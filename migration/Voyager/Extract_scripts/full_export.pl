@@ -1,24 +1,21 @@
-#!/m1/shared/bin/perl
+#!/usr/bin/perl
 
 use strict;
 use warnings;
 use DBI;
+use YAML::XS qw/LoadFile/;
 $|=1;
 
-my $num_args = $#ARGV + 1;
-if ($num_args != 3) {
-  print "\nUsage: full_export.pl database_name username password\n";
-  exit;
-}
 
-$ENV{ORACLE_SID} = "VGER";
-$ENV{ORACLE_HOME} = "/oracle/app/oracle/product/11.2.0.3/db_1";
-our $db_name = $ARGV[0];
-our $username = $ARGV[1];
-our $password = $ARGV[2];
-our $sqllogin = "$ARGV[1]/$ARGV[2]".'@VGER';
+$ENV{ORACLE_SID} = $config->{sid};
+$ENV{ORACLE_HOME} = $config->{oracle_home};
+our $host = $config->{host};
+our $username = $config->{username};
+our $password = $config->{password};
+our $sid = $config->{sid};
+our $port = $config->{port};
 
-my $dbh = DBI->connect('dbi:Oracle:', $sqllogin) || die "Could not connect: $DBI::errstr";
+my $dbh = DBI->connect("dbi:Oracle:host=$host;sid=$sid;port=$port;", $username, $password) || die "Could no connect: $DBI::errstr";
 
 
 my $query = "SELECT patron_barcode.patron_barcode,patron.institution_id,circ_transactions.patron_id,

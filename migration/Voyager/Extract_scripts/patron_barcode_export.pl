@@ -1,24 +1,25 @@
-#!/m1/shared/bin/perl    
+#!/usr/bin/perl
+
 # The line above may need to be adjusted if your Perl is in a different place!
 #
 use strict;
 use warnings;
 use DBI;
+use YAML::XS qw/LoadFile/;
 $|=1;
 
-#
-# Here's the part you'll probably need to change--
-#
-$ENV{ORACLE_SID} = "VGER";
-$ENV{ORACLE_HOME} = "/oracle/app/oracle/product/11.2.0.3/db_1";
-our $db_name = "gmcdb";
-our $username = "gmcdb";
-our $password = "Qgmcdb";
-our $sqllogin = 'gmcdb/Qgmcdb@VGER';
+$ENV{ORACLE_SID} = $config->{sid};
+$ENV{ORACLE_HOME} = $config->{oracle_home};
+our $host = $config->{host};
+our $username = $config->{username};
+our $password = $config->{password};
+our $sid = $config->{sid};
+our $port = $config->{port};
+
 #
 # You shouldn't need to make any edits below this--
 #
-my $dbh = DBI->connect('dbi:Oracle:', $sqllogin) || die "Could not connect: $DBI::errstr";
+my $dbh = DBI->connect("dbi:Oracle:host=$host;sid=$sid;port=$port;", $username, $password) || die "Could no connect: $DBI::errstr";
 my $query = "SELECT patron_barcode.patron_id, patron_barcode.patron_barcode, patron_barcode.barcode_status,
                     patron_group.patron_group_name
                FROM patron_barcode

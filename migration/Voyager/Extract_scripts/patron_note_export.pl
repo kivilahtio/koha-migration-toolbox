@@ -1,18 +1,20 @@
-#!/m1/shared/bin/perl
+#!/usr/bin/perl
 
 use strict;
 use warnings;
 use DBI;
+use YAML::XS qw/LoadFile/;
 $|=1;
 
-$ENV{ORACLE_SID} = "VGER";
-$ENV{ORACLE_HOME} = "/oracle/app/oracle/product/11.2.0.3/db_1";
-our $db_name = "gmcdb";
-our $username = "gmcdb";
-our $password = "Qgmcdb";
-our $sqllogin = 'gmcdb/Qgmcdb@VGER';
+$ENV{ORACLE_SID} = $config->{sid};
+$ENV{ORACLE_HOME} = $config->{oracle_home};
+our $host = $config->{host};
+our $username = $config->{username};
+our $password = $config->{password};
+our $sid = $config->{sid};
+our $port = $config->{port};
 
-my $dbh = DBI->connect('dbi:Oracle:', $sqllogin) || die "Could not connect: $DBI::errstr";
+my $dbh = DBI->connect("dbi:Oracle:host=$host;sid=$sid;port=$port;", $username, $password) || die "Could no connect: $DBI::errstr";
 my $query = "SELECT patron_barcode.patron_barcode,patron.institution_id,patron_notes.patron_id,patron_notes.note
                FROM patron_notes
                JOIN patron ON (patron_notes.patron_id=patron.patron_id)
@@ -33,7 +35,8 @@ while (my @line = $sth->fetchrow_array()){
       if ($line[$k]){
          $line[$k] =~ s/"/'/g;
          $line[$k] =~ s/\n/ /g;
-         $line[$k] =~ s// /g;
+         $line[$k] =~ s/
+/ /g;
          if ($line[$k] =~ /,/){
             print $out '"'.$line[$k].'"';
          }
