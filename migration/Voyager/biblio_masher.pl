@@ -59,19 +59,39 @@ my $new942 = 0;
 my $csv = Text::CSV_XS->new({binary => 1});
 GetOptions(
     'in=s'    => \$infile_name,
+    # items, eg. item-data.csv or 02-items.csv from export scripts. CSV with following columns:
+    # bib_id, add_date, barcode, perm_item_type_code, perm_location_code, enumeration chronology,
+    # historical_charges, call_no call_no_type, price, copy_number pieces, item_note
     'items=s' => \$itemsfiles,
     'out=s'   => \$outfile_name,
+    # Branch code of the branch library items are being imported to.
     'branch=s' => \$branch,
+    # last_checkout_data.csv or 13-last_borrow_dates.csv. CSV with following columns:
+    # barcode, charge_date
     'lastdate=s'  => \$lastdatefile,
+    # for dropping items, default 0 eg. no drop.
     'drop_noitem' => \$drop_noitem,
+    # for dropping item types; strings separated with comma.
     'drop_types=s' => \$drop_types_str,
+    # CSV with following columns:
+    # branch_code, branch_name
     'branch_map=s' => \$branch_map_name,
+    # Item type code and item type name for display. CSV with following columns:
+    # item_type_code, item_type_name
     'itype_map=s'       => \$itype_map_name,
+    # Location code and location name for display. CSV with following columns:
+    # location_code, location_name
     'location_map=s'       => \$location_map_name,
+    # Links together item type code, location code and collection code. CSV with following columns:
+    # item_type, location_code, collection_code
     'item_trip_map=s'   => \$item_triplet_map_name,
+    # Whether to dump copy numbers from items, default 0 eg. do not drop numbers.
     'dump_copynums=s'   => \$dump_copynums,
+    # Fixed replacement price for items. By default, purchase price is used as replacement price.
     'repl_price=s'      => \$repl_price_override,
+    # Use temporary locations. By default, do not use.
     'use_temps'         => \$use_temps,
+    # Whether to show debug information, by default 0
     'debug'   => \$debug,
 );
 

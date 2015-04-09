@@ -58,29 +58,36 @@ my $bib_id_map_filename  = $NULL_STRING;
 my $item_specific_holds  = 0;
 
 GetOptions(
+    # Holds data (29-requests.csv). CSV with following columns:
+    # BIB_ID, ITEM_ID, REQUEST_LEVEL, QUEUE_POSITION, HR_STATUS_DESC,LOCATION_CODE,
+    # CREATE_DATE,EXPIRE_DATE,PATRON_ID,PATRON_BARCODE,ITEM_BARCODE
     'in=s'          => \$input_filename,
-    'item_map=s'    => \$item_id_map_filename,
+    # CSV of Voyager item and bib_ids. CSV with following columns:
+    # BIB_ID, ITEM_ID
     'bib_map=s'     => \$bib_id_map_filename,
+    # Flag for item spesific holds, default 0
     'item_specific' => \$item_specific_holds,
+    # Flag for displaying debug information
     'debug'         => \$debug,
+    # Update the database, default 0
     'update'        => \$doo_eet,
 );
 
-for my $var ($input_filename,$item_id_map_filename,$bib_id_map_filename) {
+for my $var ($input_filename,$bib_id_map_filename) {
    croak ("You're missing something") if $var eq $NULL_STRING;
 }
 
-print "reading item map...\n";
-my %item_id_map;
-if ($item_id_map_filename ne $NULL_STRING) {
-   my $csv = Text::CSV_XS->new();
-   open my $map_file,'<',$item_id_map_filename;
-   while (my $line = $csv->getline($map_file)) {
-      my @data= @$line;
-      $item_id_map{$data[0]} = $data[1];
-   }
-   close $map_file;
-}
+# print "reading item map...\n";
+# my %item_id_map;
+# if ($item_id_map_filename ne $NULL_STRING) {
+#    my $csv = Text::CSV_XS->new();
+#   open my $map_file,'<',$item_id_map_filename;
+#   while (my $line = $csv->getline($map_file)) {
+#      my @data= @$line;
+#      $item_id_map{$data[0]} = $data[1];
+#   }
+#   close $map_file;
+#}
 
 print "reading bib map...\n";
 my %bib_id_map;

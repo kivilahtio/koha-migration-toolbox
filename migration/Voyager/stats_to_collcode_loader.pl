@@ -54,10 +54,15 @@ my $item_id_map_filename = $NULL_STRING;
 my $code_map_filename = $NULL_STRING;
 
 GetOptions(
+    # CSV of Voyager item ids and Voyager stat codes
     'in=s'     => \$input_filename,
+    # CSV of Voyager item ids and barcodes
     'item_map=s' => \$item_id_map_filename,
+    # CSV with columns stat_code, Koha collection_code and priority.
     'code_map=s' => \$code_map_filename,
+    # Do nothing, only display debug information. Default 0
     'debug'    => \$debug,
+    # Update the database. Default 0.
     'update'   => \$doo_eet,
 
 );
