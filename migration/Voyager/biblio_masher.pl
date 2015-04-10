@@ -58,6 +58,7 @@ my $new942 = 0;
 
 my $csv = Text::CSV_XS->new({binary => 1});
 GetOptions(
+    # MARC-file
     'in=s'    => \$infile_name,
     # items, eg. item-data.csv or 02-items.csv from export scripts. CSV with following columns:
     # bib_id, add_date, barcode, perm_item_type_code, perm_location_code, enumeration chronology,
@@ -76,13 +77,14 @@ GetOptions(
     # CSV with following columns:
     # branch_code, branch_name
     'branch_map=s' => \$branch_map_name,
-    # Item type code and item type name for display. CSV with following columns:
-    # item_type_code, item_type_name
+    # Item type code and item type name for display. Can be used to map old itemtypes to Koha itemtypes.
+    # CSV with following columns:
+    # item_type_code, item_type_name, or if mapping old values to new values: old_item_type_code, new_item_type_code
     'itype_map=s'       => \$itype_map_name,
     # Location code and location name for display. CSV with following columns:
     # location_code, location_name
     'location_map=s'       => \$location_map_name,
-    # Links together item type code, location code and collection code. CSV with following columns:
+    # Links together Koha item type code, location code and collection code. CSV with following columns:
     # item_type, location_code, collection_code
     'item_trip_map=s'   => \$item_triplet_map_name,
     # Whether to dump copy numbers from items, default 0 eg. do not drop numbers.
@@ -91,7 +93,7 @@ GetOptions(
     'repl_price=s'      => \$repl_price_override,
     # Use temporary locations. By default, do not use.
     'use_temps'         => \$use_temps,
-    # Whether to show debug information, by default 0
+    # Whether to show debug information
     'debug'   => \$debug,
 );
 
@@ -176,7 +178,8 @@ $batch->warnings_off();
 $batch->strict_off();
 my $iggy = MARC::Charset::ignore_errors(1);
 my $setting = MARC::Charset::assume_encoding('marc8');
-open my $out,  '>:utf8', $outfile_name;
+#open my $out,  '>:utf8', $outfile_name;
+open(my $out, "<:encoding(UTF-8)", $outfile_name);
 ## use critic
 my $last_record;
 RECORD:
@@ -309,7 +312,6 @@ MATCH:
             'p' => $barcode,
             'y' => $itype,
             'o' => $columns[8],
-            '2' => 'ddc',
             'd' => _process_date($columns[1]),
         );
 
@@ -350,7 +352,7 @@ MATCH:
             $field->add_subfields( 't' => $columns[12] );
         }
 
-        if ($columns[13] ne '1'){
+        if ($columns[13] ne $NULL_STRING){
             $field->add_subfields( '3' => $columns[13] );
         }
 #change column[14] from t to x for CIN- 
