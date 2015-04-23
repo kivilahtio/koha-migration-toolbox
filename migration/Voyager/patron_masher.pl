@@ -238,7 +238,7 @@ if ($input_stats_filename ne $NULL_STRING) {
 }
 
 my @borrower_fields = qw /cardnumber          surname
-                          firstname           title
+                          firstname           
                           othernames          initials
                           address             address2
                           city                state                zipcode  country
@@ -268,12 +268,12 @@ my @borrower_fields = qw /cardnumber          surname
                           altcontactcountry   altcontactphone
                           smsalertnumber      privacy/;
 
-my %allowed_titles;
-for my $title (split /\|/, C4::Context->preference('BorrowerTitles')) {
-   my $title_match = uc $title;
-   $title_match =~ s/\.$//;
-   $allowed_titles{$title_match} = $title;
-}
+# my %allowed_titles;
+# for my $title (split /\|/, C4::Context->preference('BorrowerTitles')) {
+#   my $title_match = uc $title;
+#   $title_match =~ s/\.$//;
+#   $allowed_titles{$title_match} = $title;
+# }
 
 my %tally;
 my $no_barcode=0;
@@ -311,15 +311,15 @@ while (my $row=$csv->getline_hr($input_file)){
    $this_borrower{firstname}     = $row->{FIRST_NAME};
    $this_borrower{firstname}    .= $row->{MIDDLE_NAME} ne $NULL_STRING ? ' '.$row->{MIDDLE_NAME} : $NULL_STRING;
 
-   my $tmp_title = uc $row->{TITLE};
-   $tmp_title =~ s/\s+$//;
-   $tmp_title =~ s/\.$//;
-   if (exists $allowed_titles{$tmp_title}) {
-      $this_borrower{title}      = $allowed_titles{$tmp_title};
-   }
-   elsif ($bad_titles ne $NULL_STRING) {
-      $this_borrower{$bad_titles} = $row->{TITLE};
-   }
+   # my $tmp_title = uc $row->{TITLE};
+   # $tmp_title =~ s/\s+$//;
+   # $tmp_title =~ s/\.$//;
+   # if (exists $allowed_titles{$tmp_title}) {
+   #   $this_borrower{title}      = $allowed_titles{$tmp_title};
+   # }
+   # elsif ($bad_titles ne $NULL_STRING) {
+   #   $this_borrower{$bad_titles} = $row->{TITLE};
+   # }
   
    if (defined $row->{REGISTRATION_DATE}) { 
       $this_borrower{dateenrolled} = _process_date($row->{REGISTRATION_DATE}) || $NULL_STRING;
@@ -439,7 +439,8 @@ NOTES_MATCH:
       if ($match->{NOTE_TYPE} && exists $note_prefix{$match->{NOTE_TYPE}}) {
          $match->{NOTE} = $note_prefix{$match->{NOTE_TYPE}} . $match->{NOTE};
       }
-      $match->{NOTE} =~ s///g;
+      $match->{NOTE} =~ s/
+//g;
       $match->{NOTE} =~ s/\n/\\n/g;
       $this_borrower{borrowernotes} .= ' | '.$match->{NOTE};
    }

@@ -57,7 +57,7 @@ my %queries = (
                                  patron_barcode.patron_group_id FROM patron_barcode
                                  WHERE patron_barcode.patron_barcode IS NOT NULL",
    "06a-patron_group_names.csv" => "SELECT patron_group.patron_group_id,patron_group.patron_group_name FROM patron_group",
-   "07-patron_names_dates.csv" => "SELECT PATRON.PATRON_ID, PATRON.LAST_NAME, PATRON.FIRST_NAME, PATRON.MIDDLE_NAME, PATRON.TITLE, 
+   "07-patron_names_dates.csv" => "SELECT PATRON.PATRON_ID, PATRON.LAST_NAME, PATRON.FIRST_NAME, PATRON.MIDDLE_NAME, 
                                    PATRON.CREATE_DATE, PATRON.EXPIRE_DATE, PATRON.INSTITUTION_ID
                                    FROM PATRON",
    "08-patron_groups_nulls.csv" => "SELECT patron_barcode.patron_id, patron_barcode.patron_barcode, patron_barcode.barcode_status,

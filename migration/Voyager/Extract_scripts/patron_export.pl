@@ -19,7 +19,7 @@ our $port = $config->{port};
 # You shouldn't need to make any edits below this--
 #
 my $dbh = DBI->connect("dbi:Oracle:host=$host;sid=$sid;port=$port;", $username, $password) || die "Could no connect: $DBI::errstr";
-my $query = "SELECT patron.patron_id,patron.last_name,patron.first_name,patron.middle_name,patron.title,
+my $query = "SELECT patron.patron_id,patron.last_name,patron.first_name,patron.middle_name,
                     patron.registration_date, patron.expire_date, patron.institution_id
                FROM patron";
 

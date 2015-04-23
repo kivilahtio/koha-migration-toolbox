@@ -28,7 +28,7 @@ my $sth=$dbh->prepare($query) || die $dbh->errstr;
 $sth->execute() || die $dbh->errstr;
 
 my $i=0;
-open my $out,">","patron_barcode_data.csv" || die "Can't open the output!";
+open my $out,">","patron_group_data.csv" || die "Can't open the output!";
 
 while (my @line = $sth->fetchrow_array()){
    $i++;
