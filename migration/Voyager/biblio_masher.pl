@@ -60,39 +60,53 @@ my $csv = Text::CSV_XS->new({binary => 1});
 GetOptions(
     # MARC-file
     'in=s'    => \$infile_name,
+    #---------------------------
     # items, eg. item-data.csv or 02-items.csv from export scripts. CSV with following columns:
     # bib_id, add_date, barcode, perm_item_type_code, perm_location_code, enumeration chronology,
     # historical_charges, call_no call_no_type, price, copy_number pieces, item_note
+    # Items data should be cleaned first using ./item_data_fixer.pl --in=02-items.csv --out=fixed-items.csv
+    # to remove newlines
     'items=s' => \$itemsfiles,
+    #----------------------------------
+    # Output file, to be loaded to Koha
     'out=s'   => \$outfile_name,
-    # Branch code of the branch library items are being imported to.
-    'branch=s' => \$branch,
+    #----------------------------------
     # last_checkout_data.csv or 13-last_borrow_dates.csv. CSV with following columns:
     # barcode, charge_date
     'lastdate=s'  => \$lastdatefile,
+    #----------------------------------
     # for dropping items, default 0 eg. no drop.
     'drop_noitem' => \$drop_noitem,
+    #----------------------------------
     # for dropping item types; strings separated with comma.
     'drop_types=s' => \$drop_types_str,
+    #----------------------------------
     # CSV with following columns:
-    # branch_code, branch_name
+    # Voyager location code, Koha branch_code
     'branch_map=s' => \$branch_map_name,
-    # Item type code and item type name for display. Can be used to map old itemtypes to Koha itemtypes.
+    #-----------------------------------
     # CSV with following columns:
-    # item_type_code, item_type_name, or if mapping old values to new values: old_item_type_code, new_item_type_code
+    # old_item_type_code, new_item_type_code
     'itype_map=s'       => \$itype_map_name,
+    #-----------------------------------
     # Location code and location name for display. CSV with following columns:
     # location_code, location_name
     'location_map=s'       => \$location_map_name,
+    #------------------------------------
     # Links together Koha item type code, location code and collection code. CSV with following columns:
-    # item_type, location_code, collection_code
+    # item_type, location_code, collection_code. Seems to be useful when using lots of item type related
+    # location and collection codes.
     'item_trip_map=s'   => \$item_triplet_map_name,
+    #-------------------------------------
     # Whether to dump copy numbers from items, default 0 eg. do not drop numbers.
     'dump_copynums=s'   => \$dump_copynums,
+    #-------------------------------------
     # Fixed replacement price for items. By default, purchase price is used as replacement price.
     'repl_price=s'      => \$repl_price_override,
+    #-------------------------------------
     # Use temporary locations. By default, do not use.
     'use_temps'         => \$use_temps,
+    #-------------------------------------
     # Whether to show debug information
     'debug'   => \$debug,
 );
@@ -100,7 +114,6 @@ GetOptions(
 if ( ( $infile_name eq $NULL_STRING ) 
      || ( $outfile_name eq $NULL_STRING )
      || ( $itemsfiles eq $NULL_STRING )
-     || ( $branch eq $NULL_STRING )
      || ( $lastdatefile eq $NULL_STRING)) {
     print "Something's missing.\n";
     exit;
@@ -124,7 +137,7 @@ if ($lastdatefile){
 
 if ($branch_map_name){
     my $csv = Text::CSV_XS->new();
-    open my $mapfile,"<$branch_map_name";
+    open my $mapfile,'<:utf8',$branch_map_name;
     while (my $row = $csv->getline($mapfile)){
         my @data = @$row;
         $branch_map{uc($data[0])} = $data[1];
@@ -134,7 +147,7 @@ if ($branch_map_name){
 
 if ($itype_map_name){
     my $csv = Text::CSV_XS->new();
-    open my $mapfile,"<$itype_map_name";
+    open my $mapfile,'<:utf8',$itype_map_name;
     while (my $row = $csv->getline($mapfile)){
         my @data = @$row;
         $itype_map{uc($data[0])} = $data[1];
@@ -144,10 +157,10 @@ if ($itype_map_name){
 
 if ($location_map_name){
     my $csv = Text::CSV_XS->new();
-    open my $mapfile,"<$location_map_name";
+    open my $mapfile,'<:utf8',$location_map_name;
     while (my $row = $csv->getline($mapfile)){
         my @data = @$row;
-        $location_map{uc($data[0])} = $data[1];
+        $location_map{$data[0]} = $data[1];
     }
     close $mapfile;
 }
@@ -178,8 +191,8 @@ $batch->warnings_off();
 $batch->strict_off();
 my $iggy = MARC::Charset::ignore_errors(1);
 my $setting = MARC::Charset::assume_encoding('marc8');
-#open my $out,  '>:utf8', $outfile_name;
-open(my $out, "<:encoding(UTF-8)", $outfile_name);
+open my $out,  '>:utf8', $outfile_name;
+# open(my $out, "<:encoding(UTF-8)", $outfile_name);
 ## use critic
 my $last_record;
 RECORD:
@@ -227,7 +240,7 @@ while ( ) {
     foreach my $dumpfield($record->field('852')){
         $record->delete_field($dumpfield);
     }
-    my @matches = qx(grep "^$biblio_id," $itemsfiles);
+    my @matches = qx(ag --nocolor --noheading --nofilename "^$biblio_id," $itemsfiles);
 
     next RECORD if ($drop_noitem && scalar(@matches) == 0);
 
@@ -268,25 +281,25 @@ MATCH:
         }
 #end loop here
 
-        my $branchcode = $branch;
+        my $branchcode = uc($columns[4]);
         if (exists $branch_map{$branchcode}){
             $branchcode = $branch_map{$branchcode};
+        } else {
+            $branchcode = 'UNKNOWN';
         }
 
-        my $location = uc($columns[4]) || q{}; 
-        if ($use_temps && ($columns[5] ne q{})){
-           $location = uc($columns[5])
-        }
-        if (exists $location_map{$location}){
-            $location = $location_map{$location};
-        }
-        $debug and print "$location\n";
+        my $location = uc($columns[4]);
+        # 
+        # if (exists $location_map{$location}){
+        #    $location = $location_map{$location};
+        # } else {
+        #     $location = "UNKNOWN";
+        # }
+        # $debug and print "$location\n";
 
-        my $collcode = q{};
-        if (exists $item_triplet_map{$itype}){
-           ($itype,$location,$collcode) = split (/~/,$item_triplet_map{$itype});
-           $debug and print "$itype!$location!$collcode\n";
-        }
+        my $collcode = uc($columns[4]);
+        $debug and print "$collcode\n";
+        
 
         my $enumchron = q{};
         if ($columns[5] ne $NULL_STRING){
@@ -319,9 +332,9 @@ MATCH:
             $field->add_subfields( 's' => $date_last_borrowed );
         }
 
-        if ($location ne $NULL_STRING){
-            $field->add_subfields( 'c' => $location );
-        }
+        # if ($location ne $NULL_STRING){
+        #    $field->add_subfields( 'c' => $location );
+        #}
 
         if ($collcode ne $NULL_STRING){
             $field->add_subfields( '8' => $collcode );
@@ -335,17 +348,6 @@ MATCH:
 #            $field->add_subfields( 'l' => $columns[8] );
 #        }
 
-        if ($columns[11] ne $NULL_STRING){
-            my $price = $columns[11] / 100;
-            $field->add_subfields( 'g' => $price );
-            if ($repl_price_override eq q{}){
-               $field->add_subfields( 'v' => $price );
-            }
-        }
-
-        if ($repl_price_override ne q{}){
-            $field->add_subfields( 'v' => $repl_price_override );
-        }
 
         if ($columns[12] ne $NULL_STRING and 
             (!$dump_copynums || scalar(@matches) > $dump_copynums)){
