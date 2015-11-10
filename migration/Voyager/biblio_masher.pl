@@ -7,7 +7,12 @@
 # -D Ruth Bavousett
 #
 #---------------------------------
-
+#
+# ./biblio_masher.pl --in=split-00000009 --items=fixed-item-data.csv --out=records-to-koha-09.mrc 
+# --lastdate=last_checkout_data.csv --branch_map=branch-mapping.csv --itype_map=item-type-mapping.csv 
+# --location_map=location-mapping.csv --debug > split-09.log
+#
+#-----------
 use strict;
 use warnings;
 use Carp;
@@ -240,7 +245,7 @@ while ( ) {
     foreach my $dumpfield($record->field('852')){
         $record->delete_field($dumpfield);
     }
-    my @matches = qx(ag --nocolor --noheading --nofilename "^$biblio_id," $itemsfiles);
+    my @matches = qx(sift "$biblio_id," --no-color $itemsfiles | sift "^$biblio_id");
 
     next RECORD if ($drop_noitem && scalar(@matches) == 0);
 
