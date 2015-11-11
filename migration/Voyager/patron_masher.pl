@@ -33,7 +33,6 @@ use English qw( -no_match_vars );
 use Getopt::Long;
 use Readonly;
 use Text::CSV_XS;
-use C4::Context;
 
 local    $OUTPUT_AUTOFLUSH =  1;
 Readonly my $NULL_STRING   => q{};
@@ -58,7 +57,6 @@ my $output_password_filename    = $NULL_STRING;
 my $output_attributes_filename  = $NULL_STRING;
 my $output_codes_filename       = $NULL_STRING;
 my $fixed_branch                = 'UNKNOWN';
-my $bad_titles                  = $NULL_STRING;
 my $use_inst_id                 = 0;
 my $branch_or_category          = 'categorycode';
 my $csv_delimiter               = 'comma';
@@ -81,7 +79,6 @@ GetOptions(
     'password=s'    => \$output_password_filename,
     'attrib=s'      => \$output_attributes_filename,
     'codes=s'       => \$output_codes_filename,
-    'bad_titles=s'  => \$bad_titles,
     'branch=s'      => \$fixed_branch,
     'use_inst_id'   => \$use_inst_id,
     'group=s'       => \$branch_or_category,
@@ -98,8 +95,8 @@ my %delimiter = ( 'comma' => ',',
                   'pipe'  => '|',
                 );
 
-for my $var ($input_name_filename,      $input_address_filename,     $input_barcode_filename, $input_null_barcode_filename,
-             $input_notes_filename,     $input_phone_filename,       $input_stats_filename,   $output_filename,
+for my $var ($input_name_filename,      $input_address_filename,     $input_barcode_filename,
+             $input_phone_filename,       $input_stats_filename,   $output_filename,
              $output_password_filename, $output_attributes_filename) {
    croak ("You're missing something") if $var eq $NULL_STRING;
 }
@@ -238,7 +235,7 @@ if ($input_stats_filename ne $NULL_STRING) {
 }
 
 my @borrower_fields = qw /cardnumber          surname
-                          firstname           
+                          firstname           title
                           othernames          initials
                           address             address2
                           city                state                zipcode  country
@@ -268,12 +265,7 @@ my @borrower_fields = qw /cardnumber          surname
                           altcontactcountry   altcontactphone
                           smsalertnumber      privacy/;
 
-# my %allowed_titles;
-# for my $title (split /\|/, C4::Context->preference('BorrowerTitles')) {
-#   my $title_match = uc $title;
-#   $title_match =~ s/\.$//;
-#   $allowed_titles{$title_match} = $title;
-# }
+
 
 my %tally;
 my $no_barcode=0;
@@ -311,15 +303,7 @@ while (my $row=$csv->getline_hr($input_file)){
    $this_borrower{firstname}     = $row->{FIRST_NAME};
    $this_borrower{firstname}    .= $row->{MIDDLE_NAME} ne $NULL_STRING ? ' '.$row->{MIDDLE_NAME} : $NULL_STRING;
 
-   # my $tmp_title = uc $row->{TITLE};
-   # $tmp_title =~ s/\s+$//;
-   # $tmp_title =~ s/\.$//;
-   # if (exists $allowed_titles{$tmp_title}) {
-   #   $this_borrower{title}      = $allowed_titles{$tmp_title};
-   # }
-   # elsif ($bad_titles ne $NULL_STRING) {
-   #   $this_borrower{$bad_titles} = $row->{TITLE};
-   # }
+   
   
    if (defined $row->{REGISTRATION_DATE}) { 
       $this_borrower{dateenrolled} = _process_date($row->{REGISTRATION_DATE}) || $NULL_STRING;
