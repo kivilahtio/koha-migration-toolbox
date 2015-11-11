@@ -120,6 +120,7 @@ while (my $line = $csv->getline_hr($input_file)) {
    my $borrower = GetMember( 'cardnumber' => $line->{PATRON_BARCODE} );
    my $biblionumber = $bib_id_map{ $line->{BIB_ID} };
    if (!$borrower or !$biblionumber) {
+      print "$line->{BIB_ID}\n";
       $problem++;
       next RECORD;
    }
@@ -132,8 +133,8 @@ while (my $line = $csv->getline_hr($input_file)) {
    if ($item_specific_holds) {
       $itemnumber = GetItemnumberFromBarcode($line->{ITEM_BARCODE});
    }
-   my $reservedate    = _process_date($line->{CREATE_DATE});
-   my $expirationdate = _process_date($line->{EXPIRE_DATE});
+   my $reservedate    = $line->{CREATE_DATE};
+   my $expirationdate = $line->{EXPIRE_DATE};
 
    if ($debug) {
       print "BORR $borrower->{borrowernumber}/BIB $biblionumber/";
