@@ -24,6 +24,8 @@
 #   -number of records read from each input file
 #   -number of records output
 
+package MAIN;
+
 use autodie;
 use strict;
 use warnings;
@@ -45,7 +47,9 @@ my $k       = 0;
 my $written = 0;
 my $problem = 0;
 
-my $input_name_filename         = $NULL_STRING;
+#Introduce the exported files needed to mash the patrons up!
+my $dataSourceDir;
+my $patron_names_dates_file     = "07-patron_names_dates.csv";
 my $input_address_filename      = $NULL_STRING;
 my $input_barcode_filename      = $NULL_STRING;
 my $input_null_barcode_filename = $NULL_STRING;
@@ -57,7 +61,6 @@ my $output_password_filename    = $NULL_STRING;
 my $output_attributes_filename  = $NULL_STRING;
 my $output_codes_filename       = $NULL_STRING;
 my $fixed_branch                = 'UNKNOWN';
-my $use_inst_id                 = 0;
 my $branch_or_category          = 'categorycode';
 my $csv_delimiter               = 'comma';
 my $tally_fields                = 'branchcode,categorycode';
@@ -68,7 +71,8 @@ my @note_prefixes;
 my %note_prefix;
 
 GetOptions(
-    'name=s'        => \$input_name_filename,
+    #From which directory the Voyager-exported data files are found from?
+    'source_dir=s'  => \$dataSourceDir,
     'address=s'     => \$input_address_filename,
     'barcode=s'     => \$input_barcode_filename,
     'nullbar=s'     => \$input_null_barcode_filename,
@@ -80,10 +84,10 @@ GetOptions(
     'attrib=s'      => \$output_attributes_filename,
     'codes=s'       => \$output_codes_filename,
     'branch=s'      => \$fixed_branch,
-    'use_inst_id'   => \$use_inst_id,
     'group=s'       => \$branch_or_category,
     'delimiter=s'   => \$csv_delimiter,
     'tally=s'       => \$tally_fields,
+    # eg. "cardnumber:167A00001,address:Nuottaniementie 20 F 19" set static values to patrons' attributes.
     'static=s'      => \@static,
     'map=s'         => \@datamap_filenames,
     'noteprefix=s'  => \@note_prefixes,
@@ -95,10 +99,11 @@ my %delimiter = ( 'comma' => ',',
                   'pipe'  => '|',
                 );
 
-for my $var ($input_name_filename,      $input_address_filename,     $input_barcode_filename,
-             $input_phone_filename,       $input_stats_filename,   $output_filename,
-             $output_password_filename, $output_attributes_filename) {
-   croak ("You're missing something") if $var eq $NULL_STRING;
+for my $var ('patron_names_dates_file',      'input_address_filename', 'input_barcode_filename',
+             'input_phone_filename',     'input_stats_filename',   'output_filename',
+             'output_password_filename', 'output_attributes_filename') {
+  no strict 'refs';
+  croak ("You're missing variable '$var'") if ${"MAIN::$var"} eq $NULL_STRING;
 }
 
 foreach my $map (@datamap_filenames) {
@@ -112,6 +117,7 @@ foreach my $map (@datamap_filenames) {
    close $mapfile;
 }
 
+#Load the external static patron attributes
 my @field_static;
 foreach my $map (@static) {
    my ($field, $data) = $map =~ /^(.*?):(.*)$/;
@@ -272,9 +278,10 @@ my $no_barcode=0;
 $i=0;
 
 my $csv=Text::CSV_XS->new({ binary => 1 });
-open my $input_file,'<:utf8',$input_name_filename;
+open my $input_file,'<:utf8',$patron_names_dates_file;
 $csv->column_names($csv->getline($input_file));
 
+#Write a header to the output patrons file
 open my $output_file,'>:utf8',$output_filename;
 for my $k (0..scalar(@borrower_fields)-1){
    print {$output_file} $borrower_fields[$k].',';
@@ -294,6 +301,7 @@ while (my $row=$csv->getline_hr($input_file)){
    my %this_borrower;
    my $addedcode;
 
+   #Preset static fields
    foreach my $map (@field_static) {
       $this_borrower{$map->{'field'}} = $map->{'data'};
    }
@@ -303,9 +311,9 @@ while (my $row=$csv->getline_hr($input_file)){
    $this_borrower{firstname}     = $row->{FIRST_NAME};
    $this_borrower{firstname}    .= $row->{MIDDLE_NAME} ne $NULL_STRING ? ' '.$row->{MIDDLE_NAME} : $NULL_STRING;
 
-   
-  
-   if (defined $row->{REGISTRATION_DATE}) { 
+
+
+   if (defined $row->{REGISTRATION_DATE}) { #REGISTRATION_DATE might not always exists
       $this_borrower{dateenrolled} = _process_date($row->{REGISTRATION_DATE}) || $NULL_STRING;
    }
    else {
@@ -315,9 +323,6 @@ while (my $row=$csv->getline_hr($input_file)){
 
 
    $this_borrower{cardnumber}   = $NULL_STRING; 
-   if ($use_inst_id){
-      $this_borrower{cardnumber}   = $row->{INSTITUTION_ID};
-   }
    $this_borrower{sort2}        = $row->{INSTITUTION_ID};
 
    my $matchpoint = $row->{PATRON_ID};
@@ -394,9 +399,8 @@ ADDRESS_MATCH:
 BARCODE_MATCH:
    foreach my $match (@barcode_matches) {
 
-      if (!$use_inst_id){
-         $this_borrower{cardnumber} = $match->{PATRON_BARCODE};
-      }
+      $this_borrower{cardnumber} = $match->{PATRON_BARCODE};
+
       if ($match->{BARCODE_STATUS} eq '') {
          $match->{BARCODE_STATUS} = 0;
       }
