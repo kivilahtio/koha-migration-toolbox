@@ -32,7 +32,7 @@ use warnings;
 use Carp;
 use Data::Dumper;
 use English qw( -no_match_vars );
-use Getopt::Long;
+use Getopt::OO;
 use Readonly;
 use Text::CSV_XS;
 
@@ -69,6 +69,46 @@ my @datamap_filenames;
 my %datamap;
 my @note_prefixes;
 my %note_prefix;
+
+my ($opts) = Getopt::OO->new(\@ARGV,
+  '--help' => {
+    help => 'Show this friendly help',
+    callback => \&help,
+  },
+  '--export-dir' => {
+    help => 'From which directory the exported Voyager table contents are found',
+    n_values => 1,
+    callback => sub {},
+  },
+  '-f' => {
+    help => 'option that expects one more value.',
+    n_values => 1,
+  },
+  '--long' => {
+    help => 'long option'
+  },
+  '--multiple_' => {
+    help =>  [
+      "Everything between '--multiple_values' and '-' is",
+      "an value for this options",
+    ],
+    'multi_value' => 1,
+    'multiple' => 1, # Can happen more than once on command line.
+  },
+  other_values => {
+    help => 'file_1 ... file_n',
+  },
+);
+sub help {
+  my ($handle, $option) = @_;
+  print $handle->Help();
+  exit 0;
+}
+sub parameterValidationFailed {
+  my ($handle, $option, $message) = @_;
+  print $handle->Help();
+  die "Parameter '$option' validation failed: $message";
+}
 
 GetOptions(
   #From which directory the Voyager-exported data files are found from?
