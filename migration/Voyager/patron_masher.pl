@@ -48,7 +48,7 @@ my $written = 0;
 my $problem = 0;
 
 #Introduce the exported files needed to mash the patrons up!
-my $dataSourceDir;
+my $dataSourceDir               = "~/migration";
 my $patron_names_dates_file     = "07-patron_names_dates.csv";
 my $input_address_filename      = $NULL_STRING;
 my $input_barcode_filename      = $NULL_STRING;
@@ -278,7 +278,7 @@ my $no_barcode=0;
 $i=0;
 
 my $csv=Text::CSV_XS->new({ binary => 1 });
-open my $input_file,'<:utf8',$patron_names_dates_file;
+open my $input_file,'<:utf8',"$dataSourceDir/$patron_names_dates_file";
 $csv->column_names($csv->getline($input_file));
 
 #Write a header to the output patrons file
@@ -322,37 +322,36 @@ while (my $row=$csv->getline_hr($input_file)){
    $this_borrower{dateexpiry}   = _process_date($row->{EXPIRE_DATE})       || $NULL_STRING;
 
 
-   $this_borrower{cardnumber}   = $NULL_STRING; 
+   $this_borrower{cardnumber}   = $NULL_STRING;
    $this_borrower{sort2}        = $row->{INSTITUTION_ID};
 
-   my $matchpoint = $row->{PATRON_ID};
+   my $patron_id = $row->{PATRON_ID};
 
    my @address_matches;
-   foreach (@{$address_data_hash{$matchpoint}}){
+   foreach (@{$address_data_hash{$patron_id}}){
       push (@address_matches, $_);
    }
    my @barcode_matches;
-   foreach (@{$barcode_data_hash{$matchpoint}}){
+   foreach (@{$barcode_data_hash{$patron_id}}){
       push (@barcode_matches, $_);
    }
    my @null_barcode_matches;
-   foreach (@{$null_barcode_data_hash{$matchpoint}}){
+   foreach (@{$null_barcode_data_hash{$patron_id}}){
       push (@null_barcode_matches, $_);
    }
    my @notes_matches;
-   foreach (@{$notes_data_hash{$matchpoint}}){
+   foreach (@{$notes_data_hash{$patron_id}}){
       push (@notes_matches, $_);
    }
    my @phone_matches;
-   foreach (@{$phone_data_hash{$matchpoint}}){
+   foreach (@{$phone_data_hash{$patron_id}}){
       push (@phone_matches, $_);
    }
    my @stats_matches;
-   foreach (@{$stats_data_hash{$matchpoint}}){
+   foreach (@{$stats_data_hash{$patron_id}}){
       push (@stats_matches, $_);
    }
 
-ADDRESS_MATCH:
    foreach my $match (@address_matches) {
       if ($match->{ADDRESS_TYPE} == 1){
          if ($match->{ADDRESS_LINE3} ne $NULL_STRING 
@@ -369,10 +368,8 @@ ADDRESS_MATCH:
          $this_borrower{state}   = $match->{STATE_PROVINCE};
          $this_borrower{zipcode} = $match->{ZIP_POSTAL};
          $this_borrower{country} = $match->{COUNTRY};
-         next ADDRESS_MATCH;
       }
-
-      if ($match->{ADDRESS_TYPE} == 2){
+      elsif ($match->{ADDRESS_TYPE} == 2){
          if ($match->{ADDRESS_LINE3} ne $NULL_STRING 
              || $match->{ADDRESS_LINE4} ne $NULL_STRING 
              || $match->{ADDRESS_LINE5} ne $NULL_STRING) {
@@ -387,16 +384,12 @@ ADDRESS_MATCH:
          $this_borrower{B_state}   = $match->{STATE_PROVINCE};
          $this_borrower{B_zipcode} = $match->{ZIP_POSTAL};
          $this_borrower{B_country} = $match->{COUNTRY};
-         next ADDRESS_MATCH;
       }
-
-      if ($match->{ADDRESS_TYPE} == 3){
+      elsif ($match->{ADDRESS_TYPE} == 3){
          $this_borrower{email} = $match->{ADDRESS_LINE1};
-         next ADDRESS_MATCH;
       }
    }
 
-BARCODE_MATCH:
    foreach my $match (@barcode_matches) {
 
       $this_borrower{cardnumber} = $match->{PATRON_BARCODE};
@@ -411,18 +404,16 @@ BARCODE_MATCH:
    }
 
    if (!exists $this_borrower{$branch_or_category}){
-NULL_BARCODE_MATCH:
       foreach my $match (@null_barcode_matches) {
          if ($match->{BARCODE_STATUS} eq '') {
             $match->{BARCODE_STATUS} = 0;
          }
-         next NULL_BARCODE_MATCH if ($match->{BARCODE_STATUS} != 1);
+         next if ($match->{BARCODE_STATUS} != 1);
          $this_borrower{$branch_or_category} = $match->{PATRON_GROUP_ID};
       }
    }
 
    $this_borrower{borrowernotes} = $NULL_STRING;
-NOTES_MATCH:
    foreach my $match(@notes_matches) {
       if ($match->{NOTE_TYPE} && exists $note_prefix{$match->{NOTE_TYPE}}) {
          $match->{NOTE} = $note_prefix{$match->{NOTE_TYPE}} . $match->{NOTE};
@@ -433,7 +424,6 @@ NOTES_MATCH:
       $this_borrower{borrowernotes} .= ' | '.$match->{NOTE};
    }
 
-PHONE_MATCH:
    foreach my $match(@phone_matches) {
       if ($match->{PHONE_DESC} eq 'Primary') {
          $this_borrower{phone} = $match->{PHONE_NUMBER};
@@ -449,7 +439,6 @@ PHONE_MATCH:
       }
    }
 
-STAT_MATCH:
    foreach my $match(@stats_matches) {
       if (exists $datamap{stat}{$match->{PATRON_STAT_ID}}) {
          foreach my $map (split /~/,$datamap{stat}{$match->{PATRON_STAT_ID}}) {
