@@ -418,8 +418,7 @@ while (my $row=$csv->getline_hr($input_file)){
       if ($match->{NOTE_TYPE} && exists $note_prefix{$match->{NOTE_TYPE}}) {
          $match->{NOTE} = $note_prefix{$match->{NOTE_TYPE}} . $match->{NOTE};
       }
-      $match->{NOTE} =~ s/
-//g;
+      #Disarm newlines
       $match->{NOTE} =~ s/\n/\\n/g;
       $this_borrower{borrowernotes} .= ' | '.$match->{NOTE};
    }
