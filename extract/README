@@ -1,0 +1,8 @@
+In this directory are the scripts needed to extract data from Voyager.
+
+Copy the voyagerDB-directory to the Voyager DB server and configure per instructions in the README/config-file.
+
+Afterwards you must define the pipeline automation script which connects from Koha-server to the VoyagerDB-server to get the data out.
+This directory has example implementations which you can use as a basis to build your own glue between migration phases.
+
+

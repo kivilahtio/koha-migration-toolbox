@@ -7,6 +7,7 @@ use experimental 'smartmatch', 'signatures';
 
 #External modules
 use Text::CSV_XS;
+use Data::Dumper;
 
 #Local modules
 use MMT::Config;
@@ -43,7 +44,7 @@ my $branchcodeFile         = MMT::Config::translationsDir."/branchcodes.yaml";
 my $noteTypeFile           = MMT::Config::translationsDir."/note_type.yaml";
 my $patronStatisticsFile   = MMT::Config::translationsDir."/patron_stat.yaml";
 
-my $outputFile = MMT::Config::kohaImportDir."/borrowers.yaml";
+my $outputFile = MMT::Config::kohaImportDir."/borrowers.migrateme";
 
 sub new {
   $log->trace("Constructor(@_)") if $log->is_trace();
@@ -63,10 +64,9 @@ sub build($s) {
   $csv->column_names($csv->getline($inFH));
   $log->info("Loading file '$patron_names_dates_file', identified columns '".join(',', $csv->column_names())."'");
 
-  #Write a header to the output patrons file
+  #Open output file
   $log->info("Opening file '$outputFile' for export");
   open(my $outFH, '>:encoding(UTF-8)', $outputFile);
-  print $outFH "---\n\n";
 
   my $i = 0; #Track how many patrons are processed
   my $w = 0; #Track how many patrons actually survived the build
@@ -85,7 +85,7 @@ sub build($s) {
       }
     }
     else {
-      print $outFH ${$patron->toYaml()};
+      print $outFH serialize($patron)."\n";
       $log->debug("Wrote ".$patron->logId()) if $log->is_debug();
       $s->{tester}->test($patron);
       $w++;
@@ -95,6 +95,47 @@ sub build($s) {
   close $outFH;
   close $inFH;
   $log->info("Patrons built, $w/$i objects survived");
+}
+
+sub addresses {
+  $_[0]->{addresses} = $_[1] if @_ == 2;
+  return $_[0]->{addresses};
+}
+sub groups {
+  $_[0]->{groups} = $_[1] if @_ == 2;
+  return $_[0]->{groups};
+}
+sub groups_nulls {
+  $_[0]->{groups_nulls} = $_[1] if @_ == 2;
+  return $_[0]->{groups_nulls};
+}
+sub notes {
+  $_[0]->{notes} = $_[1] if @_ == 2;
+  return $_[0]->{notes};
+}
+sub phones {
+  $_[0]->{phones} = $_[1] if @_ == 2;
+  return $_[0]->{phones};
+}
+sub statisticalCategories {
+  $_[0]->{statisticalCategories} = $_[1] if @_ == 2;
+  return $_[0]->{statisticalCategories};
+}
+sub categorycodeTranslator {
+  $_[0]->{categorycodeTranslator} = $_[1] if @_ == 2;
+  return $_[0]->{categorycodeTranslator};
+}
+sub branchcodeTranslation {
+  $_[0]->{branchcodeTranslation} = $_[1] if @_ == 2;
+  return $_[0]->{branchcodeTranslation};
+}
+sub noteTypeTranslation {
+  $_[0]->{noteTypeTranslation} = $_[1] if @_ == 2;
+  return $_[0]->{noteTypeTranslation};
+}
+sub patronStatisticsTranslation {
+  $_[0]->{patronStatisticsTranslation} = $_[1] if @_ == 2;
+  return $_[0]->{patronStatisticsTranslation};
 }
 
 sub _loadRepositories($s) {
@@ -136,45 +177,16 @@ sub _loadTranslationTables($s) {
   $s->noteTypeTranslation         ( MMT::Table::NoteType           ->new({file => $noteTypeFile           }) );
   $s->patronStatisticsTranslation ( MMT::Table::PatronStatistics   ->new({file => $patronStatisticsFile   }) );
 }
-sub addresses {
-  $_[0]->{addresses} = $_[1] if @_ == 2;
-  return $_[0]->{addresses};
-}
-sub groups {
-  $_[0]->{groups} = $_[1] if @_ == 2;
-  return $_[0]->{groups};
-}
-sub groups_nulls {
-  $_[0]->{groups_nulls} = $_[1] if @_ == 2;
-  return $_[0]->{groups_nulls};
-}
-sub notes {
-  $_[0]->{notes} = $_[1] if @_ == 2;
-  return $_[0]->{notes};
-}
-sub phones {
-  $_[0]->{phones} = $_[1] if @_ == 2;
-  return $_[0]->{phones};
-}
-sub statisticalCategories {
-  $_[0]->{statisticalCategories} = $_[1] if @_ == 2;
-  return $_[0]->{statisticalCategories};
-}
-sub categorycodeTranslator {
-  $_[0]->{categorycodeTranslator} = $_[1] if @_ == 2;
-  return $_[0]->{categorycodeTranslator};
-}
-sub branchcodeTranslation {
-  $_[0]->{branchcodeTranslation} = $_[1] if @_ == 2;
-  return $_[0]->{branchcodeTranslation};
-}
-sub noteTypeTranslation {
-  $_[0]->{noteTypeTranslation} = $_[1] if @_ == 2;
-  return $_[0]->{noteTypeTranslation};
-}
-sub patronStatisticsTranslation {
-  $_[0]->{patronStatisticsTranslation} = $_[1] if @_ == 2;
-  return $_[0]->{patronStatisticsTranslation};
+
+sub serialize($o) {
+  $Data::Dumper::Indent = 0;
+  $Data::Dumper::Sortkeys = 1;
+  $Data::Dumper::Useqq = 1;
+  $Data::Dumper::Varname = 'VAR1';
+  $Data::Dumper::Purity = 1;
+  my $dump = Data::Dumper::Dumper($o);
+  $dump =~ s/\n/\\n/g;
+  return $dump;
 }
 
 return 1;

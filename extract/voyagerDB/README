@@ -6,4 +6,4 @@ with DB connection params.
 
 Finally run
   extract.pl
-to prepare a .zip-file for export.
+to write .csv-files to the VoyagerDB-server

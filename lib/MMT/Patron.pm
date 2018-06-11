@@ -7,6 +7,7 @@ use experimental 'smartmatch', 'signatures';
 use English;
 
 #External modules
+use YAML::XS;
 
 #Local modules
 use MMT::Config;
@@ -42,7 +43,7 @@ Flesh out the Koha-borrower -object out of the given
  @param2 Builder
 =cut
 sub build($self, $o, $b) {
-  $self->setPatronId                         ($o, $b);
+  $self->setBorrowenumber                    ($o, $b);
   $self->setCardnumber                       ($o, $b);
   $self->setBranchcode                       ($o, $b);
   $self->setSort1                            ($o, $b);
@@ -88,11 +89,12 @@ sub logId($s) {
 }
 
 #Do not set borrowernumber here. Let Koha set it, link using barcode
-sub setPatronId($s, $o, $b) {
+sub setBorrowenumber($s, $o, $b) {
   unless ($o->{patron_id}) {
     die "\$DELETE: Patron is missing patron_id, DELETEing:\n".$s->toYaml();
   }
-  $s->{patron_id} = $o->{patron_id};
+  $s->{patron_id} =      $o->{patron_id};
+  $s->{borrowernumber} = $o->{patron_id};
 }
 sub setCardnumber($s, $o, $b) {
   my $patron_groups_barcodes = $b->groups()->get($s->{patron_id});
@@ -113,7 +115,7 @@ sub setCardnumber($s, $o, $b) {
     $log->warn("Patron '".$s->logId()."' has no cardnumber.");
   }
   unless ($s->{cardnumber}) {
-    $s->{cardnumber} = sprintf "TEMP%d",$s->{sort1};
+    $s->{cardnumber} = sprintf "TEMP%d",$s->{patron_id};
   }
 }
 sub setSort1($s, $o, $b) {

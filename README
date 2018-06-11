@@ -64,9 +64,14 @@ b) Commands to Run
 
 0. Run INSTALL.sh
 
-0. Copy full_export.pl and config.yaml to Voyager DB-server
+0. Install the VoyagerDB extraction script
 
-0.1 Configure ssh-connection to the Voyager DB-server from the Koha-server.
+- Configure ssh-connection to the Voyager DB-server from the Koha-server.
+- Copy the "extract/voyagerDB"-directory to the VoyagerDB-server and configure config.yaml in the copied dir
+- Configure the extraction automation script. Set the script used to pull the Voyager data dump to the main configuration at
+    ~/MMT-Voyager/config/main.yaml
+  For example implementations take a look at
+    extract/voyagerToKoha_*
 
 1. Configure mapping tables.
 

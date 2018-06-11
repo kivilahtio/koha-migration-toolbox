@@ -11,12 +11,9 @@
 ### 1) Data export phase
 ## Voyager DB dumps are fetched and delivered for the data transformation phase
 
-oracle_home: 
-sid: 
-host: 
-port: 
-username: 
-password: 
+# Absolute/full path to the script used to extract data from the VoyagerDB-server into the Koha-server.
+# See the extract-dir for example implementations.
+exportPipelineScript: ''
 
 # From where the files exported from Voyager are found?
 voyagerExportDir: ''
