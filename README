@@ -1,6 +1,7 @@
 ---------------------------------
 
- Koha Migration Toolbox
+ Voyager->Koha Migration Toolbox
+ Copyright 2018 NatLibFi
  Copyright 2010 ByWater Solutions
 
 ---------------------------------
@@ -22,57 +23,76 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 1) Introduction
 
-    These scripts were written by or for ByWater Solutions, for use in 
+    This Voyager ETL-program is written by the National Library of Finland,
+    based on the Voyager scripts by ByWater Solutions.
+    These scripts are for use in 
     migration and support of the Koha integrated library system.  We
     give them to the community, in the hope that others find them 
     useful.  Most should be fairly self-explanatory; if you have specific
-    questions, please direct them to ByWater via:
-    
-    D Ruth Bavousett <ruth@bywatersolutions.com>
-    Brendan Gallagher <brendan@bywatersolutions.com>
+    questions, please direct them to the committers.
 
-2) Generalities
+2) Submitting patches
 
-    In all of the Perl scripts, Getopt::Long is used to process 
-    command-line parameters.  Immediately after the call to GetOptions,
-    mandatory parameters (if any) are checked.  No --help is provided in
-    these scripts.  Most will have something hanging from the --debug flag, 
-    but it may or may not be useful, depending on the debugging needs
-    when the script was written.
+    No one at ByWater/NatLibFi suggests that these scripts are the be-all,
+    end-all of ILS migration tools; if you have enhancements that you are
+    willing to share, please send them, and we will include them!
+    A pull-request would be the most-welcome way to do that.
 
-    If a script is intended to change data on a running instance of Koha,
-    it will support the --update flag.  Without this flag, no data will 
-    be changed.
+3) Installation instructions
 
-3) Perl Prerequisites
+This program is intended to be ran on two separate servers:
+- the Voyager DB server and
+- the Koha application server
 
-    The following modules are loaded for all or many of these scripts, so 
-    you should ensure that you have necessary packages on your system.
+a) Overview of the program flow:
 
-    autodie qw(open close);
-    strict;
-    version;
-    warnings;
+- A small script and the relevant config is put to the VoyagerDB-server to extract all data
+- Koha-server is configured to access the VoyagerDB-server via ssh and pulls a DB dump when needed
+- Koha is configured with the desired configurations
+- Transformation phase mapping tables and configurations match the configured Koha and Voyager instances.
 
-    Carp;
-    Data::Dumper;
-    English qw( -no_match_vars );
-    Getopt::Long;
-    MARC::Batch;
-    MARC::Charset;
-    MARC::Field;
-    MARC::Record;
-    Readonly;
-    Smart::Comments;
-    Text::CSV_XS;
-    Text::CSV::Simple;
-    XML::Simple;
+- When the migrate-command is given:
+-- Koha-server instructs the VoyagerDB to hand over the data
+-- Data is pulled to Koha-server and unzipped
+-- Data is transformed using mapping tables and program configurations
+-- Transformed Koha-objects are stored to files
+-- All configurations in the Koha Staff Client are backed up, and the Koha DB is cleared
+-- Those files are read by bulk*Import.pl -scripts and relevant business objects are written to Koha via the Koha Perl API.
+-- ElasticSearch reindexing is triggered.
 
-4) Submitting patches
+b) Commands to Run
 
-    No one at ByWater suggests that these scripts are the be-all, end-all 
-    of ILS migration tools; if you have enhancements that you are willing to 
-    share, please send them, and we will include them!  A git patch would be
-    the most-welcome way to do that, emailed to either of the addresses above.
+0. Run INSTALL.sh
 
+0. Copy full_export.pl and config.yaml to Voyager DB-server
+
+0.1 Configure ssh-connection to the Voyager DB-server from the Koha-server.
+
+1. Configure mapping tables.
+
+2. Configure Koha
+
+2.1 Follow the Koha-manual's implementation checklist closely
+
+2.2 ExtendedPatronAttributes
+
+- KITT2 needs 'statistic', which is repeatable, non-unique, authorized_value-category should be defined and used based on the patron_stat.yaml mapping table.
+- Hetula needs 'SSN', which is non-repeatable, unique anonymized SSN-key reference to the real SSN-value
+
+
+
+TODO:: Rename as extract.pl
+3. Extract Voyager data and download to the Koha-server, unzip to VoyagerExport-directory
+
+  ssh -o "ProxyCommand ssh -A -l username -W %h:%p jumpserver.fi" koha@voyagerserver.fi "cd ~ && time ./extract.pl && zip voyagerData.zip *.csv"
+  scp -o "ProxyCommand ssh -A -l username -W %h:%p jumpserver.fi" koha@voyagerserver.fi:~/voyagerData.zip ~/MMT-Voyager/VoyagerExports/
+  cd ~/MMT-Voyager/VoyagerExports/ && unzip voyagerData.zip
+
+4. transform.pl to transform the data
+
+  transform.pl
+
+5. Load to Koha
+
+  load.pl
 

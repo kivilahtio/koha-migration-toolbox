@@ -1,0 +1,9 @@
+Files in this directory are used to extract data from Voyager, copy this directory to the Voyager DB-server.
+
+Then configure
+  config.yaml
+with DB connection params.
+
+Finally run
+  extract.pl
+to prepare a .zip-file for export.

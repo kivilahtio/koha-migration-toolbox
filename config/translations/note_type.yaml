@@ -1,0 +1,15 @@
+---
+
+##
+## IN THIS FILE
+##
+## This mapping table is used by the module MMT::Table::NoteType
+## it defines mappings from voyager.note_type integer to plain text
+##
+
+1:       General
+2:       Address
+3:       Barcode
+4:       Phone
+5:       Pop-Up
+6:       Universal Borrowing

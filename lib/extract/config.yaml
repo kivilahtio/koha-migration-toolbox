@@ -1,0 +1,15 @@
+---
+
+##
+## IN THIS FILE
+##
+## The DB configuration for the Voyager database to export
+##
+
+#Leaving real-world examples to help get started.
+oracle_home: /oracle/app/oracle/product/12.1.0.2/db_1
+sid: VAVI
+host: 127.0.0.1
+port: 1521
+username: ahmed
+password: ahne

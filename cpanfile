@@ -1,0 +1,10 @@
+requires "Log::Log4perl";
+requires "YAML::XS";
+requires "Getopt::OO";
+requires "Carp::Always::Color";
+requires "File::Basename";
+requires "Text::CSV";
+requires "Try::Tiny";
+requires "Exception::Class";
+requires "experimental";
+requires "Text::CSV_XS";

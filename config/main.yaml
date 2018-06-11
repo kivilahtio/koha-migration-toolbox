@@ -1,0 +1,28 @@
+---
+
+##
+## IN THIS FILE
+##
+## The main configurations for MMT Voyager
+##
+##
+## Configurations are introduced in the same order as they are needed by the migration tools
+
+### 1) Data export phase
+## Voyager DB dumps are fetched and delivered for the data transformation phase
+
+oracle_home: 
+sid: 
+host: 
+port: 
+username: 
+password: 
+
+# From where the files exported from Voyager are found?
+voyagerExportDir: ''
+
+### 2) Data transformation phase
+## Exported DB rows are mangled into Koha-objects
+
+# Where the built library system objects are stored to be transported to Koha?
+kohaImportDir: ''

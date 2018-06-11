@@ -1,0 +1,22 @@
+---
+
+##
+## IN THIS FILE
+##
+## This mapping table is used by the module MMT::Table::PatronStatistics
+## it defines mappings from voyager.patron_stat_id -column to Koha's ExtendedPatronAttributes-feature repeatable attribute 'statistic'
+##
+
+#patron_stat_id,patron_stat_desc
+1:     1:HAMK opiskelija
+2:     2:Toisen asteen opiskelija
+3:     3:Oman amk:n henkilökunta
+4:     4:Ulkopuol. AMK opiskelija
+5:     5:Ulkopuol. AMK henkilökunt
+6:     6:Yo Opisk./Henkilökunta
+7:     7:Muu oppilaitos
+8:     8:Julkishallinnon edustaja
+9:     9:Elinkeinoelämän edustaja
+10:    10:Kotimainen kaukopalveluas
+11:    11:Ulkomainen kaukopalveluas
+12:    12:Muu asiakas

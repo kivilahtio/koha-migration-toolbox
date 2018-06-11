@@ -1,0 +1,10 @@
+---
+
+##
+## IN THIS FILE
+##
+## This mapping table is used by the module MMT::Table::Branchcodes
+## it defines mappings from yet-unknown Voyager column to Koha's branchcode used in various tables.
+##
+
+_DEFAULT_:      HAMK
