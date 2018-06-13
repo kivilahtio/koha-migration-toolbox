@@ -7,8 +7,9 @@
 ## it defines mappings from voyager.location_id column to Koha's shelving_location and branchcode
 ##
 
-#29a-locations.csv 
+#29a-locations.csv
 #location_id,location_code,location_name
+# 'HAMK' is the branchcode, 'oark' is the location code in the first mapping row.
 1: branchLoc(HAMK, oark) #Hamkoark, Evo Arkisto,
 2: branchLoc(HAMK, okir) #Hamkokir, Evo Kirjasto,
 3: branchLoc(HAMK, ovar) #Hamkovar, Evo Varasto,
