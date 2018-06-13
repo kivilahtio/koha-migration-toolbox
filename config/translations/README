@@ -1,0 +1,24 @@
+Translation tables in this directory are static translation rules for various
+aspects of changing how library systems work.
+It is possible to make infinitely complex transformations using specific
+functions/subroutines/code-things to turn any value from Voyager into any value
+in Koha.
+
+The leftmost value tells which Voyager column value is transformed using
+the remaining rule
+Voyager value    New value in Koha
+    \/            \/
+  LAINA28: KOHA_NEW_VALUE             #Documentation about the translation pair
+
+
+- One can make static translations, where the leftmost value is substituted
+  with the value on the right
+
+- One can drop the whole Voyager object being transformed from the data
+  migration altogether by setting '$DELETE' as the rightmost value.
+
+- More complex functions can be triggered with the original Voyager value and
+  any optional parameters (note! requires code reading skills) using subroutine
+  definitions.
+  eg. LAINA28: warning(MUST_CHECK_MANUALLY) #All LAINA28 elements must be manually verified, collect logs and send to superusers.
+
