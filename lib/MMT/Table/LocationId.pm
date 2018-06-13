@@ -1,6 +1,6 @@
 use 5.22.1;
 
-package MMT::Table::PatronStatistics;
+package MMT::Table::LocationId;
 #Pragmas
 use Carp::Always::Color;
 use experimental 'smartmatch', 'signatures';
@@ -19,14 +19,19 @@ use base qw(MMT::ATranslator);
 
 =head1 NAME
 
-MMT::Table::PatronStatistics - Patron stat cat mappings
+MMT::Table::LocationId - map voyager.location_id to Koha
 
 =cut
 
-my $translationTableFile = MMT::Config::translationsDir."/patron_stat.yaml";
+my $translationTableFile = MMT::Config::translationsDir."/location_id.yaml";
 
 sub new($class) {
   return $class->SUPER::new({file => $translationTableFile});
+}
+
+sub branchLoc($s, $originalValue, $branch, $loc, $error) {
+  $log->warn("Cannot translate Voyager location_id '$originalValue'. Defaulting to branchcode '$branch' and location '$loc'");
+  return [uc($branch), uc($loc)];
 }
 
 return 1;

@@ -23,6 +23,12 @@ MMT::Table::Branchcodes - branchcode mapping table
 
 =cut
 
+my $translationTableFile = MMT::Config::translationsDir."/branchcodes.yaml";
+
+sub new($class) {
+  return $class->SUPER::new({file => $translationTableFile});
+}
+
 sub example($s, $originalValue, $param1) {
   return $param1;
 }

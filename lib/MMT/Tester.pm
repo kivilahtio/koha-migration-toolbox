@@ -1,6 +1,6 @@
 use 5.22.1;
 
-package MMT::Patron::Tester;
+package MMT::Tester;
 #Pragmas
 use Carp::Always::Color;
 use experimental 'smartmatch', 'signatures';
@@ -15,23 +15,27 @@ my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
 =head1 NAME
 
-MMT::Patron::Tester - Tests that the Transformed Voyager Patrons match what is expected to be received in Koha
+MMT::Tester - Tests that the Transformed Voyager objects match what is expected to be received in Koha
 
 =head2 DESCRIPTION
 
+Instantiate with a .yaml-file of Koha Object tests from the tests/-directory and send MMT::KohaObject-instances to this Tester-module.
+
 =cut
 
-sub new {
+=head2 new
+ @param1 file, test suite file path to the test suite to load, eg. tests/patrons.yaml
+=cut
+sub new($class, $testSuiteFile) {
   $log->trace("Constructor(@_)") if $log->is_trace();
-  my ($class, $p) = @_;
   my $self = bless({}, $class);
-  $self->_loadTestSuite();
+  $self->_loadTestSuite($testSuiteFile);
   return $self;
 }
 
 =head2 test
-Find the test suite matching the Patron's primary key (patron_id) and confirm that the transformed Patron is what is expected
- @param1 MMT::Patron
+Find the test suite matching the Issue's primary key (cardnumber-barcode) and confirm that the transformed ISsue is what is expected
+ @param1 MMT::Koha::Issue
  @returns Boolean, true on success, false on failure
 =cut
 sub test($s, $o) {
@@ -51,8 +55,8 @@ sub test($s, $o) {
   return 0;
 }
 
-sub _loadTestSuite($s) {
-  $s->{tests} = YAML::XS::LoadFile(MMT::Config::testDir().'/patrons.yaml');
+sub _loadTestSuite($s, $testSuiteFile) {
+  $s->{tests} = YAML::XS::LoadFile($testSuiteFile);
 }
 
 return 1;

@@ -27,6 +27,12 @@ Special functions to handle translation of Voyager data points to Koha borrower 
 
 =cut
 
+my $translationTableFile = MMT::Config::translationsDir."/borrowers.categorycode.yaml";
+
+sub new($class) {
+  return $class->SUPER::new({file => $translationTableFile});
+}
+
 sub example($s, $originalValue, $param1) {
   return $param1;
 }

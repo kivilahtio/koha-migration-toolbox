@@ -23,6 +23,12 @@ MMT::Table::NoteType - map note types integers to plain text
 
 =cut
 
+my $translationTableFile = MMT::Config::translationsDir."/note_type.yaml";
+
+sub new($class) {
+  return $class->SUPER::new({file => $translationTableFile});
+}
+
 sub example($s, $originalValue, $param1) {
   return $param1;
 }

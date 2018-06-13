@@ -60,7 +60,7 @@ sub _loadMappings($s) {
  @returns the translated value
  @dies $DELETE if the Object in processing should be removed from migration
 =cut
-my $re_isSubroutineCall = qr{^(.+)\((.*)\)$};
+my $re_isSubroutineCall = qr{^(.+)\((.*)\)};
 sub translate($s, $val) {
   my $kohaVal = $s->{_mappings}->{$val};
   #Check if using the fallback catch-all -value
@@ -80,12 +80,14 @@ sub translate($s, $val) {
     my @params = ($val, split(/ ?, ?/, $2));
     $log->trace("Invoking ".ref($s)."->$method(@params)") if $log->is_trace();
     my $rv = $s->$1(@params);
-    $log->trace("Returning ".ref($s)."->$method(@params) with '$rv'") if $log->is_trace();
+    $log->trace("Returning ".ref($s)."->$method(@params) with '".(ref $rv ? '['.join(',',@$rv).']' : $rv)."'.") if $log->is_trace();
+    return $rv;
   }
   else {
-    $log->trace("Returning ".ref($s)." value '$val' translated to '$kohaVal'") if $log->is_trace();
+    $log->trace("Returning ".ref($s)." value '$val' translated to '$kohaVal'.") if $log->is_trace();
+    return $kohaVal;
   }
-  return $kohaVal;
+  die "Don't know what to do with val '$val'. Program should never enter here...";
 }
 
 return 1;

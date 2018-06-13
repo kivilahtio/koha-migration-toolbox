@@ -1,13 +1,12 @@
 use 5.22.1;
 
-package MMT::Patron;
+package MMT::Koha::Patron;
 #Pragmas
 use Carp::Always::Color;
 use experimental 'smartmatch', 'signatures';
 use English;
 
 #External modules
-use YAML::XS;
 
 #Local modules
 use MMT::Config;
@@ -17,16 +16,15 @@ use MMT::Date;
 use MMT::Validator;
 use MMT::Table::PatronCategorycode;
 
-my @borrower_fields = qw /
-  cardnumber        surname           firstname       title               othernames        initials           address            address2
-  city              state             zipcode         country             email             phone              mobile             fax
-  emailpro          phonepro          B_streetnumber  B_streettype        B_address         B_address2         B_city             B_state
-  B_zipcode         B_country         B_email         B_phone             dateofbirth       branchcode         categorycode       dateenrolled
-  dateexpiry        gonenoaddress     lost            debarred            contactname       contactfirstname   contacttitle       guarantorid
-  borrowernotes     relationship      ethnicity       ethnotes            sex               flags              userid             opacnote
-  contactnote       sort1             sort2           altcontactfirstname altcontactsurname altcontactaddress1 altcontactaddress2 altcontactaddress3
-  altcontactzipcode altcontactcountry altcontactphone smsalertnumber      privacy
-/;
+#Inheritance
+use MMT::KohaObject;
+use base qw(MMT::KohaObject);
+
+=head1 NAME
+
+MMT::Koha::Patron - Transforms a bunch of Voyager data into a Koha borrower
+
+=cut
 
 =head2 new
 Create the bare reference. Reference is needed to be returned to the builder, so we can do better post-mortem analysis for each die'd Patron.
@@ -66,16 +64,6 @@ sub id {
   return $_[0]->{patron_id};
 }
 
-=head2 toYaml
-Serializes this object as a YAML list element
- @returns String pointer, to the YAML text.
-=cut
-sub toYaml {
-  my $yaml = YAML::XS::Dump([$_[0]]);
-  $yaml =~ s/^---.*$//gm;
-  return \$yaml;
-}
-
 sub logId($s) {
   if ($s->{cardnumber}) {
     return 'Patron: cardnumber='.$s->{cardnumber};
@@ -97,7 +85,7 @@ sub setBorrowenumber($s, $o, $b) {
   $s->{borrowernumber} = $o->{patron_id};
 }
 sub setCardnumber($s, $o, $b) {
-  my $patron_groups_barcodes = $b->groups()->get($s->{patron_id});
+  my $patron_groups_barcodes = $b->{groups}->get($s->{patron_id});
   if ($patron_groups_barcodes) {
     foreach my $match (@$patron_groups_barcodes) {
 
@@ -115,7 +103,7 @@ sub setCardnumber($s, $o, $b) {
     $log->warn("Patron '".$s->logId()."' has no cardnumber.");
   }
   unless ($s->{cardnumber}) {
-    $s->{cardnumber} = sprintf "TEMP%d",$s->{patron_id};
+    $s->{cardnumber} = $s->createTemporaryBarcode();
   }
 }
 sub setSort1($s, $o, $b) {
@@ -145,7 +133,7 @@ sub setDateexpiry($s, $o, $b) {
 sub setAddresses($s, $o, $b) {
   my $s->{patron_id} = $o->{patron_id};
 
-  my $patronAddresses = $b->addresses()->get($s->{patron_id});
+  my $patronAddresses = $b->{addresses}->get($s->{patron_id});
   if ($patronAddresses) {
     foreach my $match (@$patronAddresses) {
       if ($match->{address_type} == 1) {
@@ -190,10 +178,10 @@ sub setAddresses($s, $o, $b) {
   }
 }
 sub setBranchcode($s, $o, $b) {
-  $s->{branchcode} = $b->branchcodeTranslation()->translate(undef);
+  $s->{branchcode} = $b->{branchcodeTranslation}->translate(undef);
 }
 sub setCategorycode($s, $o, $b) {
-  my $patron_groups_barcodes = $b->groups()->get($s->{patron_id});
+  my $patron_groups_barcodes = $b->{groups}->get($s->{patron_id});
   if ($patron_groups_barcodes) {
     foreach my $match (@$patron_groups_barcodes) {
       $s->{categorycode} = $match->{patron_group_id};
@@ -201,7 +189,7 @@ sub setCategorycode($s, $o, $b) {
   }
   else {
     #Try looking from the $patron_groups_barcodes_nulls-Cache first before giving up
-    my $patron_groups_barcodes_nulls = $b->groups_nulls->get($s->{patron_id});
+    my $patron_groups_barcodes_nulls = $b->{groups_nulls}->get($s->{patron_id});
     if ($patron_groups_barcodes_nulls) {
       foreach my $match (@$patron_groups_barcodes_nulls) {
         if ($match->{barcode_status} eq '') {
@@ -220,16 +208,16 @@ sub setCategorycode($s, $o, $b) {
     $log->warn("Patron '".$s->logId()."' has no categorycode?");
     $s->{categorycode} = 'UNKNOWN';
   }
-  $s->{categorycode} = $b->categorycodeTranslator()->translate( $s->{categorycode} );
+  $s->{categorycode} = $b->{categorycodeTranslator}->translate( $s->{categorycode} );
 }
 sub setBorrowernotes($s, $o, $b) {
   my @sb;
-  my $patron_notes = $b->notes()->get($s->{patron_id});
+  my $patron_notes = $b->{notes}->get($s->{patron_id});
   if ($patron_notes) {
     foreach my $match(@$patron_notes) {
       push(@sb, ' | ') if (@sb > 0);
       if ($match->{note_type}) {
-        if (my $noteType = $b->noteTypeTranslation()->translate($match->{note_type})) {
+        if (my $noteType = $b->{noteTypeTranslation}->translate($match->{note_type})) {
           push(@sb, $noteType.': ');
         }
       }
@@ -239,7 +227,7 @@ sub setBorrowernotes($s, $o, $b) {
   $s->{borrowernotes} = join('', @sb);
 }
 sub setPhones($s, $o, $b) {
-  my $patron_phones = $b->phones()->get($s->{patron_id});
+  my $patron_phones = $b->{phones}->get($s->{patron_id});
   if ($patron_phones) {
     foreach my $match(@$patron_phones) {
       #Does the phone number match allowed Finnish phone numbers?
@@ -268,11 +256,11 @@ sub setPhones($s, $o, $b) {
   }
 }
 sub setStatisticExtAttribute($s, $o, $b) {
-  my $patron_statCats = $b->statisticalCategories()->get($s->{patron_id});
+  my $patron_statCats = $b->{statisticalCategories}->get($s->{patron_id});
   if ($patron_statCats) {
     foreach my $match(@$patron_statCats) {
-      if (my $statCat = $b->patronStatisticsTranslation->translate($match->{patron_stat_id})) {
-        $s->_addExtendedPatronAttribute('statistic', $statCat, 'repeatable');
+      if (my $statCat = $b->{patronStatisticsTranslation}->translate($match->{patron_stat_id})) {
+        $s->_addExtendedPatronAttribute('STAT_CAT', $statCat, 'repeatable');
       }
     }
   }
