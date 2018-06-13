@@ -20,5 +20,13 @@ Voyager value    New value in Koha
 - More complex functions can be triggered with the original Voyager value and
   any optional parameters (note! requires code reading skills) using subroutine
   definitions.
-  eg. LAINA28: warning(MUST_CHECK_MANUALLY) #All LAINA28 elements must be manually verified, collect logs and send to superusers.
+  eg. 'LAINA28: warning(MUST_CHECK_MANUALLY) #All LAINA28 elements must be
+  manually verified, collect logs and send to superusers.'
 
+- If no translation rule for a Voyager-value is defined, a warning is printed
+  and the data migration tries to continue on. Obviously such errors need to be
+  fixed before going live as the data quality quickly worsens.
+
+- One can optionally use a _DEFAULT_ translation rule to catch all unexpected
+  Voyager-values. It is recommended to print a warning when a default is used.
+  eg. '_DEFAULT_: HAMK #Set all branchcodes to HAMK for now'
