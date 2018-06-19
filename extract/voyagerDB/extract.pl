@@ -6,6 +6,9 @@ use DBI;
 #use YAML::XS qw/LoadFile/;
 $|=1;
 
+sub process_all_auth_data($$);
+sub process_all_bib_data($$);
+
 our $anonymize = 1;
 
 my $config = &LoadFile('config.yaml');
@@ -149,6 +152,14 @@ my %queries = (
   "29a-locations.csv" => "SELECT location.location_id, location.location_code, location.location_name FROM location"
               );
 
+
+print STDERR "Processing BIB records...\n";
+&process_all_bib_data($dbh, "01-bib_records.csv");
+delete $queries{"01-bib_records.csv"};
+
+print STDERR "Processing AUTH records...\n";
+&process_all_auth_data($dbh, "16-authorities.csv");
+delete $queries{"16-authorities.csv"};
 
 foreach my $key (sort keys %queries) {
   my $filename = $key ;
@@ -300,7 +311,7 @@ foreach my $key (sort keys %queries) {
         print {$out} ',';
       }
       print {$out} "\n";
-  }   
+  }
 
   close $out;
   print "\n\n$i records exported\n";
@@ -320,6 +331,73 @@ sub LoadFile { # quick and dirty replacement for YAML's LodaFile()
   }
   close($FH);
   return \%config; # yaml-like pointer, I'd rather return hash it self
+}
+
+sub output_record($$$) {
+  my ( $FH, $id, $record ) = @_;
+  if ( length($record) ) {
+    $record =~ s/\"/'/g; # quick and *VERY* dirty
+    print $FH $id, ',"', $record, "\"\n";
+  }
+}
+
+sub process_all_bib_data($$) {
+  my ( $dbh, $output_file ) = @_;
+
+  my $query = "select * from BIB_DATA order by BIB_ID, SEQNUM";
+  my $sth = $dbh->prepare($query)  || die($dbh->errstr);
+  $sth->execute() || die($dbh->errstr);
+
+  my $FH;
+  open($FH, ">", $output_file) or die($!);
+  print $FH "BIB_ID,BIB_DATA\n";
+
+  my @row;
+  my $record = '';
+  my $prev_bib_id = 0;
+  while ( ((@row) = $sth->fetchrow_array) ) {
+    if ( $row[1] == 1 ) {
+      output_record($FH, $prev_bib_id, $record);
+      $record = $row[2];
+    }
+    else {
+      $record .= $row[2];
+    }
+    $prev_bib_id = $row[0];
+  }
+  $sth->finish();
+  output_record($FH, $prev_bib_id, $record);
+  close($FH);
+}
+
+
+sub process_all_auth_data($$) {
+  my ( $dbh, $output_file ) = @_;
+
+  my $query = "select * from AUTH_DATA order by AUTH_ID, SEQNUM";
+  my $sth = $dbh->prepare($query)  || die($dbh->errstr);
+  $sth->execute() || die($dbh->errstr);
+
+  my $FH;
+  open($FH, ">", $output_file) or die($!);
+  print $FH "AUTH_ID,AUTH_DATA\n";
+
+  my @row;
+  my $record = '';
+  my $prev_bib_id = 0;
+  while ( ((@row) = $sth->fetchrow_array) ) {
+    if ( $row[1] == 1 ) {
+      output_record($FH, $prev_bib_id, $record);
+      $record = $row[2];
+    }
+    else {
+      $record .= $row[2];
+    }
+    $prev_bib_id = $row[0];
+  }
+  $sth->finish();
+  output_record($FH, $prev_bib_id, $record);
+  close($FH);
 }
 
 exit;
