@@ -3,12 +3,12 @@
 use strict;
 use warnings;
 use DBI;
-use YAML::XS qw/LoadFile/;
+#use YAML::XS qw/LoadFile/;
 $|=1;
 
 our $anonymize = 1;
 
-my $config = LoadFile('config.yaml');
+my $config = &LoadFile('config.yaml');
 
 $ENV{ORACLE_SID} = $config->{sid};
 $ENV{ORACLE_HOME} = $config->{oracle_home};
@@ -304,6 +304,22 @@ foreach my $key (sort keys %queries) {
 
   close $out;
   print "\n\n$i records exported\n";
+}
+
+sub LoadFile { # quick and dirty replacement for YAML's LodaFile()
+  my $filename = $_[0];
+  my $FH;
+  my %config;
+  open($FH, $filename);
+  while ( my $row = <$FH> ) {
+    $row =~ s/\s*$//s;
+    $row =~ /\s*:\s*/;
+    my $lhs = $`;
+    my $rhs = $'; # '
+    $config{$lhs} = $rhs;
+  }
+  close($FH);
+  return \%config; # yaml-like pointer, I'd rather return hash it self
 }
 
 exit;
