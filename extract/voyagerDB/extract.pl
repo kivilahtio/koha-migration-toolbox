@@ -74,7 +74,8 @@ my %queries = (
   "08-patron_groups_nulls.csv" => "SELECT patron_barcode.patron_id, patron_barcode.patron_barcode, patron_barcode.barcode_status,
                                     patron_barcode.patron_group_id FROM patron_barcode
                                     WHERE patron_barcode.patron_barcode IS NULL AND patron_barcode.barcode_status=1",
-  "09-patron_notes.csv" => "SELECT patron_notes.patron_id, patron_notes.note, patron_notes.note_type FROM patron_notes 
+  "09-patron_notes.csv" => "SELECT patron_notes.patron_id, regexp_replace(patron_notes.note,'[[:space:]]+',' '), patron_notes.note_type, 
+                            patron_notes.modify_date FROM patron_notes 
                             order by patron_notes.patron_id,patron_notes.modify_date",
   "10-patron_phones.csv" => "SELECT patron_address.patron_id,
                               phone_type.phone_desc,
@@ -149,7 +150,8 @@ my %queries = (
                         JOIN LOCATION ON (LOCATION.LOCATION_ID = HOLD_RECALL.PICKUP_LOCATION)
                         JOIN ITEM_BARCODE ON (HOLD_RECALL_ITEMS.ITEM_ID = ITEM_BARCODE.ITEM_ID)
                         ORDER BY HOLD_RECALL_ITEMS.ITEM_ID, HOLD_RECALL_ITEMS.QUEUE_POSITION",
-  "29a-locations.csv" => "SELECT location.location_id, location.location_code, location.location_name FROM location"
+  "29a-locations.csv" => "SELECT location.location_id, location.location_code, location.location_name FROM location",
+  "30-patron_note_types.csv" => "SELECT note_type.note_type, note_type.note_desc FROM note_type"
               );
 
 
