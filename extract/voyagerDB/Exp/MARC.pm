@@ -20,6 +20,9 @@ package Exp::MARC;
 use warnings;
 use strict;
 
+#External modules
+use Carp;
+
 =head2 NAME
 
 Exp::MARC
@@ -30,21 +33,22 @@ Export Bibliographic, Authorities and MFHD MARC records as raw ISO
 
 =cut
 
+use Exp::Config;
 use Exp::DB;
 use Exp::Util;
 
-sub exportBiblios() {
-  _processRow('/tmp/'.$Exp::DB::config->{dbname}.'.biblios.mrc',
+sub exportBiblios($) {
+  _processRow(Exp::Config::exportPath('biblios.mrc'),
               'select * from BIB_DATA order by BIB_ID, SEQNUM');
 }
 
 sub exportAuth() {
-  _processRow('/tmp/'.$Exp::DB::config->{dbname}.'.authorities.mrc',
+  _processRow(Exp::Config::exportPath('authorities.mrc'),
               'select * from AUTH_DATA order by AUTH_ID, SEQNUM');
 }
 
 sub exportMFHD() {
-  _processRow('/tmp/'.$Exp::DB::config->{dbname}.'.mfhd.mrc',
+  _processRow(Exp::Config::exportPath('mfhd.mrc'),
               'select * from MFHD_DATA order by MFHD_ID, SEQNUM');
 }
 
@@ -52,11 +56,11 @@ sub exportMFHD() {
 sub _processRow($$) {
   my ($outFilePath, $sql) = @_;
 
-  open(my $FH, '>:raw', $outFilePath) or die($!);
+  open(my $FH, '>:raw', $outFilePath) or confess("Opening file '$outFilePath' failed: ".$!);
 
   my $dbh = Exp::DB::dbh();
-  my $sth = $dbh->prepare($sql) || die($dbh->errstr);
-  $sth->execute() || die($dbh->errstr);
+  my $sth = $dbh->prepare($sql) || confess($dbh->errstr);
+  $sth->execute() || confess($dbh->errstr);
 
 
   my @row;
@@ -64,7 +68,7 @@ sub _processRow($$) {
   my $prev_id = 0;
   while ( ((@row) = $sth->fetchrow_array) ) {
     if ( $row[1] == 1 ) {
-      output_record($FH, $prev_id, $record);
+      _output_record($FH, $prev_id, $record);
       $record = $row[2];
     }
     else {

@@ -84,9 +84,8 @@ sub _linkChildToParent($$$) {
   for (my $j = 0; $j <= @$boundChildRecords; $j++) {
     my $boundChildId = $boundChildIds->[$j];
     my $boundChildRecord = $boundChildRecords->[$j];
+
     my $nimeke = Exp::nvolk_marc21::marc21_record_get_title($boundChildRecord);
-    # NB! Oletan laiskasti, että yhteensidotut ovat aina painettuja :D
-    # TODO: vastaava viittaus alkuperäisestä tähän.
     $$boundParentRecord = Exp::nvolk_marc21::marc21_record_add_field($$boundParentRecord, '776', "08\x1FiYksittäiskappale\x1Ft$nimeke\x1FcPainettu\x1Fw$boundChildId");
   }
 }
@@ -150,6 +149,7 @@ sub _mergeChildMetadataToParent($$$) {
     if ( 0 && $content =~ /: :/ ) {
       exit();
     }
+
     $$boundParentRecord = Exp::nvolk_marc21::marc21_record_add_field($$boundParentRecord, '501', $content);
   }
 }

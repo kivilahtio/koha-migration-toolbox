@@ -14,15 +14,14 @@
 # along with koha-migration-toolbox; if not, see <http://www.gnu.org/licenses>.
 #
 
-package MMT::Util;
+package Exp::Util;
 
 #Pragmas
 use warnings;
 use strict;
 
 #External modules
-use Data::Dumper;
-$Data::Dumper::Sortkeys = 1;
+use Carp;
 
 =head2 NAME
 

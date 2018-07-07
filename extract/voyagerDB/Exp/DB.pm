@@ -97,6 +97,7 @@ sub bib_id2bib_record($) {
   }
   my $rv = join("", @marcdata);
   warn __PACKAGE__."::bib_id2bib_record($bibId):> Returns $rv\n" if ($ENV{DEBUG});
+  return $rv;
 }
 
 return 1;
