@@ -5,5 +5,6 @@ Then configure
 with DB connection params.
 
 Finally run
-  extract.pl
+  export.pl --bound --everything
 to write .csv-files to the VoyagerDB-server
+

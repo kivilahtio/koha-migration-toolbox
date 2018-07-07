@@ -1,0 +1,16 @@
+---
+
+# THIS IS A TEMPLATE, values here are defaults used
+
+oracle_home: /oracle/app/oracle/product/12.1.0.2/db_1
+sid: VERTA
+host: 127.0.0.1
+port: 1521
+username: ahmed
+password: ahne
+
+#This should be oracle only, configured this way due to a bug in some VSCode Perl extension.
+dbdriver: Oracle
+
+#DB name is prepended as a directory here. DB name by default is the same as username.
+exportDir: /tmp
