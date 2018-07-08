@@ -21,6 +21,7 @@ use Log::Log4perl;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 use MMT::Validator;
 use MMT::Extractor;
+use MMT::Loader;
 use MMT::Builder;
 use MMT::Koha::Patron::Builder;
 use MMT::Koha::Issue::Builder;
@@ -71,6 +72,12 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
       });
       $builder->build();
     },
+  },
+
+
+  '--load' => {
+    help => "Runs the load-phase using the script configured in 'importPipelineScript'",
+    callback => sub {MMT::Loader::load()},
   },
 );
 

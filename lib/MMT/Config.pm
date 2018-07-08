@@ -16,14 +16,7 @@ MMT::Config - Manage app-wide config
 
 =cut
 
-##Check that the environment is properly configured
-my $errorDescr = "This must point to the home directory created during MMT-Voyager installation, where all the configurations reside.";
-die "\$ENV{MMT_HOME} '$ENV{MMT_HOME}' is undefined! $errorDescr"
-  unless $ENV{MMT_HOME};
-die "\$ENV{MMT_HOME} '$ENV{MMT_HOME}' is unreadable by user '".getEffectiveUser()."'! $errorDescr"
-  unless -r $ENV{MMT_HOME};
-
-our $config = YAML::XS::LoadFile(mainConfigFile());
+our $config;
 
 sub getEffectiveUser() {
   return $ENV{LOGNAME} || $ENV{USER} || getpwuid($<);
@@ -52,6 +45,18 @@ sub testDir() {
 sub exportPipelineScript() {
   return $config->{exportPipelineScript};
 }
+sub importPipelineScript() {
+  return $config->{importPipelineScript};
+}
+
+##Check that the environment is properly configured
+my $errorDescr = "This must point to the home directory created during MMT-Voyager installation, where all the configurations reside.";
+die "\$ENV{MMT_HOME} '$ENV{MMT_HOME}' is undefined! $errorDescr"
+  unless $ENV{MMT_HOME};
+die "\$ENV{MMT_HOME} '$ENV{MMT_HOME}' is unreadable by user '".getEffectiveUser()."'! $errorDescr"
+  unless -r $ENV{MMT_HOME};
+
+$config = YAML::XS::LoadFile(mainConfigFile());
 
 #Initialize the logging subsystem
 eval {

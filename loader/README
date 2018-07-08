@@ -1,0 +1,7 @@
+In this directory are example connection|pipeline scripts needed to load data into Koha.
+
+MMT uses Koha's own load scripts.
+
+You must define the pipeline automation script which connects from this transformation server to the Koha application server to get the data in,
+at your main configuration file.
+
