@@ -1,13 +1,18 @@
 {
-    "editor.tabSize": 2,
-    "editor.detectIndentation": false,
+  "editor.tabSize": 2,
+  "editor.detectIndentation": false,
 
-    "indentRainbow.colors": [
-      "rgba(32,32,8,0.3)",
-      "rgba(16,32,16,0.3)",
-      "rgba(32,32,8,0.3)",
-      "rgba(16,32,16,0.3)",
-      "rgba(32,32,8,0.3)",
-      "rgba(16,32,16,0.3)"
-    ]
+  "indentRainbow.colors": [
+    "rgba(32,32,8,0.3)",
+    "rgba(16,32,16,0.3)",
+    "rgba(32,32,8,0.3)",
+    "rgba(16,32,16,0.3)",
+    "rgba(32,32,8,0.3)",
+    "rgba(16,32,16,0.3)"
+  ],
+
+  "perlSyntax.includePaths": [
+    "/home/ollikivi/workspace/koha-migration-toolbox/lib",
+    "/home/ollikivi/workspace/koha-migration-toolbox/extlib/lib/perl5"
+  ]
 }

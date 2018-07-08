@@ -3,7 +3,7 @@
 ##
 ## IN THIS FILE
 ##
-## This mapping table is used by the module MMT::Table::NoteType
+## This mapping table is used by the module MMT::TranslationTable::NoteType
 ## it defines mappings from voyager.note_type integer to plain text descriptions, prepended to Koha's notes-fields
 ##
 

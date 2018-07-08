@@ -20,14 +20,19 @@ MMT::Validator - Common package for basic validations
 
 =head2 COMMON INTERFACE
 
-All validators beginning with 'is' share a common interface so they are usable from multiple contexts.
-All accept the following parameters:
+Validators beginning with 'is':
+-Share a common interface so they are usable from multiple contexts.
+-Die on error
+-All accept the following parameters:
  @param1 the variable to be validated and
  @param2 the name of the variable
 
 In addition validation emits specific error messages if
  @param3 the Getopt::OO-instance
 is given, in this context the validation believes it is validating command line arguments
+
+Validators beginning with 'check':
+-Simply checks and returns a boolean. Doesn't die.
 
 =cut
 
@@ -60,6 +65,10 @@ sub isString($value, $variable, $opts) {
   if (!defined($value)) {
     _parameterValidationFailed("Value is not defined", $variable, $opts);
   }
+}
+
+sub checkIsAbsolutePath($value) {
+  return ($value =~ /^\//);
 }
 
 sub delimiterAllowed($delim, $fileToDelimit) {
@@ -116,3 +125,5 @@ sub _parameterValidationFailed($message, $variable, $opts) {
 sub _getEffectiveUsername {
   return $ENV{LOGNAME} || $ENV{USER} || getpwuid($<);
 }
+
+return 1;

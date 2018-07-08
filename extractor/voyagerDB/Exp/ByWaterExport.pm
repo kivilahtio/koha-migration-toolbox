@@ -4,6 +4,8 @@ use strict;
 use warnings;
 use DBI;
 
+use Exp::Config;
+
 #use YAML::XS qw/LoadFile/;
 $|=1;
 
@@ -119,16 +121,18 @@ my %queries = (
 #   "01-bib_records.csv" => "SELECT BIB_DATA.RECORD_SEGMENT, BIB_DATA.BIB_ID, BIB_DATA.SEQNUM
 #                            FROM BIB_DATA
 #                            ORDER BY BIB_DATA.BIB_ID, BIB_DATA.SEQNUM",
-   "02-items.csv"  => "SELECT bib_item.bib_id,bib_item.add_date,
-                       item_vw.barcode,item_vw.perm_item_type_code,item_vw.perm_location_code,
+   "02-items.csv"  => "SELECT item.item_id, bib_item.bib_id,bib_item.add_date,
+                       item_vw.barcode,item.perm_location,item.temp_location,item.item_type_id,item.temp_item_type_id,
                        item_vw.enumeration,item_vw.chronology,item_vw.historical_charges,item_vw.call_no,
                        item_vw.call_no_type,
                        item.price,item.copy_number,item.pieces,
-                       item_note.item_note
+                       item_note.item_note, item_note.item_note_type
                        FROM   item_vw
                        JOIN   item        ON (item_vw.item_id = item.item_id)
                        LEFT JOIN   item_note   ON (item_vw.item_id = item_note.item_id)
                        JOIN   bib_item    ON  (item_vw.item_id = bib_item.item_id)",
+   "02-item_status.csv" => "SELECT item_status.item_id,item_status.item_status,item_status_type.item_status_desc
+                           FROM item_status JOIN item_status_type ON (item_status.item_status = item_status_type.item_status_type)",
    "03-item_status_descriptions.csv" => "SELECT item_status_type.item_status_type, item_status_type.item_status_desc
                                          FROM item_status_type",
    "04-barcode_statuses.csv" => "SELECT item_vw.barcode,item_status.item_status FROM item_vw 
@@ -254,7 +258,7 @@ foreach my $key (sort keys %queries) {
 
   my $i=0;
   #open my $out,">:encoding(UTF-8)",$filename || die "Can't open the output!";
-  open my $out,">",$filename || die "Can't open the output!";
+  open my $out,">",$Exp::Config::config->{exportDir}.'/'.$filename || die "Can't open the output!";
 
   print $out "$header_row\n";
 

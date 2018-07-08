@@ -42,6 +42,9 @@ sub new {
 }
 sub _validate($class, $p) {
   my $var; #Simply reduce duplication at a cost of slight awkwardness
+  $var = 'file';      MMT::Validator::isString($p->{$var}, $var, undef);
+  $p->{$var} = MMT::Config::voyagerExportDir().'/'.$p->{$var} unless MMT::Validator::checkIsAbsolutePath($p->{$var}); #Prepend the voyager exports dir if the file is not an absolute path
+
   $var = 'file';      MMT::Validator::isFileReadable($p->{$var}, $var, undef);
   $var = 'name';      MMT::Validator::isString($p->{$var}, $var, undef);
   $var = 'keys';      MMT::Validator::isArray($p->{$var}, $var, undef);

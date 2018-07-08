@@ -14,7 +14,7 @@ use Log::Log4perl;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 use MMT::Date;
 use MMT::Validator;
-use MMT::Table::PatronCategorycode;
+use MMT::TranslationTable::PatronCategorycode;
 
 #Inheritance
 use MMT::KohaObject;

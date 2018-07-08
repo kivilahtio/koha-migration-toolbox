@@ -17,8 +17,8 @@ use MMT::Validator;
 use MMT::Cache;
 use MMT::Tester;
 use MMT::Koha::Issue;
-use MMT::Table::LocationId;
-use MMT::Table::Branchcodes;
+use MMT::TranslationTable::LocationId;
+use MMT::TranslationTable::Branchcodes;
 
 #Introduce the exported files needed to mash the objects up!
 my $current_circ_file      = MMT::Config::voyagerExportDir."/12-current_circ.csv";
@@ -84,8 +84,8 @@ sub _loadRepositories($s) {
   $s->{lastBorrowDates} = MMT::Cache->new({name => "Last borrow dates", file => $last_borrow_dates_file, keys => ['barcode']});
 }
 sub _loadTranslationTables($s) {
-  $s->{locationIdTranslation} = MMT::Table::LocationId->new();
-  $s->{branchcodeTranslation} = MMT::Table::Branchcodes->new();
+  $s->{locationIdTranslation} = MMT::TranslationTable::LocationId->new();
+  $s->{branchcodeTranslation} = MMT::TranslationTable::Branchcodes->new();
 }
 
 return 1;

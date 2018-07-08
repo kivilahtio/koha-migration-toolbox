@@ -12,8 +12,12 @@
 ## Voyager DB dumps are fetched and delivered for the data transformation phase
 
 # Absolute/full path to the script used to extract data from the VoyagerDB-server into the Koha-server.
-# See the extract-dir for example implementations.
+# See the extractor-dir for example implementations.
 exportPipelineScript: ''
+
+# Absolute path to the script used to import the transformed data into Koha
+# See the importer-dir for example implementations.
+importPipelineScript: ''
 
 # From where the files exported from Voyager are found?
 voyagerExportDir: ''

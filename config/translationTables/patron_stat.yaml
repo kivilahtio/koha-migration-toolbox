@@ -3,7 +3,7 @@
 ##
 ## IN THIS FILE
 ##
-## This mapping table is used by the module MMT::Table::PatronStatistics
+## This mapping table is used by the module MMT::TranslationTable::PatronStatistics
 ## it defines mappings from voyager.patron_stat_id -column to Koha's ExtendedPatronAttributes-feature repeatable attribute 'statistic'
 ##
 

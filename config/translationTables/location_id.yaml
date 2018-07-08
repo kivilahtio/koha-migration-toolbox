@@ -3,7 +3,7 @@
 ##
 ## IN THIS FILE
 ##
-## This mapping table is used by the module MMT::Table::LocationId
+## This mapping table is used by the module MMT::TranslationTable::LocationId
 ## it defines mappings from voyager.location_id column to Koha's shelving_location and branchcode
 ##
 

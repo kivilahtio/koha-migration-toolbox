@@ -18,7 +18,7 @@ $basename
 Usage:
   -e, --everything        Exports all DB tables as is.
   -b, --bound             Exports bound MFHD records.
-  -c, --config=PATH       Default 'config.yml'
+  -c, --config=PATH       Default 'config.yaml'
                           PATH to the DB connection config.
   --bywater               Export everything but MARC using ByWater export sql statements
   -h, --help              Show this help
@@ -27,7 +27,7 @@ USAGE
 }
 
 # Getting parameters
-my $config = 'config.yml';
+my $config = 'config.yaml';
 my ($help, $verbose, $exportEverything, $exportBoundRecords, $exportBibliographicRecords, $exportAuthoritiesRecords, $exportHoldingsRecords, $exportByWaterStyle);
 
 GetOptions(
@@ -78,6 +78,5 @@ if ($exportHoldingsRecords) {
 
 if ($exportByWaterStyle) {
   require Exp::ByWaterExport;
-  Exp::ByWaterExport::export();
 }
 

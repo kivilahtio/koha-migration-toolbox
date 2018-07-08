@@ -48,6 +48,12 @@ sub dbh {
 
   my $config = $Exp::Config::config;
 
+  $ENV{ORACLE_HOME} = $config->{oracle_home}; #DBD::Oracle needs this    
+  die "Configuration variable 'oracle_home' is undefined. DBD::Oracle needs to know where the Oracle files are"
+    unless ($ENV{ORACLE_HOME});
+  die "Configuration variable 'oracle_home' is not readable. DBD::Oracle needs to access the Oracle files"
+    unless (-r $ENV{ORACLE_HOME});
+
   my $dataSource =  'dbi:'.$config->{dbdriver}.':'. #Workaround to remove DBD::Oracle from compile time syntax checking, because installing DBD::Oracle locally needs some extra Oracle-files
                     'host='.$config->{host}.';'.
                     'sid='.$config->{sid}.';'.

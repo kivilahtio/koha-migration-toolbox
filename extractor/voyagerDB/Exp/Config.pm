@@ -39,7 +39,7 @@ sub _LoadConfig($) {
   my $filename = $_[0];
   my $FH;
   my %config;
-  open($FH, $filename);
+  open($FH, "<:raw", $filename) or die "Cannot open configuration file '$filename': $!";
   while (my $row = <$FH>) {
     $row =~ s/\s*$//s;
     $row =~ /\s*:\s*/;
@@ -53,6 +53,8 @@ sub _LoadConfig($) {
   $config{dbname} = $config{username};
   $config{exportDir} = '/tmp/'.$config{dbname} unless $config{exportDir};
   print "Exporting to '$config{exportDir}'\n";
+  mkdir($config{exportDir}, 0744) or die "Couldn't create the exportDir='".$config{exportDir}."': $!"
+    unless -e $config{exportDir};
 
   return \%config;
 }

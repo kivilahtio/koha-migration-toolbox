@@ -3,7 +3,7 @@
 ##
 ## IN THIS FILE
 ##
-## This mapping table is used by the module MMT::Table::Branchcodes
+## This mapping table is used by the module MMT::TranslationTable::Branchcodes
 ## it defines mappings from yet-unknown Voyager column to Koha's branchcode used in various tables.
 ##
 

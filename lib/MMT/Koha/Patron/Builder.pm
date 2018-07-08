@@ -17,10 +17,10 @@ use MMT::Validator;
 use MMT::Cache;
 use MMT::Tester;
 use MMT::Koha::Patron;
-use MMT::Table::Branchcodes;
-use MMT::Table::NoteType;
-use MMT::Table::PatronCategorycode;
-use MMT::Table::PatronStatistics;
+use MMT::TranslationTable::Branchcodes;
+use MMT::TranslationTable::NoteType;
+use MMT::TranslationTable::PatronCategorycode;
+use MMT::TranslationTable::PatronStatistics;
 
 =head1 NAME
 
@@ -105,10 +105,10 @@ sub _loadRepositories($s) {
   $s->{statisticalCategories} = MMT::Cache->new({name => "Patron statistical categories"                  , file => $patron_stat_codes_file  , keys => ['patron_id']});
 }
 sub _loadTranslationTables($s) {
-  $s->{categorycodeTranslator}      = MMT::Table::PatronCategorycode ->new();
-  $s->{branchcodeTranslation}       = MMT::Table::Branchcodes        ->new();
-  $s->{noteTypeTranslation}         = MMT::Table::NoteType           ->new();
-  $s->{patronStatisticsTranslation} = MMT::Table::PatronStatistics   ->new();
+  $s->{categorycodeTranslator}      = MMT::TranslationTable::PatronCategorycode ->new();
+  $s->{branchcodeTranslation}       = MMT::TranslationTable::Branchcodes        ->new();
+  $s->{noteTypeTranslation}         = MMT::TranslationTable::NoteType           ->new();
+  $s->{patronStatisticsTranslation} = MMT::TranslationTable::PatronStatistics   ->new();
 }
 
 return 1;

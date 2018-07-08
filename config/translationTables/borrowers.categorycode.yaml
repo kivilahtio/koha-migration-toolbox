@@ -3,11 +3,11 @@
 ##
 ## IN THIS FILE
 ##
-## This mapping table is used by the module MMT::Table::PatronCategorycode
+## This mapping table is used by the module MMT::TranslationTable::PatronCategorycode
 ## it defines mappings from voyager.patron_group.patron_group_id to koha.borrowers.categorycode
 ##
 
-1        : example(HAMK_OPISK) #Triggers subroutine MMT::Table::PatronCategorycode::example with parameters <value from Voyager> and 'HAMK_OPISK'
+1        : example(HAMK_OPISK) #Triggers subroutine MMT::TranslationTable::PatronCategorycode::example with parameters <value from Voyager> and 'HAMK_OPISK'
 2        : HENKI               #The rest of the examples are one-to-one mappings
 3        : HAMI_OPISK          #prev. HAMI Opiskelijat
 4        : MUUT                #prev. Muut

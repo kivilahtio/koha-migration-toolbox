@@ -1,6 +1,6 @@
 use 5.22.1;
 
-package MMT::ATranslator;
+package MMT::ATranslationTable;
 #Pragmas
 use Carp::Always::Color;
 use experimental 'smartmatch', 'signatures';
@@ -19,17 +19,20 @@ use MMT::Exception::Delete;
 
 =head1 NAME
 
-MMT::ATranslator - Abstract class, translates object attributes (source data column values) into Koha specific versions.
+MMT::ATranslationTable - Abstract class, translates object attributes (source data column values) into Koha specific versions.
 
 =head2 DESCRIPTION
 
 Used to translate configurable parameters, such as item types or branchcodes or borrower categorycodes, etc.
 
+These can be used as a modular extension to the core KohaObject (Patron, Item, ...) builder functions, to delegate
+more complex logic to translation tables.
+
 =cut
 
 =head2 new
  @param1 HASHRef of constructor params: {
-  file => 'translations/borrowers.categorycode.yaml' #file containing the translation rules
+  file => 'translationTables/borrowers.categorycode.yaml' #file containing the translation rules
  }
 =cut
 sub new {
@@ -56,12 +59,21 @@ sub _loadMappings($s) {
 }
 
 =head2 translate
- @param1 value to translate
+
+Has the same subroutine signature as the MMT::Builder build steps, so one can easily use these TranslationTable-subroutines
+to extend the functionality of the core MMT::KohaObject subclass (Item, Patron, Issue, ...) naturally via translation table
+rules.
+
+ @param1 MMT::KohaObject-subclass, the object for whom the translation table is translating for
+ @param2 HASHRef, Voyager data row hashified
+ @param3 MMT::Builder, Builder configured to build the KohaObject.
+ @param4 value to translate
  @returns the translated value
  @dies $DELETE if the Object in processing should be removed from migration
+
 =cut
-my $re_isSubroutineCall = qr{^(.+)\((.*)\)};
-sub translate($s, $val) {
+my $re_isSubroutineCall = qr{(.+)\((.*)\)$};
+sub translate($s, $kohaObject, $voyagerObject, $builder, $val) {
   my $kohaVal = $s->{_mappings}->{$val};
   #Check if using the fallback catch-all -value
   if (not(defined($kohaVal))) {
@@ -77,9 +89,9 @@ sub translate($s, $val) {
   }
   elsif ($kohaVal =~ $re_isSubroutineCall) {
     my $method = $1;
-    my @params = ($val, split(/ ?, ?/, $2));
+    my @params = ($kohaObject, $voyagerObject, $builder, $val, split(/ ?, ?/, $2));
     $log->trace("Invoking ".ref($s)."->$method(@params)") if $log->is_trace();
-    my $rv = $s->$1(@params);
+    my $rv = $s->$method(@params);
     $log->trace("Returning ".ref($s)."->$method(@params) with '".(ref $rv ? '['.join(',',@$rv).']' : $rv)."'.") if $log->is_trace();
     return $rv;
   }
