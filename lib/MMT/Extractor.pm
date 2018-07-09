@@ -32,7 +32,8 @@ sub extract() {
 
   my ($success, $error_code, $full_buf, $stdout_buf, $stderr_buf) = MMT::Shell::run($script);
 
-  return $success;
+  return undef if $success;
+  return $error_code;
 }
 
 return 1;

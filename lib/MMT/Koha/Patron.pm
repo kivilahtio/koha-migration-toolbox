@@ -20,6 +20,9 @@ use MMT::TranslationTable::PatronCategorycode;
 use MMT::KohaObject;
 use base qw(MMT::KohaObject);
 
+#Exceptions
+use MMT::Exception::Delete;
+
 =head1 NAME
 
 MMT::Koha::Patron - Transforms a bunch of Voyager data into a Koha borrower
@@ -41,35 +44,91 @@ Flesh out the Koha-borrower -object out of the given
  @param2 Builder
 =cut
 sub build($self, $o, $b) {
-  $self->setBorrowenumber                    ($o, $b);
+  $self->setBorrowernumber                   ($o, $b);
   $self->setCardnumber                       ($o, $b);
-  $self->setBranchcode                       ($o, $b);
-  $self->setSort1                            ($o, $b);
-  $self->setSort2                            ($o, $b);
-  $self->setFirstname                        ($o, $b);
+  $self->setBorrowernotes                    ($o, $b); #Set notes up here, so we can start appending notes regarding validation failures.
   $self->setSurname                          ($o, $b);
-  $self->setDateenrolled                     ($o, $b);
-  $self->setDateexpiry                       ($o, $b);
+  $self->setFirstname                        ($o, $b);
+  #$self->setTitle                           ($o, $b);
+  #$self->setOthernames                      ($o, $b);
+  #$self->setInitials                        ($o, $b);
   $self->setAddresses                        ($o, $b);
-  $self->setBranchcode                       ($o, $b);
-  $self->setCategorycode                     ($o, $b);
-  $self->setBorrowernotes                    ($o, $b);
+  #  \$self->setStreetnumber                  ($o, $b);
+  #   \$self->setStreettype                    ($o, $b);
+  #    \$self->setAddress                       ($o, $b);
+  #     \$self->setAddress2                      ($o, $b);
+  #      \$self->setCity                          ($o, $b);
+  #       \$self->setState                         ($o, $b);
+  #        \$self->setZipcode                       ($o, $b);
+  #         \$self->setCountry                       ($o, $b);
+  #$self->setAltcontactfirstname($o, $b);
+  #$self->setAltcontactsurname($o, $b);
+  #$self->setAltcontactaddress1($o, $b);
+  #$self->setAltcontactaddress2($o, $b);
+  #$self->setAltcontactaddress3($o, $b);
+  #$self->setAltcontactstate($o, $b);
+  #$self->setAltcontactzipcode($o, $b);
+  #$self->setAltcontactcountry($o, $b);
+  #$self->setAltcontactphone($o, $b);
+  #$self->setB_streetnumber($o, $b);
+  #$self->setB_streettype($o, $b);
+  #$self->setB_address($o, $b);
+  #$self->setB_address2($o, $b);
+  #$self->setB_city($o, $b);
+  #$self->setB_state($o, $b);
+  #$self->setB_zipcode($o, $b);
+  #$self->setB_country($o, $b);
+  #$self->setB_email($o, $b);
+  #$self->setB_phone($o, $b);
+  #$self->setEmail                           ($o, $b);
+  #  \$self->setEmailpro                      ($o, $b);
   $self->setPhones                           ($o, $b);
-  $self->setStatisticExtAttribute($o, $b);
-  $self->setUserid                           ($o, $b);
-  $self->setPassword                         ($o, $b);
+  #  \$self->setMobile                        ($o, $b);
+  #   \$self->setFax                           ($o, $b);
+  #    \$self->setPhonepro                      ($o, $b);
+  #     \$self->setSmsalertnumber                ($o, $b);
+  $self->setDateofbirth($o, $b);
+  $self->setBranchcode($o, $b);
+  $self->setCategorycode($o, $b);
+  $self->setDateenrolled($o, $b);
+  $self->setDateexpiry($o, $b);
+  #$self->setGonenoaddress($o, $b);
+  #$self->setLost($o, $b);
+  #$self->setDebarred($o, $b);
+  #$self->setDebarredcomment($o, $b);
+  #$self->setContactname($o, $b);
+  #$self->setContactfirstname($o, $b);
+  #$self->setContacttitle($o, $b);
+  #$self->setGuarantorid($o, $b);
+  #$self->setRelationship($o, $b);
+  #$self->setSex($o, $b);
+  $self->setPassword($o, $b);
+  $self->setUserid($o, $b);
+  #$self->setOpacnote($o, $b);
+  #$self->setContactnote($o, $b);
+  $self->setSort1($o, $b);
+  $self->setSort2($o, $b);
+  #$self->setSms_provider_id($o, $b);
+  $self->setPrivacy                          ($o, $b);
+  #  \$self->setPrivacy_guarantor_checkouts   ($o, $b);
+  #$self->setCheckprevcheckout($o, $b);
+  #$self->setUpdated_on($o, $b);
+  #$self->setLastseen($o, $b);
+  $self->setLang                             ($o, $b);
+  #$self->setLogin_attempts($o, $b);
+  #$self->setOverdrive_auth_token($o, $b);
 }
 
 sub id {
-  return $_[0]->{patron_id};
+  return $_[0]->{borrowernumber};
 }
 
 sub logId($s) {
   if ($s->{cardnumber}) {
     return 'Patron: cardnumber='.$s->{cardnumber};
   }
-  elsif ($s->{patron_id}) {
-    return 'Patron: patron_id='.$s->{patron_id};
+  elsif ($s->{borrowernumber}) {
+    return 'Patron: borrowernumber='.$s->{borrowernumber};
   }
   else {
     return 'Patron: '.MMT::Validator::dumpObject($s);
@@ -79,13 +138,12 @@ sub logId($s) {
 #Do not set borrowernumber here. Let Koha set it, link using barcode
 sub setBorrowenumber($s, $o, $b) {
   unless ($o->{patron_id}) {
-    die "\$DELETE: Patron is missing patron_id, DELETEing:\n".$s->toYaml();
+    MMT::Exception::Delete->throw("Patron is missing patron_id, DELETEing:\n".$s->toYaml());
   }
-  $s->{patron_id} =      $o->{patron_id};
   $s->{borrowernumber} = $o->{patron_id};
 }
 sub setCardnumber($s, $o, $b) {
-  my $patron_groups_barcodes = $b->{groups}->get($s->{patron_id});
+  my $patron_groups_barcodes = $b->{groups}->get($s->{borrowernumber});
   if ($patron_groups_barcodes) {
     foreach my $match (@$patron_groups_barcodes) {
 
@@ -106,11 +164,27 @@ sub setCardnumber($s, $o, $b) {
     $s->{cardnumber} = $s->createTemporaryBarcode();
   }
 }
+sub setBorrowernotes($s, $o, $b) {
+  my @sb;
+  my $patron_notes = $b->{notes}->get($s->{borrowernumber});
+  if ($patron_notes) {
+    foreach my $match(@$patron_notes) {
+      push(@sb, ' | ') if (@sb > 0);
+      if ($match->{note_type}) {
+        if (my $noteType = $b->{NoteType}->translate(@_, $match->{note_type})) {
+          push(@sb, $noteType.': ');
+        }
+      }
+      push(@sb, $match->{note});
+    }
+  }
+  $s->{borrowernotes} = join('', @sb);
+}
 sub setSort1($s, $o, $b) {
   $s->{sort1} = $o->{patron_id};
 }
 sub setSort2($s, $o, $b) {
-  $s->{sort2} = $o->{institution_id};
+  $s->{sort2} = ''; #ByWater scripts put $o->{institution_id} here, which has SSN in Finland;
 }
 sub setFirstname($s, $o, $b) {
   $s->{firstname}     = $o->{first_name};
@@ -129,11 +203,14 @@ sub setDateenrolled($s, $o, $b) {
 }
 sub setDateexpiry($s, $o, $b) {
   $s->{dateexpiry}   = MMT::Date::translateDateDDMMMYY($o->{expire_date}, $s, 'expire_date->dateexpiry');
+  unless ($s->{dateexpiry}) {
+    my $notification = "Missing expiration date, expiring now";
+    $log->warn($s->logId()." - $notification");
+    $s->{borrowernotes} = ($s->{borrowernotes}) ? $s->{borrowernotes}.' | '.$notification : $notification;
+  }
 }
 sub setAddresses($s, $o, $b) {
-  my $s->{patron_id} = $o->{patron_id};
-
-  my $patronAddresses = $b->{addresses}->get($s->{patron_id});
+  my $patronAddresses = $b->{addresses}->get($s->{borrowernumber});
   if ($patronAddresses) {
     foreach my $match (@$patronAddresses) {
       if ($match->{address_type} == 1) {
@@ -178,10 +255,10 @@ sub setAddresses($s, $o, $b) {
   }
 }
 sub setBranchcode($s, $o, $b) {
-  $s->{branchcode} = $b->{branchcodeTranslation}->translate(undef);
+  $s->{branchcode} = $b->{Branchcodes}->translate(@_, '_DEFAULT_');
 }
 sub setCategorycode($s, $o, $b) {
-  my $patron_groups_barcodes = $b->{groups}->get($s->{patron_id});
+  my $patron_groups_barcodes = $b->{groups}->get($s->{borrowernumber});
   if ($patron_groups_barcodes) {
     foreach my $match (@$patron_groups_barcodes) {
       $s->{categorycode} = $match->{patron_group_id};
@@ -189,7 +266,7 @@ sub setCategorycode($s, $o, $b) {
   }
   else {
     #Try looking from the $patron_groups_barcodes_nulls-Cache first before giving up
-    my $patron_groups_barcodes_nulls = $b->{groups_nulls}->get($s->{patron_id});
+    my $patron_groups_barcodes_nulls = $b->{groups_nulls}->get($s->{borrowernumber});
     if ($patron_groups_barcodes_nulls) {
       foreach my $match (@$patron_groups_barcodes_nulls) {
         if ($match->{barcode_status} eq '') {
@@ -208,31 +285,16 @@ sub setCategorycode($s, $o, $b) {
     $log->warn("Patron '".$s->logId()."' has no categorycode?");
     $s->{categorycode} = 'UNKNOWN';
   }
-  $s->{categorycode} = $b->{categorycodeTranslator}->translate( $s->{categorycode} );
-}
-sub setBorrowernotes($s, $o, $b) {
-  my @sb;
-  my $patron_notes = $b->{notes}->get($s->{patron_id});
-  if ($patron_notes) {
-    foreach my $match(@$patron_notes) {
-      push(@sb, ' | ') if (@sb > 0);
-      if ($match->{note_type}) {
-        if (my $noteType = $b->{noteTypeTranslation}->translate($match->{note_type})) {
-          push(@sb, $noteType.': ');
-        }
-      }
-      push(@sb, $match->{note});
-    }
-  }
-  $s->{borrowernotes} = join('', @sb);
+  $s->{categorycode} = $b->{PatronCategorycode}->translate(@_, $s->{categorycode});
 }
 sub setPhones($s, $o, $b) {
-  my $patron_phones = $b->{phones}->get($s->{patron_id});
+  my $patron_phones = $b->{phones}->get($s->{borrowernumber});
   if ($patron_phones) {
     foreach my $match(@$patron_phones) {
-      #Does the phone number match allowed Finnish phone numbers?
-      unless ($match->{phone_number} =~ m/^((90[0-9]{3})?0|\+358\s?)(?!(100|20(0|2(0|[2-3])|9[8-9])|300|600|700|708|75(00[0-3]|(1|2)\d{2}|30[0-2]|32[0-2]|75[0-2]|98[0-2])))(4|50|10[1-9]|20(1|2(1|[4-9])|[3-9])|29|30[1-9]|71|73|75(00[3-9]|30[3-9]|32[3-9]|53[3-9]|83[3-9])|2|3|5|6|8|9|1[3-9])\s?(\d\s?){4,19}\d$/) {
-        $log->warn("Finnish phone number validation failed for number '".$match->{phone_number}."' of '".$s->logId()."'");
+      unless (MMT::Validator::checkIsValidFinnishPhoneNumber($match->{phone_number})) {
+        my $notification = "Finnish phone number validation failed for number '".$match->{phone_number}."'";
+        $log->warn($s->logId()." - $notification");
+        $s->{borrowernotes} = ($s->{borrowernotes}) ? $s->{borrowernotes}.' | '.$notification : $notification;
         return undef;
       }
       given ($match->{phone_desc}) {
@@ -247,6 +309,7 @@ sub setPhones($s, $o, $b) {
         }
         when ('Mobile') {
           $s->{mobile} = $match->{phone_number};
+          $s->{smsalertnumber} = $match->{phone_number};
         }
       }
     }
@@ -256,10 +319,10 @@ sub setPhones($s, $o, $b) {
   }
 }
 sub setStatisticExtAttribute($s, $o, $b) {
-  my $patron_statCats = $b->{statisticalCategories}->get($s->{patron_id});
+  my $patron_statCats = $b->{statisticalCategories}->get($s->{borrowernumber});
   if ($patron_statCats) {
     foreach my $match(@$patron_statCats) {
-      if (my $statCat = $b->{patronStatisticsTranslation}->translate($match->{patron_stat_id})) {
+      if (my $statCat = $b->{PatronStatistics}->translate(@_, $match->{patron_stat_id})) {
         $s->_addExtendedPatronAttribute('STAT_CAT', $statCat, 'repeatable');
       }
     }
@@ -277,6 +340,29 @@ sub setPassword($s, $o, $b) {
     $s->{password} = substr($s->{cardnumber}, -4);
     $log->info("Patron '".$s->logId()."' has no password, using last 4 digits of the cardnumber");
   }
+}
+sub setSsn($s, $o, $b) {
+  $s->{ssn} = $o->{institution_id}; #For some reason ssn is here
+  if ($s->{ssn}) {
+    unless (MMT::Validator::checkIsValidFinnishSSN($s->{ssn})) {
+      my $notification = "SSN is not a valid Finnish SSN";
+      $log->warn("Patron '".$s->logId()."' $notification");
+
+      $s->{borrowernotes} = ($s->{borrowernotes}) ? $s->{borrowernotes}.' | '.$notification : $notification;
+    }
+  }
+  else {
+    $log->info("Patron '".$s->logId()."' has no ssn");
+  }
+}
+sub setPrivacy($s, $o, $b) {
+  $s->{privacy} = 1;
+  # 2 - never save privacy information. Koha tries to save as little info as possible
+  # 1 - Default
+  # 0 - Gather and keep data about me! 
+}
+sub setLang($s, $o, $b) {
+  $s->{lang} = 'fi';
 }
 
 sub _addExtendedPatronAttribute($s, $attributeName, $val, $isRepeatable) {

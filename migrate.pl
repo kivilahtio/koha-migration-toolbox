@@ -24,8 +24,6 @@ use MMT::Extractor;
 use MMT::Loader;
 use MMT::Builder;
 use MMT::Koha::Biblio;
-use MMT::Koha::Patron::Builder;
-use MMT::Koha::Issue::Builder;
 
 
 $log->debug("Starting $0 using config '".MMT::Validator::dumpObject($MMT::Config::config)."'");
@@ -52,11 +50,46 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
 
   '--patrons' => {
     help => 'Transform patrons from Voyager extracts to Koha',
+    callback => sub {
+      my MMT::Builder $builder = MMT::Builder->new({
+        type => 'Patron',
+        inputFile => '07-patron_names_dates.csv',
+        repositories => [
+          {name => "addresses",             file => '05-patron_addresses.csv'   , keys => ['patron_id']},
+          {name => "groups",                file => '06-patron_groups.csv'      , keys => ['patron_id']},
+          {name => "groups_nulls",          file => '08-patron_groups_nulls.csv', keys => ['patron_id']},
+          {name => "notes",                 file => '09-patron_notes.csv'       , keys => ['patron_id']},
+          {name => "phones",                file => '10-patron_phones.csv'      , keys => ['patron_id']},
+          {name => "statisticalCategories", file => '11-patron_stat_codes.csv'  , keys => ['patron_id']},
+        ],
+        translationTables => [
+          {name => 'PatronCategorycode'},
+          {name => 'Branchcodes'},
+          {name => 'NoteType'},
+          {name => 'PatronStatistics'},
+        ],
+      });
+      $builder->build();
+    },
   },
 
 
   '--issues' => {
     help => 'Transform issues from Voyager extracts to Koha',
+    callback => sub {
+      my MMT::Builder $builder = MMT::Builder->new({
+        type => 'Issue',
+        inputFile => '12-current_circ.csv',
+        repositories => [
+          {name => "LastBorrowDates", file => "13-last_borrow_dates.csv", keys => ['barcode']},
+        ],
+        translationTables => [
+          {name => 'Branchcodes'},
+          {name => 'LocationId'},
+        ],
+      });
+      $builder->build();
+    },
   },
 
 
@@ -87,13 +120,3 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
     callback => sub {MMT::Loader::load()},
   },
 );
-
-if ($opts->Values('--patrons')) {
-  my MMT::Koha::Patron::Builder $builder = MMT::Koha::Patron::Builder->new();
-  $builder->build();
-}
-
-if ($opts->Values('--issues')) {
-  my MMT::Koha::Issue::Builder $builder = MMT::Koha::Issue::Builder->new();
-  $builder->build();
-}

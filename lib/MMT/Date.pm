@@ -89,4 +89,9 @@ sub translateDateDDMMMYY($datein, $o, $attribute) {
   }
 }
 
+my $re_isIso = qr/^\d\d\d\d-\d\d-\d\d$/;
+sub isIso8601($date) {
+  return $date =~ $re_isIso;
+}
+
 return 1;

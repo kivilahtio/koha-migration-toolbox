@@ -33,6 +33,11 @@ sub new($class) {
   return $class->SUPER::new({file => $translationTableFile});
 }
 
+sub example($s, $kohaObject, $voyagerObject, $builder, $originalValue, @tableParams) {
+  $log->error("example invoked without a parameter in translation table '$translationTableFile'") unless $tableParams[0];
+  return $tableParams[0];
+}
+
 sub warning($s, $kohaObject, $voyagerObject, $builder, $originalValue, @tableParams) {
   $log->warn("No mapping for value '$originalValue'");
 }

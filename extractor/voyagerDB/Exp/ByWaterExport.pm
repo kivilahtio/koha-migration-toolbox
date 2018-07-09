@@ -152,7 +152,8 @@ my %queries = (
    "07-patron_names_dates.csv" => "SELECT PATRON.PATRON_ID, PATRON.LAST_NAME, PATRON.FIRST_NAME, PATRON.MIDDLE_NAME, 
                                    PATRON.CREATE_DATE, PATRON.EXPIRE_DATE, PATRON.INSTITUTION_ID,
                                    PATRON.REGISTRATION_DATE,
-                                   PATRON.PATRON_PIN
+                                   PATRON.PATRON_PIN,
+                                   PATRON.INSTITUTION_ID
                                    FROM PATRON
                                    ORDER BY PATRON.PATRON_ID",
    "08-patron_groups_nulls.csv" => "SELECT patron_barcode.patron_id, patron_barcode.patron_barcode, patron_barcode.barcode_status,
@@ -170,8 +171,7 @@ my %queries = (
                                   FROM patron_stats",
    "11a-patron_stat_desc.csv" => "SELECT patron_stat_code.patron_stat_id,patron_stat_code.patron_stat_desc
                                   FROM patron_stat_code",
-	       #"12-current_circ.csv" => "SELECT patron_barcode.patron_barcode,patron.institution_id,circ_transactions.patron_id,
-	       "12-current_circ.csv" => "SELECT patron_barcode.patron_barcode, circ_transactions.charge_location, circ_transactions.patron_id,
+   "12-current_circ.csv" => "SELECT patron_barcode.patron_barcode, circ_transactions.patron_id, circ_transactions.charge_location, circ_transactions.item_id,
                              item_barcode.item_barcode,
                              circ_transactions.charge_date,circ_transactions.current_due_date,
                              circ_transactions.renewal_count
@@ -317,6 +317,9 @@ foreach my $key (sort keys %queries) {
           $line[6] =~ s/\d\d(\d).$/00${1}0/;
           my $tmp = '0104'.int(rand(30)+70);
           $line[6] =~ s/^....../$tmp/;
+        }
+        if ( $line[9] ) { #ssn aka institution_id
+          $line[9] =~ s/\d/1/gsm;
         }
       }
 
