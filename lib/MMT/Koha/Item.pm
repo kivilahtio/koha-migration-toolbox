@@ -55,7 +55,7 @@ sub build($self, $o, $b) {
   #       \$self->setWithdrawn_on      ($o, $b);
   $self->setItemcallnumber       ($o, $b);
   #$self->setCoded_location_qualifier($o, $b);
-  #$self->setIssues              ($o, $b);
+  $self->setIssues              ($o, $b);
   #$self->setRenewals            ($o, $b);
   #$self->setReserves            ($o, $b);
   #$self->setRestricted          ($o, $b);
@@ -137,6 +137,9 @@ sub setItemcallnumber($s, $o, $b) {
   unless ($s->{itemcallnumber}) {
     $log->warn($s->logId()." has no itemcallnumber! call_no=".$o->{call_no});
   }
+}
+sub setIssues($s, $o, $b) {
+  $s->{issues} = $o->{historical_charges} || 0;
 }
 sub setItemnotes($s, $o, $b) {
   #Translation table mutates $s directly

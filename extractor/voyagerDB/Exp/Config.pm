@@ -69,7 +69,7 @@ our $config = _LoadConfig($ENV{VOYAGER_EXPORTER_CONFIG_PATH});
 
 sub exportPath($) {
   my ($filename) = @_;
-  return $config->{exportDir}.'/'.$config->{dbname}.'.'.$filename;
+  return $config->{exportDir}.'/'.$filename;
 }
 
 return 1;

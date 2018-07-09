@@ -6,10 +6,10 @@ use Carp::Always::Color;
 use experimental 'smartmatch', 'signatures';
 
 #External modules
-use IPC::Cmd;
 
 #Local modules
 use MMT::Config;
+use MMT::Shell;
 use Log::Log4perl;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
@@ -30,16 +30,9 @@ sub extract() {
   $log->logdie("$errCtxt is not executable? $cfgMsg")
     unless -x $script;
 
-  my($success, $error_code, $full_buf, $stdout_buf, $stderr_buf) = IPC::Cmd::run(command => $script, verbose => 1);
+  my ($success, $error_code, $full_buf, $stdout_buf, $stderr_buf) = MMT::Shell::run($script);
 
-  if ($error_code) {
-    $log->logdie(
-      "$errCtxt execution failed:\n".
-      "\$error_code='$error_code'\n".
-      "OUT:\n".
-      join("\n", @$full_buf)
-    );
-  }
+  return $success;
 }
 
 return 1;

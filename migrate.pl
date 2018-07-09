@@ -23,6 +23,7 @@ use MMT::Validator;
 use MMT::Extractor;
 use MMT::Loader;
 use MMT::Builder;
+use MMT::Koha::Biblio;
 use MMT::Koha::Patron::Builder;
 use MMT::Koha::Issue::Builder;
 
@@ -40,6 +41,12 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
   '--extract' => {
     help => "Runs the extract-phase using the script configured in 'exportPipelineScript'",
     callback => sub {MMT::Extractor::extract()},
+  },
+
+
+  '--biblios' => {
+    help => "Transform biblios using ./usemarcon/rules-*/rules.ini",
+    callback => sub {MMT::Koha::Biblio::transform()},
   },
 
 

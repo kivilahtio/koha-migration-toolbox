@@ -23,6 +23,9 @@ use strict;
 #External modules
 use Carp;
 
+#Local modules
+use Exp::nvolk_marc21;
+
 =head2 NAME
 
 Exp::MARC
@@ -38,17 +41,17 @@ use Exp::DB;
 use Exp::Util;
 
 sub exportBiblios($) {
-  _processRow(Exp::Config::exportPath('biblios.mrc'),
+  _processRow(Exp::Config::exportPath('biblios.xml'),
               'select * from BIB_DATA order by BIB_ID, SEQNUM');
 }
 
 sub exportAuth() {
-  _processRow(Exp::Config::exportPath('authorities.mrc'),
+  _processRow(Exp::Config::exportPath('authorities.xml'),
               'select * from AUTH_DATA order by AUTH_ID, SEQNUM');
 }
 
 sub exportMFHD() {
-  _processRow(Exp::Config::exportPath('mfhd.mrc'),
+  _processRow(Exp::Config::exportPath('mfhd.xml'),
               'select * from MFHD_DATA order by MFHD_ID, SEQNUM');
 }
 
@@ -88,6 +91,7 @@ sub _output_record($$$) {
       print STDERR "$id\tWarning\tRecord contains non-UTF-8 characters\n";
       $record = Exp::Util::toUtf8($record);
     }
+    $record = Exp::nvolk_marc21::nvolk_marc212oai_marc($record);
     print $FH $record, "\n";
   }
 }

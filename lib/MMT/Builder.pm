@@ -110,6 +110,8 @@ sub build($s) {
   close $outFH;
   close $inFH;
   $log->info("Built, $w/$i objects survived");
+
+  return undef; #Getopt::OO callback errors if we return something.
 }
 
 =head2 _loadRepositories

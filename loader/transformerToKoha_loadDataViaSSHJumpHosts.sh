@@ -12,7 +12,15 @@ KOHA_HOST="koha-ci-jyu"
 KOHA_HOME="/home/koha/Koha"
 
 #Copy the loadable files in
-scp -r ~/MMT-Voyager/KohaImports $KOHA_HOST:~/
+tar -czf ~/MMT-Voyager/kohaData.tar.gz ~/MMT-Voyager/KohaImports
+test $? != 0 && echo "Packing Koha data failed!" && exit 10
+
+scp -r   ~/MMT-Voyager/kohaData.tar.gz $KOHA_HOST:~/
+test $? != 0 && echo "Uploading Koha data failed!" && exit 11
+
+ssh $KOHA_HOST "tar -xzf ~/kohaData.tar.gz"
+test $? != 0 && echo "Unpacking Koha data remotely failed!" && exit 12
 
 #Start loading
 ssh $KOHA_HOST "$KOHA_HOME/misc/migration_tools/load.sh ~/KohaImports"
+test $? != 0 && echo "Loading Koha data failed!" && exit 13

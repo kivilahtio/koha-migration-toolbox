@@ -21,7 +21,7 @@ VOYAGER_MMT_DATA_DIR="/m1/groupcron/hamk/scripts/koha/data"
 
 #Tunnel to VoyagerDB-server and run the extract.pl, make the zip and cleanup.
 sshpass -p $SSH_PASSWORD ssh -o ProxyCommand="ssh -A -W %h:%p $JUMP_HOST" $VOYAGERDB_SERVER \
-"cd $VOYAGER_MMT_DIR && time $EXTRACT_CMD && cd $VOYAGER_MMT_DATA_DIR && zip voyagerData.zip *.csv && rm *.csv"
+"cd $VOYAGER_MMT_DIR && time $EXTRACT_CMD && cd $VOYAGER_MMT_DATA_DIR && zip voyagerData.zip *.mrc *.csv && rm *.csv *.mrc"
 
 #Download the data
 sshpass -p $SSH_PASSWORD scp -o ProxyCommand="ssh -A -W %h:%p $JUMP_HOST" \
