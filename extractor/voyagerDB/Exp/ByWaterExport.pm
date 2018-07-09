@@ -153,7 +153,7 @@ my %queries = (
                                    PATRON.CREATE_DATE, PATRON.EXPIRE_DATE, PATRON.INSTITUTION_ID,
                                    PATRON.REGISTRATION_DATE,
                                    PATRON.PATRON_PIN,
-                                   PATRON.INSTITUTION_ID
+                                   PATRON.INSTITUTION_ID, PATRON.BIRTH_DATE
                                    FROM PATRON
                                    ORDER BY PATRON.PATRON_ID",
    "08-patron_groups_nulls.csv" => "SELECT patron_barcode.patron_id, patron_barcode.patron_barcode, patron_barcode.barcode_status,
@@ -320,6 +320,9 @@ foreach my $key (sort keys %queries) {
         }
         if ( $line[9] ) { #ssn aka institution_id
           $line[9] =~ s/\d/1/gsm;
+        }
+        if ( $line[10] ) { #BIRTH_DATE
+          $line[10] =~ s/\d/1/gsm;
         }
       }
 

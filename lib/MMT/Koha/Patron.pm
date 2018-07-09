@@ -49,6 +49,7 @@ sub build($self, $o, $b) {
   $self->setBorrowernotes                    ($o, $b); #Set notes up here, so we can start appending notes regarding validation failures.
   $self->setSurname                          ($o, $b);
   $self->setFirstname                        ($o, $b);
+  $self->setSsn                              ($o, $b);
   #$self->setTitle                           ($o, $b);
   #$self->setOthernames                      ($o, $b);
   #$self->setInitials                        ($o, $b);
@@ -117,6 +118,7 @@ sub build($self, $o, $b) {
   $self->setLang                             ($o, $b);
   #$self->setLogin_attempts($o, $b);
   #$self->setOverdrive_auth_token($o, $b);
+  $self->setStatisticExtAttribute            ($o, $b);
 }
 
 sub id {
@@ -136,7 +138,7 @@ sub logId($s) {
 }
 
 #Do not set borrowernumber here. Let Koha set it, link using barcode
-sub setBorrowenumber($s, $o, $b) {
+sub setBorrowernumber($s, $o, $b) {
   unless ($o->{patron_id}) {
     MMT::Exception::Delete->throw("Patron is missing patron_id, DELETEing:\n".$s->toYaml());
   }
@@ -316,6 +318,18 @@ sub setPhones($s, $o, $b) {
   }
   else {
     $log->warn("Patron '".$s->logId()."' has no phones.");
+  }
+}
+my $re_ssnToDob = qr/^(\d\d)(\d\d)(\d\d)([-+A])/;
+sub setDateofbirth($s, $o, $b) {
+  $s->{dateofbirth} = $o->{birth_date};
+  if (not($s->{dateofbirth}) && $s->{ssn}) { #Try to get dob from ssn
+    $s->{ssn} =~ $re_ssnToDob;
+    my $year = ($4 eq 'A') ? "20$3" : "19$3";
+    $s->{dateofbirth} = "$year-$2-$1";
+  }
+  if (not($s->{dateofbirth}) && $s->{ssn}) {
+    $log->warn("Patron '".$s->logId()."' has no dateofbirth and it couldn't be salvaged from the ssn.");
   }
 }
 sub setStatisticExtAttribute($s, $o, $b) {
