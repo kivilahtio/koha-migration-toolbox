@@ -85,7 +85,7 @@ sub translate($s, $kohaObject, $voyagerObject, $builder, $val) {
   }
 
   if ($kohaVal eq '$DELETE') {
-    MMT::Exception::Delete->throw("Marked for deletion in '".$s->{file}."'");
+    MMT::Exception::Delete->throw("Marked for deletion in '".$s->{_params}->{file}."'");
   }
   elsif ($kohaVal =~ $re_isSubroutineCall) {
     my $method = $1;

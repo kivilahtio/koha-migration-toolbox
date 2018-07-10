@@ -224,19 +224,15 @@ my %queries = (
                          FROM mfhd_data 
                          LEFT JOIN serials_vw ON (mfhd_data.mfhd_id = serials_vw.mfhd_id) 
                          WHERE serials_vw.mfhd_id IS NOT NULL",
-   "29-requests.csv" => "SELECT HOLD_RECALL.BIB_ID, HOLD_RECALL_ITEMS.ITEM_ID, HOLD_RECALL.REQUEST_LEVEL,
-                         HOLD_RECALL_ITEMS.QUEUE_POSITION, HOLD_RECALL_STATUS.HR_STATUS_DESC, LOCATION.LOCATION_CODE, 
-                         HOLD_RECALL.CREATE_DATE, HOLD_RECALL.EXPIRE_DATE, HOLD_RECALL.PATRON_ID, 
-                         PATRON_BARCODE.PATRON_BARCODE, ITEM_BARCODE.ITEM_BARCODE
+   "29-requests.csv" => "SELECT HOLD_RECALL.BIB_ID, HOLD_RECALL.PATRON_ID, HOLD_RECALL_ITEMS.ITEM_ID, HOLD_RECALL.REQUEST_LEVEL,
+                         HOLD_RECALL_ITEMS.QUEUE_POSITION, HOLD_RECALL_STATUS.HR_STATUS_DESC, HOLD_RECALL_ITEMS.HOLD_RECALL_STATUS, HOLD_RECALL_ITEMS.HOLD_RECALL_STATUS_DATE,
+                         HOLD_RECALL.CREATE_DATE, HOLD_RECALL.EXPIRE_DATE, HOLD_RECALL.PICKUP_LOCATION
                          FROM HOLD_RECALL
                          JOIN HOLD_RECALL_ITEMS ON (HOLD_RECALL_ITEMS.HOLD_RECALL_ID = HOLD_RECALL.HOLD_RECALL_ID)
                          JOIN HOLD_RECALL_STATUS ON (HOLD_RECALL_STATUS.HR_STATUS_TYPE = HOLD_RECALL_ITEMS.HOLD_RECALL_STATUS)
-                         JOIN PATRON_BARCODE ON (PATRON_BARCODE.PATRON_ID = HOLD_RECALL.PATRON_ID)
-                         JOIN LOCATION ON (LOCATION.LOCATION_ID = HOLD_RECALL.PICKUP_LOCATION)
-                         JOIN ITEM_BARCODE ON (HOLD_RECALL_ITEMS.ITEM_ID = ITEM_BARCODE.ITEM_ID)
                          ORDER BY HOLD_RECALL_ITEMS.ITEM_ID, HOLD_RECALL_ITEMS.QUEUE_POSITION",
    "29a-locations.csv" => "SELECT location.location_id, location.location_code, location.location_name FROM location"
-              );
+);
 
 
 foreach my $key (sort keys %queries) {

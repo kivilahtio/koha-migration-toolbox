@@ -29,10 +29,13 @@ MMT::Koha::Issue - Transforms a bunch of Voyager data into a Koha issue-transact
 =cut
 
 =head2 build
+
 Flesh out the Koha-borrower -object out of the given
  @param1 Voyager data object
  @param2 Builder
+
 =cut
+
 sub build($self, $o, $b) {
   $self->setBorrowernumber                   ($o, $b);
   $self->setItemnumber                       ($o, $b);

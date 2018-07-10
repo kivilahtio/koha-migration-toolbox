@@ -132,6 +132,24 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
   },
 
 
+  '--reserves' => {
+    help => 'Transform reserves from Voyager extracts to Koha',
+    callback => sub {
+      my MMT::Builder $builder = MMT::Builder->new({
+        type => 'Reserve',
+        inputFile => '29-requests.csv',
+        repositories => [
+        ],
+        translationTables => [
+          {name => 'HoldStatuses'},
+          {name => 'LocationId'},
+        ],
+      });
+      $builder->build();
+    },
+  },
+
+
   '--load' => {
     help => "Runs the load-phase using the script configured in 'importPipelineScript'",
     callback => sub {MMT::Loader::load()},
