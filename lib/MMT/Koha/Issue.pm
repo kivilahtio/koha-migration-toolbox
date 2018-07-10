@@ -57,13 +57,13 @@ sub logId($s) {
 #Do not set issue_id here, just move some primary key for deubgging purposes
 sub setBorrowernumber($s, $o, $b) {
   unless ($o->{patron_id}) {
-    MMT::Exception::Delete->throw("Issue is missing patron_id:\n".$s->toYaml());
+    MMT::Exception::Delete->throw("Issue is missing patron_id ".MMT::Validator::dumpObject($o));
   }
   $s->{borrowernumber} = $o->{patron_id};
 }
 sub setItemnumber($s, $o, $b) {
   unless ($o->{item_id}) {
-    MMT::Exception::Delete->throw("Issue is missing item_id:\n".$s->toYaml());
+    MMT::Exception::Delete->throw("Issue is missing item_id ".MMT::Validator::dumpObject($o));
   }
   $s->{itemnumber} = $o->{item_id};
 }

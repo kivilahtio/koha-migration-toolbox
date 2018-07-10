@@ -93,7 +93,7 @@ sub build($s) {
     };
     if ($@) {
       if (ref($@) eq 'MMT::Exception::Delete') {
-        $log->debug($ko->logId()." was killed in action") if $log->is_debug();
+        $log->debug($ko->logId()." was dropped. Reason: ".$@->error) if $log->is_debug();
       }
       else {
         $log->fatal("Received an unhandled exception '".MMT::Validator::dumpObject($@)."'") if $log->is_fatal();

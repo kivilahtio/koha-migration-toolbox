@@ -9,3 +9,4 @@ requires "Exception::Class";
 requires "experimental";
 requires "Text::CSV_XS";
 requires "IPC::Cmd";
+requires "Modern::Perl";

@@ -185,9 +185,10 @@ my %queries = (
                                   FROM circ_trans_archive
                                   JOIN item_vw ON (circ_trans_archive.item_id = item_vw.item_id)
                                   GROUP BY item_vw.barcode",
-   "14-fines.csv" => "SELECT patron_barcode.patron_barcode,patron.institution_id,fine_fee.patron_id,
-                      item_barcode.item_barcode,fine_fee.fine_fee_type,
-                      fine_fee.create_date,fine_fee.fine_fee_balance,
+   "14-fines.csv" => "SELECT patron_barcode.patron_barcode, fine_fee.patron_id,
+                      item_barcode.item_barcode, fine_fee.item_id,
+                      fine_fee.create_date, fine_fee.fine_fee_type, fine_fee.fine_fee_location,
+                      fine_fee.fine_fee_amount, fine_fee.fine_fee_balance,
                       fine_fee.fine_fee_note
                       FROM fine_fee
                       JOIN patron ON (fine_fee.patron_id=patron.patron_id)
@@ -375,14 +376,6 @@ foreach my $key (sort keys %queries) {
         # circ_transactions.renewal_count
 
         if ( 0 && $line[1] ) { # tässä oli ennen patron.institution_id
-          $line[1] =~ s/\d\d(\d).$/00${1}0/;
-          my $tmp = '0104'.int(rand(30)+70);
-          $line[1] =~ s/^....../$tmp/;
-        }
-      }
-      if ( $key eq "14-fines.csv" ) {
-        # => "SELECT patron_barcode.patron_barcode,patron.institution_id,fine_fee.patron_id,
-        if ( $line[1] ) {
           $line[1] =~ s/\d\d(\d).$/00${1}0/;
           my $tmp = '0104'.int(rand(30)+70);
           $line[1] =~ s/^....../$tmp/;

@@ -115,6 +115,23 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
   },
 
 
+  '--fines' => {
+    help => 'Transform fines from Voyager extracts to Koha',
+    callback => sub {
+      my MMT::Builder $builder = MMT::Builder->new({
+        type => 'Fine',
+        inputFile => '14-fines.csv',
+        repositories => [
+        ],
+        translationTables => [
+          {name => 'FineTypes'},
+        ],
+      });
+      $builder->build();
+    },
+  },
+
+
   '--load' => {
     help => "Runs the load-phase using the script configured in 'importPipelineScript'",
     callback => sub {MMT::Loader::load()},

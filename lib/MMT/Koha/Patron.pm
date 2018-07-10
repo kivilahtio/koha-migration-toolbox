@@ -140,7 +140,7 @@ sub logId($s) {
 #Do not set borrowernumber here. Let Koha set it, link using barcode
 sub setBorrowernumber($s, $o, $b) {
   unless ($o->{patron_id}) {
-    MMT::Exception::Delete->throw("Patron is missing patron_id, DELETEing:\n".$s->toYaml());
+    MMT::Exception::Delete->throw("Patron is missing patron_id ".MMT::Validator::dumpObject($o));
   }
   $s->{borrowernumber} = $o->{patron_id};
 }

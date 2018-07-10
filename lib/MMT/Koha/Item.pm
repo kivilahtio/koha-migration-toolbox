@@ -94,13 +94,13 @@ sub logId($s) {
 
 sub setItemnumber($s, $o, $b) {
   unless ($o->{item_id}) {
-    MMT::Exception::Delete->throw("Item is missing item_id, DELETEing:\n".$s->toYaml());
+    MMT::Exception::Delete->throw("Item is missing item_id ".MMT::Validator::dumpObject($o));
   }
   $s->{itemnumber} = $o->{item_id};
 }
 sub setBiblionumber($s, $o, $b) {
   unless ($o->{bib_id}) {
-    MMT::Exception::Delete->throw("Item is missing bib_id, DELETEing:\n".$s->toYaml());
+    MMT::Exception::Delete->throw("Item is missing bib_id ".MMT::Validator::dumpObject($o));
   }
   $s->{biblionumber} = $o->{bib_id};
 }
