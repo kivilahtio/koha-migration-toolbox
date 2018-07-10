@@ -1,0 +1,13 @@
+Files in this directory are used to load data to Koha,
+copy this directory to the Koha-application server.
+
+If Koha is properly installed, this program should pick
+configurations automatically from Koha environment variables.
+
+Finally run
+  bash -x load.sh migrate
+to load all data to Koha.
+
+see also
+  ./load.sh help
+

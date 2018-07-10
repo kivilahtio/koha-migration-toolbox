@@ -81,14 +81,16 @@ Awesome! MMT installed!
 -----------------------
 Now you need to do some manual steps.
 
-- Firstly the Voyager extract scripts need to be deployed.
-  You can do so by copying the whole $EXTRACTOR_DIR/voyagerDB/* to your
+1)
+  Firstly the Voyager extract scripts need to be deployed.
+  You can do so by copying the whole $EXTRACTOR_DIR/VoyagerExtractor/* to your
   Voyager DB server, for ex.
-    scp -r $EXTRACTOR_DIR/voyagerDB/* username@voyager-server:~/
-  See the $EXTRACTOR_DIR/voyagerDB/README for installation information
+    scp -r $EXTRACTOR_DIR/VoyagerExtractor username@voyager-server:~/
+  See the $EXTRACTOR_DIR/VoyagerExtractor/README for installation information
 
 
-- A extract-phase connection script needs to be created and configured to make a
+2)
+  A extract-phase connection script needs to be created and configured to make a
   connection to the Voyager DB server and extract data.
   You can find examples in $EXTRACTOR_DIR
   You must edit/create a script and configure MMT to use it.
@@ -97,16 +99,22 @@ Now you need to do some manual steps.
   to point into the extract-phase triggering script.
 
 
-- A load-phase (import) connection script needs to be created and configured to
+3)
+  Then the Koha load scripts need to be deployed.
+  You can do so by copying the whole $LOADER_DIR/KohaLoader/* to your
+  Voyager DB server, for ex.
+    scp -r $LOADER_DIR/KohaLoader username@koha-server:~/
+  See the $LOADER_DIR/KohaLoader/README for installation information
+
+
+4)
+  A load-phase (import) connection script needs to be created and configured to
   make a connection to the Koha application server and load data in.
   You can find examples in $LOADER_DIR
   You must edit/create a script and configure MMT to use it.
   Set
     $CONFIG_MAIN -> importPipelineScript
   to point into the load-phase triggering script.
-
-  Load-phase uses Koha's import tools, so no extra code needs to be deployed to
-  the Koha server
 
 
 STEPS
