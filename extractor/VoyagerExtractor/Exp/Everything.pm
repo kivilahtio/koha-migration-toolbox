@@ -62,7 +62,7 @@ sub exportAllTables {
     my $tableName = $tableInfo->{TABLE_NAME};
     open(my $FH, ">:raw", '/tmp/'.$Exp::DB::config->{dbname}.'.'.$tableName.'.csv');
     warn "Exporting table $tableName\n";
-    $sth = $dbh->column_info( '%', 'HAMEDB', $tableName, '%' ) || confess $dbh->errstr;
+    $sth = $dbh->column_info( '%', $Exp::DB::config->{dbname}, $tableName, '%' ) || confess $dbh->errstr;
     my $columnInfos = $sth->fetchall_arrayref({}) || confess $dbh->errstr;
     my @columnNames = map {$_->{COLUMN_NAME}} @$columnInfos;
     warn "found columns ".join(",", @columnNames)."\n";
