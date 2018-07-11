@@ -5,6 +5,7 @@ use warnings;
 use DBI;
 
 use Exp::Config;
+use Exp::MARC;
 
 #use YAML::XS qw/LoadFile/;
 $|=1;
@@ -206,24 +207,52 @@ my %queries = (
    "18-item_stats.csv" => "SELECT item_stats.item_id,item_stat_code.item_stat_code
                            FROM item_stats JOIN item_stat_code ON (item_stats.item_stat_id = item_stat_code.item_stat_id)",
     # Allaolevista '*' aukirjoitettu
-   "19-ser_component.csv" => "SELECT component_id, subscription_id, component_name, component_name_norm, unit_title, category, predict, next_issue_id, note, item_type_id, create_items, claim_interval FROM component",
-   "20-ser_subsc.csv" => "SELECT subscription_id, line_item_id, start_date, subscription_length, length_type, renewal_date, auto_renewal, sici, normal_sici, upc, normal_upc, note FROM subscription",
+   "19-ser_component.csv" => "SELECT
+                                component_id, subscription_id, component_name, component_name_norm, unit_title, category, predict, next_issue_id, note, item_type_id,
+                                create_items, claim_interval
+                              FROM component",
+   "20-ser_subsc.csv" => "    SELECT
+                                subscription_id, line_item_id, start_date, subscription_length, length_type, renewal_date, auto_renewal, sici,
+                                normal_sici, upc, normal_upc, note
+                              FROM subscription",
 
-   "21-ser_issues.csv" => "SELECT issue_id, component_id, enumchron, lvl1, lvl2, lvl3, lvl4, lvl5, lvl6, alt_lvl1, alt_lvl2, chron1, chron2, chron3, chron4, alt_chron, expected_date, receipt_date, received FROM serial_issues",
+   "21-ser_issues.csv" => "   SELECT
+                                component.subscription_id, issue_id, component_id, enumchron, lvl1, lvl2, lvl3, lvl4, lvl5, lvl6, alt_lvl1, alt_lvl2, chron1, chron2, chron3, chron4, alt_chron,
+                                expected_date, receipt_date, received
+                              FROM serial_issues
+                              LEFT JOIN issues_received ON (issues_received.issue_id = serial_issues.issue_id)
+                              LEFT JOIN component ON (component.component_id = serial_issues.component_id)
+                              LEFT JOIN subscription ON (component.subscription_id = subscription.subscription_id)
+                              LEFT JOIN line_item ON (subscription.line_item_id = line_item.line_item_id)
+                              ",
 
-   "22-ser_claim.csv" => "SELECT claim_thread, issue_id, component_id, copy_id, location_id, claim_id, vendor_id, claim_type, claim_date, claim_count, override_claim_date, claim_status, op_id, note, edi_ref FROM serial_claim",
+   "22-ser_claim.csv" => "    SELECT
+                                claim_thread, issue_id, component_id, copy_id, location_id, claim_id, vendor_id, claim_type, claim_date, claim_count,
+                                override_claim_date, claim_status, op_id, note, edi_ref
+                              FROM serial_claim",
 
-   "23-ser_vendor.csv" => "SELECT vendor_id, vendor_type, normal_vendor_type, vendor_code, normal_vendor_code, vendor_name, normal_vendor_name federal_tax_id, institution_id, default_currency, claim_interval, claim_count, cancel_interval, ship_via, create_date, create_opid, update_date, update_opid FROM vendor",
+   "23-ser_vendor.csv" => "   SELECT
+                                vendor_id, vendor_type, normal_vendor_type, vendor_code, normal_vendor_code, vendor_name, normal_vendor_name,
+                                federal_tax_id, institution_id, default_currency, claim_interval, claim_count, cancel_interval, ship_via, create_date,
+                                create_opid, update_date, update_opid
+                              FROM vendor",
 
-   "24-ser_vendaddr.csv" => "SELECT address_id, vendor_id, std_address_number, order_address, payment_address, return_address, claim_address, email_address, other_address, contact_name, contact_title, address_line1, address_line2, address_line3, address_line4, address_line5, city, state_province, zip_postal, country, modify_date, modify_operator_id FROM vendor_address",
-   "25-ser_vendnote.csv" => "SELECT vendor_id, note FROM vendor_note",
-   "26-ser_vendphone.csv" => "SELECT address_id, phone_type, phone_number, modify_date, modify_operator_id FROM vendor_phone",
-   "27-ser_vw.csv" => "SELECT bib_id, mfhd_id, component_id, component_name, component_name_norm, predict, next_issue_id, note, issue_id, enumchron, expected_date, receipt_date, received from serials_vw",
-
-   "28-ser_mfhd.csv" => "SELECT mfhd_data.mfhd_id, mfhd_data.seqnum, mfhd_data.record_segment
-                         FROM mfhd_data 
-                         LEFT JOIN serials_vw ON (mfhd_data.mfhd_id = serials_vw.mfhd_id) 
-                         WHERE serials_vw.mfhd_id IS NOT NULL",
+   "24-ser_vendaddr.csv" => " SELECT
+                                address_id, vendor_id, std_address_number, order_address, payment_address, return_address, claim_address, email_address,
+                                other_address, contact_name, contact_title, address_line1, address_line2, address_line3, address_line4, address_line5,
+                                city, state_province, zip_postal, country, modify_date, modify_operator_id
+                              FROM vendor_address",
+   "25-ser_vendnote.csv" => " SELECT
+                                vendor_id, note
+                              FROM vendor_note",
+   "26-ser_vendphone.csv" => "SELECT
+                                address_id, phone_type, phone_number, modify_date, modify_operator_id
+                              FROM vendor_phone",
+   "27-ser_vw.csv" => "       SELECT
+                                bib_id, mfhd_id, component_id, component_name, component_name_norm, predict, next_issue_id, note, issue_id, enumchron,
+                                expected_date, receipt_date, received
+                              FROM serials_vw",
+   "serials_mfhd.csv" => " SELECT 1", #Special processing for this one
    "29-requests.csv" => "SELECT HOLD_RECALL.BIB_ID, HOLD_RECALL.PATRON_ID, HOLD_RECALL_ITEMS.ITEM_ID, HOLD_RECALL.REQUEST_LEVEL,
                          HOLD_RECALL_ITEMS.QUEUE_POSITION, HOLD_RECALL_STATUS.HR_STATUS_DESC, HOLD_RECALL_ITEMS.HOLD_RECALL_STATUS, HOLD_RECALL_ITEMS.HOLD_RECALL_STATUS_DATE,
                          HOLD_RECALL.CREATE_DATE, HOLD_RECALL.EXPIRE_DATE, HOLD_RECALL.PICKUP_LOCATION
@@ -236,11 +265,59 @@ my %queries = (
 
 
 foreach my $key (sort keys %queries) {
+  next unless ($key eq 'serials_mfhd.csv');
   my $filename = $key ;
   my $query    = $queries{$key};
 
   print STDERR "$filename\n";
-   
+
+  if ( $key eq "serials_mfhd.csv") {
+    require Exp::nvolk_marc21;
+    my $csvHeadersPrinted = 0;
+
+    #Turn MFHD's into MARCXML, and then use a transformation hook to turn it into .csv instead!! Brilliant! What could go wrong...
+    Exp::MARC::_exportMARC(
+      $key,
+      "SELECT
+        mfhd_data.mfhd_id, mfhd_data.seqnum, mfhd_data.record_segment
+      FROM mfhd_data
+      LEFT JOIN serials_vw ON (mfhd_data.mfhd_id = serials_vw.mfhd_id)
+      WHERE serials_vw.mfhd_id IS NOT NULL
+      GROUP BY mfhd_data.mfhd_id, mfhd_data.seqnum, mfhd_data.record_segment",
+      sub { #Logic from https://github.com/GeekRuthie/koha-migration-toolbox/blob/master/migration/Voyager/serials_subscriptions_loader.pl#L122
+        my ($FH, $id, $record_ptr) = @_;
+
+        my $mfhd_id = '0';
+        my $location = '0';
+        my $holdings = ''; #Concatenate all individual holdings here for subscription histories
+        eval {
+          $mfhd_id  = Exp::nvolk_marc21::marc21_record_get_field($$record_ptr, '001', undef);
+          $location = Exp::nvolk_marc21::marc21_record_get_field($$record_ptr, '852', 'b');
+
+          my @holdingsFields = Exp::nvolk_marc21::marc21_record_get_fields($$record_ptr, '863', undef);
+          print "\n".join(" -- ", ($mfhd_id, $location, @holdingsFields))."\n";
+          my @holdings = map {Exp::nvolk_marc21::marc21_field_get_subfield($_, 'a')} @holdingsFields;
+          $holdings = join(' ', @holdings);
+        };
+        warn $@ if ($@);
+
+        $mfhd_id = '0' unless $mfhd_id;
+        $location = '0' unless $location;
+        $holdings = '' unless $holdings;
+        unless ($csvHeadersPrinted) {
+          $csvHeadersPrinted++;
+          $$record_ptr = "mfhd_id,location,holdings\n".
+                         "$mfhd_id,$location,\"$holdings\"";
+        }
+        else {
+          $$record_ptr = "$mfhd_id,$location,\"$holdings\"";
+        }
+        print $FH $$record_ptr, "\n";
+      }
+    );
+    next;
+  }
+
   my $header_row = $query;
   while ( $header_row =~ s/(select\s|,\s*)\s*convert\(([a-z0-9_]+),.*\)/$1$2/si ) {}
   $header_row =~ s/\s+/\t/g;

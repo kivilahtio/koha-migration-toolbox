@@ -77,6 +77,10 @@ sub checkIsValidFinnishSSN($value) {
   return $value =~ /^\d{6}[+-A]\d{3}[A-Z0-9]$/;
 }
 
+sub probablyAYear($value) {
+  return $value =~ /^(?:19|20)\d\d$/;
+}
+
 sub delimiterAllowed($delim, $fileToDelimit) {
   my $suffix = filetype($fileToDelimit);
   if ($suffix eq 'csv') {

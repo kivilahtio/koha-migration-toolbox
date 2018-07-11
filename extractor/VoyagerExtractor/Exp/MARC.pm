@@ -41,23 +41,33 @@ use Exp::DB;
 use Exp::Util;
 
 sub exportBiblios($) {
-  _processRow(Exp::Config::exportPath('biblios.xml'),
+  _exportMARC(Exp::Config::exportPath('biblios.xml'),
               'select * from BIB_DATA order by BIB_ID, SEQNUM');
 }
 
 sub exportAuth() {
-  _processRow(Exp::Config::exportPath('authorities.xml'),
+  _exportMARC(Exp::Config::exportPath('authorities.xml'),
               'select * from AUTH_DATA order by AUTH_ID, SEQNUM');
 }
 
 sub exportMFHD() {
-  _processRow(Exp::Config::exportPath('mfhd.xml'),
+  _exportMARC(Exp::Config::exportPath('mfhd.xml'),
               'select * from MFHD_DATA order by MFHD_ID, SEQNUM');
 }
 
+=head2 _exportMARC
 
-sub _processRow($$) {
-  my ($outFilePath, $sql) = @_;
+Implements the export logic.
+Can be hooked with a subroutine to do transformations before writing to disk.
+
+ @param1 String, filepath where to write the data
+ @param2 String, SQL statement to extract data with
+ @param3 Subroutine, OPTIONAL, Executed after the MARC as ISO has been concatenated. Is used to write the data to disk.
+
+=cut
+
+sub _exportMARC($$$) {
+  my ($outFilePath, $sql, $outputHook) = @_;
 
   open(my $FH, '>:raw', $outFilePath) or confess("Opening file '$outFilePath' failed: ".$!);
 
@@ -71,7 +81,7 @@ sub _processRow($$) {
   my $prev_id = 0;
   while ( ((@row) = $sth->fetchrow_array) ) {
     if ( $row[1] == 1 ) {
-      _output_record($FH, $prev_id, $record);
+      ($outputHook) ? $outputHook->($FH, $prev_id, \$record) : _output_record($FH, $prev_id, \$record);
       $record = $row[2];
     }
     else {
@@ -80,19 +90,20 @@ sub _processRow($$) {
     $prev_id = $row[0];
   }
   $sth->finish();
-  _output_record($FH, $prev_id, $record);
+  ($outputHook) ? $outputHook->($FH, $prev_id, \$record) : _output_record($FH, $prev_id, \$record);
   close($FH);
 }
 
 sub _output_record($$$) {
-  my ( $FH, $id, $record ) = @_;
-  if ( length($record) ) {
-    if ( !Exp::Util::isUtf8($record) ) {
+  my ( $FH, $id, $record_ptr ) = @_;
+
+  if ( length($$record_ptr) ) {
+    if ( !Exp::Util::isUtf8($$record_ptr) ) {
       print STDERR "$id\tWarning\tRecord contains non-UTF-8 characters\n";
-      $record = Exp::Util::toUtf8($record);
+      $$record_ptr = Exp::Util::toUtf8($$record_ptr);
     }
-    $record = Exp::nvolk_marc21::nvolk_marc212oai_marc($record);
-    print $FH $record, "\n";
+    $$record_ptr = Exp::nvolk_marc21::nvolk_marc212oai_marc($$record_ptr);
+    print $FH $$record_ptr, "\n";
   }
 }
 
