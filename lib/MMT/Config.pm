@@ -49,7 +49,8 @@ sub importPipelineScript() {
   return $config->{importPipelineScript};
 }
 
-##Check that the environment is properly configured
+
+#Check that the environment is properly configured
 my $errorDescr = "This must point to the home directory created during MMT-Voyager installation, where all the configurations reside.";
 die "\$ENV{MMT_HOME} '$ENV{MMT_HOME}' is undefined! $errorDescr"
   unless $ENV{MMT_HOME};

@@ -35,11 +35,12 @@ MMT::Koha::Serial - Transforms a bunch of Voyager data into Koha serials
 
 =cut
 
+my @keys = (['component_id' => 'subscriptionid'], ['issue_id' => 'serialid'], ['bib_id' => 'biblionumber']);
 sub build($self, $o, $b) {
-  #$self->setSerialid          ($o, $b); #AUTO_INCREMENT
-  $self->setKeys               ($o, $b);
+  $self->setKeys               ($o, $b, \@keys);
   #  \$self->setBiblionumber    ($o, $b); #line_item.bib_id,
   #   \$self->setSubscriptionid  ($o, $b); #component.subscription_id,
+  #    \$self->setSerialid        ($o, $b); #s.serial_id
   $self->setEnumerations       ($o, $b); #s.enumchron, s.lvl1, s.lvl2, s.lvl3, s.lvl4, s.lvl5, s.lvl6, s.alt_lvl1, s.alt_lvl2, s.chron1, s.chron2, s.chron3, s.chron4, s.alt_chron,
   #  \$self->setSerialseq       ($o, $b);
   #   \$self->setSerialseq_x     ($o, $b);
@@ -56,32 +57,25 @@ sub build($self, $o, $b) {
 }
 
 sub id {
-  return 'S:'.$_[0]->{subscriptionid}.'-s:'.$_[0]->{serialid};
+  return 'S:'.($_[0]->{subscriptionid} || 'NULL').'-s:'.($_[0]->{serialid} || 'NULL');
 }
 
 sub logId($s) {
   return 'Serial: '.$s->id();
 }
 
-sub setKeys($s, $o, $b) {
-  unless ($o->{bib_id}) {
-    MMT::Exception::Delete->throw("Serial is missing bib_id ".MMT::Validator::dumpObject($o));
-  }
-  $s->{biblionumber} = $o->{bib_id};
-  unless ($o->{subscription_id}) {
-    MMT::Exception::Delete->throw("Serial is missing subscription_id ".MMT::Validator::dumpObject($o));
-  }
-  $s->{subscriptionid} = $o->{subscription_id};
-}
 sub setPlanneddate($s, $o, $b) {
-  $s->{planneddate} = MMT::Date::translateDateDDMMMYY($o->{expected_date}, $s, 'expected_date->planneddate');
+  $s->{planneddate} = MMT::Date::translateDateDDMMMYY($o->{receipt_date} || $o->{expected_date}, $s, 'receipt_date||expected_date->planneddate');
 
   unless ($s->{planneddate}) {
-    MMT::Exception::Delete->throw($s->logId()."' has no expected_date/planneddate.");
+    MMT::Exception::Delete->throw($s->logId()."' has no receipt_date||expected_date/planneddate.");
   }
 }
 sub setPublisheddate($s, $o, $b) {
-  $s->{publisheddate} = $s->{planneddate};
+  $s->{publisheddate} = $o->{expected_date};
+  unless ($s->{publisheddate}) {
+    MMT::Exception::Delete->throw($s->logId()."' has no expected_date/publisheddate.");
+  }
 }
 use constant { #Koha C4::Serial line 44:
     EXPECTED               => 1,
@@ -110,7 +104,7 @@ sub setStatus($s, $o, $b) {
 my @enumChronColsOrderIfChronFirst = qw(chron1 chron2 chron3 chron4 alt_chron lvl1 lvl2 lvl3 lvl4 lvl5 lvl6 alt_lvl1 alt_lvl2);
 my @enumChronColsOrderIfEnumFirst  = qw(lvl1 lvl2 lvl3 lvl4 lvl5 lvl6 alt_lvl1 alt_lvl2 chron1 chron2 chron3 chron4 alt_chron);
 sub setEnumerations($s, $o, $b) {
-  $s->sourceKeyExists($o, 'enumchron');
+  $s->sourceKeyExists($o, $_) for @enumChronColsOrderIfChronFirst;
   #No filtering this time, just pass everything through as is and lets worry about it later.
   #$s->{serialseq} = $o->{enumchron} =~ s/\s*,\s*/ : /gsm; #Turn , to : for Koha? This is configurable in numbering patterns.
 
@@ -130,6 +124,7 @@ sub setEnumerations($s, $o, $b) {
   $s->{serialseq_x} = $xyz[0] if $xyz[0];
   $s->{serialseq_y} = $xyz[1] if $xyz[1];
   $s->{serialseq_z} = $xyz[2] if $xyz[2];
+  $s->{serialseq}   = join(":", @xyz);
 }
 
 return 1;

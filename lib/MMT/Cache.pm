@@ -6,7 +6,7 @@ use Carp::Always::Color;
 use experimental 'smartmatch', 'signatures';
 
 #External modules
-use Text::CSV_XS;
+use Text::CSV;
 
 #Local modules
 use MMT::Config;
@@ -66,7 +66,7 @@ sub _slurpFile($s) {
   $log->info("Cache '".$s->name()."' loaded. '$linesRead' lines read.");
 }
 sub _slurpCsv($s) {
-  my $csv = Text::CSV_XS->new({ binary => 1, sep_char => ',' });
+  my $csv = Text::CSV->new({ binary => 1, sep_char => ',' });
   open(my $FH, '<:encoding(UTF-8)', $s->file());
   $csv->column_names($csv->getline($FH));
   $log->debug("Loading .csv-file '".$s->file()."', identified columns '".join(',', $csv->column_names())."'");

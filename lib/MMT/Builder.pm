@@ -6,7 +6,7 @@ use Carp::Always::Color;
 use experimental 'smartmatch', 'signatures';
 
 #External modules
-use Text::CSV_XS;
+use Text::CSV;
 use Data::Dumper;
 
 #Local modules
@@ -71,7 +71,7 @@ sub new($class, $params) {
 sub build($s) {
   $log->info($s->{type}." - Starting to build");
 
-  my $csv=Text::CSV_XS->new({ binary => 1 });
+  my $csv=Text::CSV->new({ binary => 1 });
   open(my $inFH, '<:encoding(UTF-8)', $s->{inputFile}) or $log->logdie("Loading file '".$s->{inputFile}."' failed: $!");
   $csv->column_names($csv->getline($inFH));
   $log->info("Loading file '".$s->{inputFile}."', identified columns '".join(',', $csv->column_names())."'");

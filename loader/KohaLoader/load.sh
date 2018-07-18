@@ -76,6 +76,13 @@ function migrateBulkScripts {
         --bnConversionTable $WORKING_DIR/biblionumberConversionTable \
         &> $WORKING_DIR/bulkHoldsImport.log
 
+    ./bulkSubscriptionImport.pl \
+        --subscriptionFile $DATA_SOURCE_DIR/Subscription.migrateme \
+        --serialFile $DATA_SOURCE_DIR/Serial.migrateme \
+        --suConversionTable $WORKING_DIR/subscriptionidConversionTable \
+        --bnConversionTable $WORKING_DIR/biblionumberConversionTable \
+        &> $WORKING_DIR/bulkSubscriptionImport.log
+
     #./bulkRotatingCollectionsImport.pl --file $DATA_SOURCE_DIR/Siirtolaina.migrateme &> $WORKING_DIR/bulkRotatingCollectionsImport.log
     #./bulkHistoryImport.pl --file /home/koha/pielinen/histories.migrateme &> bulkHistoryImport.log
 }

@@ -33,6 +33,31 @@ sub new {
   return $self;
 }
 
+=head2 setKeys
+
+Sets the mandatory primary and foreign keys, drops the KohaObject if one of the given keys is missing
+
+ @param1 Text::CSV row, Voyager data row
+ @param2 MMT::Builder
+ @param3 ARRAYRef of ARRAYRefs, list of Voyager to Koha key mappings
+           [
+             ['voyager_key' => 'koha_key'],
+             ['bib_id' => 'biblionumber'],
+             ...
+           ]
+  @throws MMT::Exception::Delete
+
+=cut
+
+sub setKeys($s, $o, $b, $v2ks) {
+  for my $v2k (@$v2ks) {
+    unless ($o->{ $v2k->[0] }) { #Check Voyager source data for the expected Voyager key
+      MMT::Exception::Delete->throw(ref($s)." is missing ".$v2k->[0].'->'.$v2k->[1].": ".MMT::Validator::dumpObject($o));
+    }
+    $s->{$v2k->[1]} = $o->{$v2k->[0]}; #Basically rename the expected voyager key as the Koha key
+  }
+}
+
 =head2 createTemporaryBarcode
 
 Used when the Koha object doesn't have a barcode/cardnumber

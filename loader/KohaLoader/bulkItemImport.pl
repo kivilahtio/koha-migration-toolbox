@@ -14,8 +14,9 @@ use Bulk::Util;
 use Bulk::ConversionTable::ItemnumberConversionTable;
 use Bulk::ConversionTable::BiblionumberConversionTable;
 
-my ($itemsFile, $biblionumberConversionTable, $itemnumberConversionTable, $verbosity, $populateStatistics) =
-   (undef,      'biblionumberConversionTable','itemnumberConversionTable',3,          0);
+my ($itemsFile, $biblionumberConversionTable, $itemnumberConversionTable,  $populateStatistics) =
+   (undef,      'biblionumberConversionTable','itemnumberConversionTable', 0);
+our $verbosity = 3;
 
 GetOptions(
     'file:s'                   => \$itemsFile,

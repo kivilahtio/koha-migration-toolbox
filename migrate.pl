@@ -150,6 +150,36 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
   },
 
 
+  '--serials' => {
+    help => 'Transform serials from Voyager extracts to Koha',
+    callback => sub {
+      my MMT::Builder $builder = MMT::Builder->new({
+        type => 'Serial',
+        inputFile => '21-ser_issues.csv',
+        repositories => [],
+        translationTables => [],
+      });
+      $builder->build();
+    },
+  },
+
+
+  '--subscriptions' => {
+    help => 'Transform subscriptions from Voyager extracts to Koha',
+    callback => sub {
+      my MMT::Builder $builder = MMT::Builder->new({
+        type => 'Subscription',
+        inputFile => '20-subscription_locations.csv',
+        repositories => [],
+        translationTables => [
+          {name => 'LocationId'},
+        ],
+      });
+      $builder->build();
+    },
+  },
+
+
   '--load' => {
     help => "Runs the load-phase using the script configured in 'importPipelineScript'",
     callback => sub {MMT::Loader::load()},

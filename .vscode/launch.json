@@ -24,9 +24,16 @@
       "request": "launch",
       "name": "Perl-Debug remote",
       "program": "${workspaceFolder}/${relativeFile}",
+      "exec": "perl",
+      "execArgs": [],
       "root": "${workspaceRoot}/",
+      "inc": [],
+      "args": [],
+      "env": {
+        "MMT_HOME": "${env:HOME}/MMT-Voyager"
+      },
       "stopOnEntry": true,
-      "port": 5000
+      "port": 54321
     }
   ]
 }

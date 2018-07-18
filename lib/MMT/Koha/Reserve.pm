@@ -36,11 +36,13 @@ Flesh out the Koha-borrower -object out of the given
 
 =cut
 
+my @keys = (['patron_id' => 'borrowernumber'], ['bib_id' => 'biblionumber'], ['item_id' => 'itemnumber']);
 sub build($self, $o, $b) {
   #$self->setReserve_id                  ($o, $b); #AUTO_INCREMENT
-  $self->setBorrowernumber               ($o, $b);
-  $self->setBiblionumber                 ($o, $b);
-  $self->setItemnumber                   ($o, $b);
+  $self->setKeys                         ($o, $b, \@keys);
+  #  \$self->setBorrowernumber            ($o, $b);
+  #   \$self->setBiblionumber              ($o, $b);
+  #    \$self->setItemnumber                ($o, $b);
   $self->setReservedate                  ($o, $b);
   $self->setBranchcode                   ($o, $b);
   #$self->setNotificationdate            ($o, $b);
@@ -68,24 +70,6 @@ sub logId($s) {
   return 'Reserve: '.$s->id();
 }
 
-sub setBorrowernumber($s, $o, $b) {
-  unless ($o->{patron_id}) {
-    MMT::Exception::Delete->throw("Reserve is missing patron_id ".MMT::Validator::dumpObject($o));
-  }
-  $s->{borrowernumber} = $o->{patron_id};
-}
-sub setBiblionumber($s, $o, $b) {
-  unless ($o->{bib_id}) {
-    MMT::Exception::Delete->throw("Reserve is missing bib_id ".MMT::Validator::dumpObject($o));
-  }
-  $s->{biblionumber} = $o->{bib_id};
-}
-sub setItemnumber($s, $o, $b) {
-  unless ($o->{item_id}) {
-    MMT::Exception::Delete->throw("Reserve is missing item_id ".MMT::Validator::dumpObject($o));
-  }
-  $s->{itemnumber} = $o->{item_id};
-}
 sub setReservedate($s, $o, $b) {
   $s->{reservedate} = MMT::Date::translateDateDDMMMYY($o->{create_date}, $s, 'create_date->reservedate');
 

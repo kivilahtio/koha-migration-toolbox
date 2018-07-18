@@ -3,7 +3,7 @@ use 5.22.1;
 package MMT::Date;
 #Pragmas
 use Carp::Always::Color;
-use experimental 'smartmatch', 'signatures';
+use experimental 'smartmatch', 'signatures', 'switch';
 
 #External modules
 

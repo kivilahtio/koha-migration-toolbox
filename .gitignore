@@ -1,3 +1,5 @@
 extlib
 ~$
 .vstags
+*.komodoproject
+.vscode/settings*

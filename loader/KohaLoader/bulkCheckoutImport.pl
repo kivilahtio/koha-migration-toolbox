@@ -14,7 +14,8 @@ use C4::Members;
 use Bulk::ConversionTable::ItemnumberConversionTable;
 use Bulk::ConversionTable::BorrowernumberConversionTable;
 
-my ( $importFile, $verbosity) = ('',3);
+my $importFile = '';
+our $verbosity = 3;
 my $borrowernumberConversionTable = 'borrowernumberConversionTable';
 my $itemnumberConversionTable = 'itemnumberConversionTable';
 

@@ -211,20 +211,60 @@ my %queries = (
                                 component_id, subscription_id, component_name, component_name_norm, unit_title, category, predict, next_issue_id, note, item_type_id,
                                 create_items, claim_interval
                               FROM component",
-   "20-ser_subsc.csv" => "    SELECT
-                                subscription_id, line_item_id, start_date, subscription_length, length_type, renewal_date, auto_renewal, sici,
-                                normal_sici, upc, normal_upc, note
-                              FROM subscription",
 
+   "20-ser_subsc.csv" => "    SELECT
+                                s.subscription_id, line_item.bib_id,
+                                start_date, subscription_length, length_type, renewal_date, auto_renewal, sici,
+                                normal_sici, upc, normal_upc, note
+                              FROM subscription s
+                              LEFT JOIN line_item ON (s.line_item_id = line_item.line_item_id)",
+
+    #Koha has a single subscription for each branch receiving serials.
+    #Voyager has a single subscription which orders serials to multiple branches.
+    #Need to clone Voyager subscriptions, one per branch to Koha.
+    #issues_received has location_id. That is the only place with any location information.
+   "20-subscription_locations.csv" =>
+                             "SELECT
+                                subscription.subscription_id, line_item.bib_id, component.component_id, subscription.start_date
+                              FROM subscription
+                              LEFT JOIN line_item       ON (subscription.line_item_id = line_item.line_item_id)
+                              LEFT JOIN component       ON (component.subscription_id = subscription.subscription_id)
+                              LEFT JOIN serial_issues   ON (serial_issues.component_id = component.component_id)
+                              LEFT JOIN issues_received ON (issues_received.issue_id = serial_issues.issue_id)
+                              GROUP BY
+                                subscription.subscription_id, line_item.bib_id, component.component_id, subscription.start_date",
+                                
+
+    #Extract only serials which have been received. No data in the Voyager subscription about into which branches it orders serials.
+    #Only received serials have location-information.
+    #Currently only migrate received serials, and ignore predictions, because migrating predictions most certainly will be very slow.
    "21-ser_issues.csv" => "   SELECT
-                                component.subscription_id, issue_id, component_id, enumchron, lvl1, lvl2, lvl3, lvl4, lvl5, lvl6, alt_lvl1, alt_lvl2, chron1, chron2, chron3, chron4, alt_chron,
+                                issue_id, serial_issues.component_id, line_item.bib_id,
+                                enumchron, lvl1, lvl2, lvl3, lvl4, lvl5, lvl6, alt_lvl1, alt_lvl2, chron1, chron2, chron3, chron4, alt_chron,
                                 expected_date, receipt_date, received
                               FROM serial_issues
-                              LEFT JOIN issues_received ON (issues_received.issue_id = serial_issues.issue_id)
-                              LEFT JOIN component ON (component.component_id = serial_issues.component_id)
-                              LEFT JOIN subscription ON (component.subscription_id = subscription.subscription_id)
-                              LEFT JOIN line_item ON (subscription.line_item_id = line_item.line_item_id)
+                              LEFT JOIN component       ON (component.component_id = serial_issues.component_id)
+                              LEFT JOIN subscription    ON (subscription.subscription_id = component.subscription_id)
+                              LEFT JOIN line_item       ON (subscription.line_item_id = line_item.line_item_id)
                               ",
+
+# This creates a gaxillion billion rows. issues_received has a huge amount of duplicate issue_id ??
+#   "21-ser_issues.csv" => "   SELECT
+#                                s.issue_id, component.subscription_id, line_item.bib_id, issues_received.location_id,
+#                                s.enumchron, s.lvl1, s.lvl2, s.lvl3, s.lvl4, s.lvl5, s.lvl6, s.alt_lvl1, s.alt_lvl2, s.chron1, s.chron2, s.chron3, s.chron4, s.alt_chron,
+#                                s.expected_date, s.receipt_date, s.received
+#                              FROM serial_issues s
+#                              LEFT JOIN issues_received ON (issues_received.issue_id = s.issue_id)
+#                              LEFT JOIN component ON (component.component_id = s.component_id)
+#                              LEFT JOIN subscription ON (component.subscription_id = subscription.subscription_id)
+#                              LEFT JOIN line_item ON (subscription.line_item_id = line_item.line_item_id)
+#                              WHERE issues_received.issue_id IS NOT NULL
+#                              GROUP BY
+#                                s.issue_id, component.subscription_id, line_item.bib_id, issues_received.location_id,
+#                                s.enumchron, s.lvl1, s.lvl2, s.lvl3, s.lvl4, s.lvl5, s.lvl6, s.alt_lvl1, s.alt_lvl2, s.chron1, s.chron2, s.chron3, s.chron4, s.alt_chron,
+#                                s.expected_date, s.receipt_date, s.received
+#                              ",
+
 
    "22-ser_claim.csv" => "    SELECT
                                 claim_thread, issue_id, component_id, copy_id, location_id, claim_id, vendor_id, claim_type, claim_date, claim_count,
@@ -265,7 +305,7 @@ my %queries = (
 
 
 foreach my $key (sort keys %queries) {
-  next unless ($key eq 'serials_mfhd.csv');
+  next unless ($key eq '21-ser_issues.csv');
   my $filename = $key ;
   my $query    = $queries{$key};
 
