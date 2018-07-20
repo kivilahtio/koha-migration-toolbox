@@ -21,7 +21,6 @@ use warnings;
 use strict;
 
 #External modules
-use DBI;
 
 =head2 NAME
 
@@ -35,30 +34,21 @@ Configuration manager
 
 
 
-sub _LoadConfig($) {
+our $config;
+sub LoadConfig($) {
   my $filename = $_[0];
-  my $FH;
-  my %config;
-  open($FH, "<:raw", $filename) or die "Cannot open configuration file '$filename': $!";
-  while (my $row = <$FH>) {
-    $row =~ s/\s*$//s;
-    $row =~ /\s*:\s*/;
-    my $lhs = $`;
-    my $rhs = $';
-    $config{$lhs} = $rhs;
-  }
-  close($FH);
+  $config = do $filename;
 
-
-  $config{dbname} = $config{username};
-  $config{exportDir} = '/tmp/'.$config{dbname} unless $config{exportDir};
-  print "Exporting to '$config{exportDir}'\n";
-  mkdir($config{exportDir}, 0744) or die "Couldn't create the exportDir='".$config{exportDir}."': $!"
-    unless -e $config{exportDir};
-
-  return \%config;
+  $config->{dbname} = $config->{username};
+  $config->{exportDir} = '/tmp/'.$config->{dbname} unless $config->{exportDir};
+  print "Exporting to '".$config->{exportDir}."'\n";
+  mkdir($config->{exportDir}, 0744) or die "Couldn't create the exportDir='".$config->{exportDir}."': $!"
+    unless -e $config->{exportDir};
 }
-our $config = _LoadConfig($ENV{VOYAGER_EXPORTER_CONFIG_PATH});
+
+sub config() {
+  return $config;
+}
 
 =head2 exportPath
 
@@ -70,6 +60,16 @@ our $config = _LoadConfig($ENV{VOYAGER_EXPORTER_CONFIG_PATH});
 sub exportPath($) {
   my ($filename) = @_;
   return $config->{exportDir}.'/'.$filename;
+}
+
+sub getTableEncoding($) {
+  my ($table) = @_;
+  return $config->{characterEncodings}->{$table} || $config->{characterEncodings}->{'_DEFAULT_'} || die("config->characterEncodings->_DEFAULT_ is not defined?");
+}
+
+sub getTableRepairs($) {
+  my ($table) = @_;
+  return $config->{characterEncodingRepairs}->{$table};
 }
 
 return 1;

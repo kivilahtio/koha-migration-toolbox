@@ -15,7 +15,7 @@ test $? != 0 && echo "sshpass is not installed. Install it with 'apt install ssh
 JUMP_HOST="user@jumphost"
 VOYAGERDB_SERVER="user@voyagerserver.fi"
 SSH_PASSWORD="password"
-EXTRACT_CMD='/opt/CSCperl/current/bin/perl extract.pl -B -A -H --bywater --bound'
+EXTRACT_CMD='/opt/CSCperl/current/bin/perl extract.pl -B -A -H --precision --bound'
 VOYAGER_MMT_DIR="/m1/groupcron/hamk/scripts/koha"
 VOYAGER_MMT_DATA_DIR="/m1/groupcron/hamk/scripts/koha/data"
 

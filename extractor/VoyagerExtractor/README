@@ -1,10 +1,10 @@
 Files in this directory are used to extract data from Voyager, copy this directory to the Voyager DB-server.
 
 Then configure
-  config.yaml
+  config.pl
 with DB connection params.
 
 Finally run
-  export.pl --bound -A -B -H --bywater
+  export.pl --bound -A -B -H --precision
 to write .csv-files to the VoyagerDB-server
 

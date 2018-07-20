@@ -42,13 +42,24 @@ use Exp::Config;
 
 =cut
 
-our $dbh;
+my $dbh;
 sub dbh {
   return $dbh if $dbh && $dbh->ping();
 
-  my $config = $Exp::Config::config;
+  my $config = Exp::Config::config();
 
-  $ENV{ORACLE_HOME} = $config->{oracle_home}; #DBD::Oracle needs this    
+  #Try to get Oracle to send UTF-8 with 05-patron-address.csv
+  #This doesn't work very nicely. Oracle sets the utf8-flag on, but actually doesn't convert it's internal encoding (latin1) to UTF-8
+  #$ENV{NLS_LANG} = 'AMERICAN_AMERICA.AL32UTF8'; #Straight from the DBD::Oracle docs. WTF is the American language?
+  #$ENV{NLS_NCHAR} = 'AL32UTF8'; #Tell Oracle to output UTF-8 . Looks like this doesn't do anything.
+
+  #Try to get Oracle to send UTF-8 with 02-items.csv
+  #Same problem, even worse, "ä" becomes hexes "FD FD"
+  #$ENV{NLS_LANG} = 'AMERICAN_AMERICA.AL32UTF8';
+  #$ENV{NLS_NCHAR} = 'AL32UTF8';
+
+
+  $ENV{ORACLE_HOME} = $config->{oracle_home}; #DBD::Oracle needs this
   die "Configuration variable 'oracle_home' is undefined. DBD::Oracle needs to know where the Oracle files are"
     unless ($ENV{ORACLE_HOME});
   die "Configuration variable 'oracle_home' is not readable. DBD::Oracle needs to access the Oracle files"
@@ -63,7 +74,6 @@ sub dbh {
     || confess "Could no connect: $DBI::errstr";
   return $dbh;
 }
-$dbh = dbh();
 
 =head2 mfhd_id2bib_ids
 
@@ -74,9 +84,12 @@ So $004 doesn't always cut it as it (apparently) can store only one value.
 
 =cut
 
-my $mfhd_id2bib_id_sth = $dbh->prepare("SELECT BIB_ID FROM BIB_MFHD WHERE MFHD_ID=?") || confess $dbh->errstr;
+my $mfhd_id2bib_id_sth;
 sub mfhd_id2bib_ids($) {
   my ($mfhdId) = @_;
+
+  $mfhd_id2bib_id_sth = dbh->prepare("SELECT BIB_ID FROM BIB_MFHD WHERE MFHD_ID=?") || confess $dbh->errstr
+    unless $mfhd_id2bib_id_sth;
 
   $mfhd_id2bib_id_sth->execute($mfhdId) || confess $dbh->errstr;
   my @bibIds;
@@ -92,9 +105,12 @@ sub mfhd_id2bib_ids($) {
 
 =cut
 
-my $bib_id2bib_record_sth = $dbh->prepare("SELECT RECORD_SEGMENT FROM BIB_DATA WHERE BIB_ID=? ORDER BY SEQNUM") || confess $dbh->errstr;
+my $bib_id2bib_record_sth;
 sub bib_id2bib_record($) {
   my ($bibId) = @_;
+
+  $bib_id2bib_record_sth = dbh->prepare("SELECT RECORD_SEGMENT FROM BIB_DATA WHERE BIB_ID=? ORDER BY SEQNUM") || confess $dbh->errstr
+    unless $bib_id2bib_record_sth;
 
   $bib_id2bib_record_sth->execute($bibId) || confess $dbh->errstr;
   my @marcdata;

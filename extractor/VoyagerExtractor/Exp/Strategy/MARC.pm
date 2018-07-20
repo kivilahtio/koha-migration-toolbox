@@ -14,7 +14,7 @@
 # along with koha-migration-toolbox; if not, see <http://www.gnu.org/licenses>.
 #
 
-package Exp::MARC;
+package Exp::Strategy::MARC;
 
 #Pragmas
 use warnings;
@@ -28,7 +28,7 @@ use Exp::nvolk_marc21;
 
 =head2 NAME
 
-Exp::MARC
+Exp::Strategy::MARC
 
 =head2 DESCRIPTION
 

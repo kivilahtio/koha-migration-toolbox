@@ -305,7 +305,6 @@ my %queries = (
 
 
 foreach my $key (sort keys %queries) {
-  next unless ($key eq '21-ser_issues.csv');
   my $filename = $key ;
   my $query    = $queries{$key};
 
@@ -358,6 +357,8 @@ foreach my $key (sort keys %queries) {
     next;
   }
 
+
+
   my $header_row = $query;
   while ( $header_row =~ s/(select\s|,\s*)\s*convert\(([a-z0-9_]+),.*\)/$1$2/si ) {}
   $header_row =~ s/\s+/\t/g;
@@ -371,8 +372,8 @@ foreach my $key (sort keys %queries) {
   $sth->execute() || die $dbh->errstr;
 
   my $i=0;
-  #open my $out,">:encoding(UTF-8)",$filename || die "Can't open the output!";
-  open my $out,">",$Exp::Config::config->{exportDir}.'/'.$filename || die "Can't open the output!";
+  #open my $out,">:encoding(UTF-8)",$Exp::Config::config->{exportDir}.'/'.$filename || die "Can't open the output!";
+  open my $out,">:bytes",$Exp::Config::config->{exportDir}.'/'.$filename || die "Can't open the output!";
 
   print $out "$header_row\n";
 
@@ -395,22 +396,22 @@ foreach my $key (sort keys %queries) {
           # PATRON_ADDRESS.ADDRESS_LINE5, PATRON_ADDRESS.CITY, PATRON_ADDRESS.STATE_PROVINCE, 
           # PATRON_ADDRESS.ZIP_POSTAL, PATRON_ADDRESS.COUNTRY
           if ( $line[1] eq '3' ) { # email
-        $line[2] = 'etunimi.sukunimi@hamk.fi';
-        # Nollaa muut kentat varmuuden vuoksi
-        for ( my $k=3; $k <= $#line; $k++ ) {
-            $line[$k] = '';
-        }
+            $line[2] = 'etunimi.sukunimi@hamk.fi';
+            # Nollaa muut kentat varmuuden vuoksi
+            for ( my $k=3; $k <= $#line; $k++ ) {
+                $line[$k] = '';
+            }
           }
           else {
-        if ( $line[2] ) { $line[2] = 'Katuosoite 1A'; }
-        if ( $line[3] ) { $line[3] = 'Toinen osoiterivi'; }
-        if ( $line[4] ) { $line[4] = 'Kolmas osoiterivi'; }
-        if ( $line[5] ) { $line[5] = 'NeljC$s osoiterivi'; }
-        if ( $line[6] ) { $line[6] = 'Viides osoiterivi'; }
-        if ( $line[7] ) { $line[7] = 'HC$meenlinna'; }
-        if ( $line[8] ) { $line[8] = 'HC$me'; }
-        if ( $line[9] ) { $line[9] = '13100'; }
-        if ( $line[10] ) { $line[10] = 'Suomi'; }
+            if ( $line[2] ) { $line[2] = 'Katuosoite 1A'; }
+            if ( $line[3] ) { $line[3] = 'Toinen osoiterivi'; }
+            if ( $line[4] ) { $line[4] = 'Kolmas osoiterivi'; }
+            if ( $line[5] ) { $line[5] = 'Neljäs osoiterivi'; }
+            if ( $line[6] ) { $line[6] = 'Viides osoiterivi'; }
+            if ( $line[7] ) { $line[7] = 'Hämeenlinna'; }
+            #if ( $line[8] ) { $line[8] = 'Häme'; } #City is not personally identifiable and helps spot encoding issues
+            if ( $line[9] ) { $line[9] = '13100'; }
+            if ( $line[10] ) { $line[10] = 'Suomi'; }
           }
       }
       if ( $key eq "07-patron_names_dates.csv" ) {

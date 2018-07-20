@@ -14,7 +14,7 @@
 # along with koha-migration-toolbox; if not, see <http://www.gnu.org/licenses>.
 #
 
-package MMT::Everything;
+package MMT::Strategy::Everything;
 
 #Pragmas
 use warnings;
@@ -27,7 +27,7 @@ $Data::Dumper::Sortkeys = 1;
 
 =head2 NAME
 
-Exp::Everything
+Exp::Strategy::Everything
 
 =head2 DESCRIPTION
 

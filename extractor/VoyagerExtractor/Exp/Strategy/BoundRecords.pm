@@ -14,7 +14,7 @@
 # along with koha-migration-toolbox; if not, see <http://www.gnu.org/licenses>.
 #
 
-package Exp::BoundRecords;
+package Exp::Strategy::BoundRecords;
 
 #Pragmas
 use warnings;
@@ -25,7 +25,7 @@ use Carp;
 
 =head2 NAME
 
-Exp::BoundRecords
+Exp::Strategy::BoundRecords
 
 =head2 DESCRIPTION
 

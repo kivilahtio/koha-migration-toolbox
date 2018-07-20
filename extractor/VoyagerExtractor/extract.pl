@@ -2,10 +2,16 @@
 
 use warnings;
 use strict;
+$|=1;
 
 use Getopt::Long qw(:config no_ignore_case);
 
-$|=1;
+use Exp::Config;
+
+# Getting parameters
+my $config = 'config.pl';
+my $noanonymize = 0;
+my ($help, $verbose, $exportEverything, $exportWithPrecision, $exportBoundRecords, $exportBibliographicRecords, $exportAuthoritiesRecords, $exportHoldingsRecords, $exportByWaterStyle);
 
 sub print_usage {
   (my $basename = $0) =~ s|.*/||;
@@ -16,27 +22,28 @@ $basename
   There used to be a bunch of scripts lying around. Now all of those are merged into one program where they can share common infrastucture.
 
 Usage:
+  --noanonymize           Do not anonymize confidential and personally identifiable information? Used when going live.
+                          Anonymizes by default.
   -e, --everything        Exports all DB tables as is.
   -b, --bound             Exports bound MFHD records.
-  -c, --config=PATH       Default 'config.yaml'
+  -c, --config=PATH       Default '$config'
                           PATH to the DB connection config.
   --bywater               Export everything but MARC using ByWater export sql statements
+  --precision             Export with precision everything but MARC
   -h, --help              Show this help
   -v, --verbose           Show debug information
 USAGE
 }
 
-# Getting parameters
-my $config = 'config.yaml';
-my ($help, $verbose, $exportEverything, $exportBoundRecords, $exportBibliographicRecords, $exportAuthoritiesRecords, $exportHoldingsRecords, $exportByWaterStyle);
-
 GetOptions(
+    'noanonymize'   => \$noanonymize,
     'e|everything'  => \$exportEverything,
     'b|bound'       => \$exportBoundRecords,
     'B|bib'         => \$exportBibliographicRecords,
     'A|auth'        => \$exportAuthoritiesRecords,
     'H|holdings'    => \$exportHoldingsRecords,
     'bywater'       => \$exportByWaterStyle,
+    'p|precision'   => \$exportWithPrecision,
     'c|config=s'    => \$config,
     'h|help'        => \$help,
     'v|verbose'     => \$verbose,
@@ -47,36 +54,44 @@ if ($help) {
     exit;
 }
 
+$ENV{ANONYMIZE} = ($noanonymize) ? 0 : 1;
 $ENV{DEBUG} = 1 if ($verbose);
 $ENV{VOYAGER_EXPORTER_CONFIG_PATH} = $config if ($config);
+Exp::Config::LoadConfig($ENV{VOYAGER_EXPORTER_CONFIG_PATH});
+
 
 if ($exportEverything) {
-  require Exp::Everything;
-  Exp::Everything::exportAllTables();
+  require Exp::Strategy::Everything;
+  Exp::Strategy::Everything::exportAllTables();
+}
+
+if ($exportWithPrecision) {
+  require Exp::Strategy::Precision;
+  Exp::Strategy::Precision::extract();
 }
 
 my $boundRecordIds;
 if ($exportBoundRecords) {
-  require Exp::BoundRecords;
-  $boundRecordIds = Exp::BoundRecords::export();
+  require Exp::Strategy::BoundRecords;
+  $boundRecordIds = Exp::Strategy::BoundRecords::export();
 }
 
 if ($exportBibliographicRecords) {
-  require Exp::MARC;
-  Exp::MARC::exportBiblios({exclude => $boundRecordIds});
+  require Exp::Strategy::MARC;
+  Exp::Strategy::MARC::exportBiblios({exclude => $boundRecordIds});
 }
 
 if ($exportAuthoritiesRecords) {
-  require Exp::MARC;
-  Exp::MARC::exportAuth();
+  require Exp::Strategy::MARC;
+  Exp::Strategy::MARC::exportAuth();
 }
 
 if ($exportHoldingsRecords) {
-  require Exp::MARC;
-  Exp::MARC::exportMFHD();
+  require Exp::Strategy::MARC;
+  Exp::Strategy::MARC::exportMFHD();
 }
 
 if ($exportByWaterStyle) {
-  require Exp::ByWaterExport;
+  require Exp::Strategy::ByWaterExport;
 }
 
