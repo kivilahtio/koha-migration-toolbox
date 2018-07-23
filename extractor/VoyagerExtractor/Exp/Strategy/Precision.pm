@@ -29,7 +29,6 @@ use DBI;
 use Exp::nvolk_marc21;
 use Exp::Config;
 use Exp::DB;
-use Exp::Util;
 use Exp::Encoding;
 use Exp::Encoding::Repair;
 

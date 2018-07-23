@@ -38,7 +38,7 @@ Export Bibliographic, Authorities and MFHD MARC records as raw ISO
 
 use Exp::Config;
 use Exp::DB;
-use Exp::Util;
+use Exp::Encoding;
 
 sub exportBiblios($) {
   _exportMARC(Exp::Config::exportPath('biblios.xml'),
@@ -98,9 +98,9 @@ sub _output_record($$$) {
   my ( $FH, $id, $record_ptr ) = @_;
 
   if ( length($$record_ptr) ) {
-    if ( !Exp::Util::isUtf8($$record_ptr) ) {
+    if ( !Exp::Encoding::isUtf8($$record_ptr) ) {
       print STDERR "$id\tWarning\tRecord contains non-UTF-8 characters\n";
-      $$record_ptr = Exp::Util::toUtf8($$record_ptr);
+      $$record_ptr = Exp::Encoding::toUtf8($$record_ptr);
     }
     $$record_ptr = Exp::nvolk_marc21::nvolk_marc212oai_marc($$record_ptr);
     print $FH $$record_ptr, "\n";
