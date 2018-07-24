@@ -108,8 +108,8 @@ then
     ##Run this as root to make a backup of an existing merge target database
     service mysql stop
     service koha-zebra-daemon stop
-    time tar -czf mysql.bak.tar.gz -C /var/lib/ mysql
-    time tar -czf zebra.bak.tar.gz -C /home/koha/koha-dev/var/lib/ zebradb
+    time tar -czf $WORKING_DIR/mysql.bak.tar.gz -C /var/lib/ mysql
+    time tar -czf $WORKING_DIR/zebra.bak.tar.gz -C /home/koha/koha-dev/var/lib/ zebradb
     service mysql start
     service koha-zebra-daemon start
     exit
@@ -124,8 +124,8 @@ then
     service koha-zebra-daemon stop
     rm -r /var/lib/mysql
     rm -r /home/koha/koha-dev/var/lib/zebradb
-    time tar -xzf mysql.bak.tar.gz -C /var/lib/
-    time tar -xzf zebra.bak.tar.gz -C /home/koha/koha-dev/var/lib/
+    time tar -xzf $WORKING_DIR/mysql.bak.tar.gz -C /var/lib/
+    time tar -xzf $WORKING_DIR/zebra.bak.tar.gz -C /home/koha/koha-dev/var/lib/
     service mysql start
     service koha-zebra-daemon start
     #  #Reindex zebra as the koha-user, this will take a loong time.

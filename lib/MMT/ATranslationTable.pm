@@ -72,7 +72,7 @@ rules.
  @dies $DELETE if the Object in processing should be removed from migration
 
 =cut
-my $re_isSubroutineCall = qr{(.+)\((.*)\)$};
+my $re_isSubroutineCall = qr{(.+)\(\s*(.*)\s*\)$};
 sub translate($s, $kohaObject, $voyagerObject, $builder, $val) {
   my $kohaVal = $s->{_mappings}->{$val};
   #Check if using the fallback catch-all -value
@@ -89,7 +89,7 @@ sub translate($s, $kohaObject, $voyagerObject, $builder, $val) {
   }
   elsif ($kohaVal =~ $re_isSubroutineCall) {
     my $method = $1;
-    my @params = ($kohaObject, $voyagerObject, $builder, $val, split(/ ?, ?/, $2));
+    my @params = ($kohaObject, $voyagerObject, $builder, $val, split(/\s*,\s*/, $2));
     $log->trace("Invoking ".ref($s)."->$method(@params)") if $log->is_trace();
     my $rv = $s->$method(@params);
     $log->trace("Returning ".ref($s)."->$method(@params) with '".MMT::Validator::dumpObject($rv)."'.") if $log->is_trace();
