@@ -7,11 +7,20 @@
 ## it defines mappings from voyager.patron_group.patron_group_id to koha.borrowers.categorycode
 ##
 
-1        : example(HAMK_OPISK) #Triggers subroutine MMT::TranslationTable::PatronCategorycode::example with parameters <value from Voyager> and 'HAMK_OPISK'
-2        : HENKI               #The rest of the examples are one-to-one mappings
-3        : HAMI_OPISK          #prev. HAMI Opiskelijat
-4        : MUUT                #prev. Muut
-5        : KAUKO               #prev. Kaukopalvelu
-6        : WITHDRAWN           #prev. Withdrawn
+#HAMK source values
+#PATRON_GROUP_ID,PATRON_GROUP_CODE,PATRON_GROUP_NAME
+#"1","B","HAMK Opiskelijat"
+#"2","A","HAMK/HAMI Henkil<F6>kunta"
+#"3","BB","HAMI Opiskelijat"
+#"4","K","Muut","Muut"
+#"5","I","Kaukopalvelu"
+#"6","WD","Withdrawn"
+
+1        : B
+2        : A
+3        : BB
+4        : K
+5        : I
+6        : WD
 UNKNOWN  : $DELETE             #Patrons with group id of UNKNOWN, will be removed from the migration. UNKNOWN is given when no Patron has no patron_group_id
 _DEFAULT_: warning()           #Default value to use, if nothing matches. if this field is omitted, MMT simply warns and ignores the value.

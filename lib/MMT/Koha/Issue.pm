@@ -95,7 +95,7 @@ sub setDateDue($s, $o, $b) {
 }
 sub setBranchcode($s, $o, $b) {
   my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{charge_location});
-  $s->{branchcode} = $b->{Branchcodes}->translate(@_, $branchcodeLocation->[0]);
+  $s->{branchcode} = $branchcodeLocation->{branch};
 
   unless ($s->{branchcode}) {
     MMT::Exception::Delete->throw($s->logId()."' has no place of issuance (charge_location/branchcode). Set a default in the TranslationTable rules!");

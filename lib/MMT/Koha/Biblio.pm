@@ -27,10 +27,10 @@ MMT::Koha::Biblio - Transform biblios
 =cut
 
 sub transform() {
-  my $cmd = "usemarcon/usemarcon usemarcon/rules-hamk/rules.ini ".MMT::Config::voyagerExportDir()."/biblios.mrc ".MMT::Config::kohaImportDir()."/biblios.marcxml";
+  my $cmd = "usemarcon/usemarcon usemarcon/rules-hamk/rules.ini ".MMT::Config::voyagerExportDir()."/biblios.xml ".MMT::Config::kohaImportDir()."/biblios.marcxml";
   my ($success, $error_code, $full_buf, $stdout_buf, $stderr_buf) = MMT::Shell::run($cmd);
 
-  return 1;
+  return undef; #Getopt::OO callback errors if we return something.
 }
 
 return 1;

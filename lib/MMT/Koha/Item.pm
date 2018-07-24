@@ -119,14 +119,6 @@ sub setDateaccessioned($s, $o, $b) {
     $log->warn($s->logId()."' has no dateaccessioned.");
   }
 }
-sub setHomebranch($s, $o, $b) {
-  my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{perm_location});
-  $s->{homebranch} = $b->{Branchcodes}->translate(@_, $branchcodeLocation->[0]);
-
-  unless ($s->{homebranch}) {
-    MMT::Exception::Delete->throw($s->logId()."' has no homebranch! perm_location=".$o->{perm_location}.". Define a default in the Branchcodes translation table!");
-  }
-}
 sub setPrice($s, $o, $b) {
   $s->{price} = $o->{price} ? $o->{price}/100 : undef;
   $log->warn($s->logId()."' has no price.") unless $s->{price};
@@ -147,10 +139,20 @@ sub setItemnotes($s, $o, $b) {
     $b->{ItemNoteTypes}->translate(@_, $o->{item_note_type});
   }
 }
+sub setHomebranch($s, $o, $b) {
+  my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{perm_location});
+  $s->{homebranch} = $branchcodeLocation->{branch};
+  $s->{ccode} = $branchcodeLocation->{collectionCode} if $branchcodeLocation->{collectionCode};
+
+  unless ($s->{homebranch}) {
+    MMT::Exception::Delete->throw($s->logId()."' has no homebranch! perm_location=".$o->{perm_location}.". Define a default in the Branchcodes translation table!");
+  }
+}
 sub setHoldingbranch($s, $o, $b) {
   if ($o->{temp_location}) {
     my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{temp_location});
-    $s->{holdingbranch} = $b->{Branchcodes}->translate(@_, $branchcodeLocation->[0]);
+    $s->{holdingbranch} = $branchcodeLocation->{branch};
+    $s->{ccode} = $branchcodeLocation->{collectionCode} if $branchcodeLocation->{collectionCode};
   }
   else {
     $s->{holdingbranch} = $s->{homebranch};
@@ -158,7 +160,8 @@ sub setHoldingbranch($s, $o, $b) {
 }
 sub setPermanent_location($s, $o, $b) {
   my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{perm_location});
-  $s->{permanent_location} = $branchcodeLocation->[1];
+  $s->{permanent_location} = $branchcodeLocation->{location};
+  $s->{ccode} = $branchcodeLocation->{collectionCode} if $branchcodeLocation->{collectionCode};
 
   unless ($s->{permanent_location}) {
     MMT::Exception::Delete->throw($s->logId()."' has no permanent_location! perm_location=".$o->{perm_location});
@@ -167,7 +170,8 @@ sub setPermanent_location($s, $o, $b) {
 sub setLocation($s, $o, $b) {
   if ($o->{temp_location}) {
     my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{temp_location});
-    $s->{location} = $branchcodeLocation->[1];
+    $s->{location} = $branchcodeLocation->{location};
+    $s->{ccode} = $branchcodeLocation->{collectionCode} if $branchcodeLocation->{collectionCode};
   }
   else {
     $s->{location} = $s->{permanent_location};

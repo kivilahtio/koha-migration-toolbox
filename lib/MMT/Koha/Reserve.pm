@@ -80,7 +80,7 @@ sub setReservedate($s, $o, $b) {
 sub setBranchcode($s, $o, $b) {
   $s->sourceKeyExists($o, 'pickup_location');
   my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{pickup_location});
-  $s->{branchcode} = $branchcodeLocation->[0];
+  $s->{branchcode} = $branchcodeLocation->{branch};
 
   unless ($s->{branchcode}) {
     MMT::Exception::Delete->throw($s->logId()."' has no place of issuance (pickup_location/branchcode). Set a default in the TranslationTable rules!");

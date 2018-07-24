@@ -108,7 +108,7 @@ sub setLocation($s, $o, $b) {
 sub setBranchcode($s, $o, $b) {
   #$s->sourceKeyExists($o, 'what_is_the_source_key?');
   my $branchcodeLocation = $b->{LocationId}->translate(@_, '_DEFAULT_');
-  $s->{branchcode} = $branchcodeLocation->[0];
+  $s->{branchcode} = $branchcodeLocation->{branch};
 
   unless ($s->{branchcode}) {
     MMT::Exception::Delete->throw($s->logId()."' has no branchcode. Set a default in the TranslationTable rules!");
