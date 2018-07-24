@@ -3,3 +3,6 @@ extlib
 .vstags
 *.komodoproject
 .vscode/settings*
+*.swp
+usemarcon/rules-hamk/error.txt
+
