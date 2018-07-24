@@ -81,6 +81,7 @@ Voyager has bound records, which share the same MFHD-record.
 So $004 doesn't always cut it as it (apparently) can store only one value.
 
  @returns ARRAYRef, bib ids that the given MFHD record references to
+ @author Nicholas Volk
 
 =cut
 
@@ -102,6 +103,7 @@ sub mfhd_id2bib_ids($) {
 =head2 bib_id2bib_record
 
  @returns String, The complete ISO-record from DB as is.
+ @author Nicholas Volk
 
 =cut
 

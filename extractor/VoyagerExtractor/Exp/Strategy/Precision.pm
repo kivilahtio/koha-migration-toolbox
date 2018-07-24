@@ -19,6 +19,7 @@ package Exp::Strategy::Precision;
 #Pragmas
 use warnings;
 use strict;
+use utf8; #This file and all Strings within are utf8-encoded
 $|=1;
 
 #External modules
