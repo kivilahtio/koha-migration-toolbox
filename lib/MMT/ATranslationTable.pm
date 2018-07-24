@@ -92,7 +92,7 @@ sub translate($s, $kohaObject, $voyagerObject, $builder, $val) {
     my @params = ($kohaObject, $voyagerObject, $builder, $val, split(/ ?, ?/, $2));
     $log->trace("Invoking ".ref($s)."->$method(@params)") if $log->is_trace();
     my $rv = $s->$method(@params);
-    $log->trace("Returning ".ref($s)."->$method(@params) with '".(ref $rv ? '['.join(',',@$rv).']' : $rv)."'.") if $log->is_trace();
+    $log->trace("Returning ".ref($s)."->$method(@params) with '".MMT::Validator::dumpObject($rv)."'.") if $log->is_trace();
     return $rv;
   }
   else {

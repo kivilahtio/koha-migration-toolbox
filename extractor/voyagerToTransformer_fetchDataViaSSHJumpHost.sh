@@ -19,9 +19,13 @@ EXTRACT_CMD='/opt/CSCperl/current/bin/perl extract.pl -B -A -H --precision --bou
 VOYAGER_MMT_DIR="/m1/groupcron/hamk/scripts/koha"
 VOYAGER_MMT_DATA_DIR="/m1/groupcron/hamk/scripts/koha/data"
 
+#Tunnel to VoyagerDB-server and deploy the newest version of the extractor program.
+sshpass -p $SSH_PASSWORD scp -r -o ProxyCommand="ssh -A -W %h:%p $JUMP_HOST" \
+extractor/VoyagerExtractor $VOYAGERDB_SERVER:$VOYAGER_MMT_DIR/
+
 #Tunnel to VoyagerDB-server and run the extract.pl, make the zip and cleanup.
 sshpass -p $SSH_PASSWORD ssh -o ProxyCommand="ssh -A -W %h:%p $JUMP_HOST" $VOYAGERDB_SERVER \
-"cd $VOYAGER_MMT_DIR && time $EXTRACT_CMD && cd $VOYAGER_MMT_DATA_DIR && zip voyagerData.zip *.xml *.csv && rm *.csv *.xml"
+"cd $VOYAGER_MMT_DIR/VoyagerExtractor && time $EXTRACT_CMD && cd $VOYAGER_MMT_DATA_DIR && zip voyagerData.zip *.xml *.csv && rm *.csv *.xml"
 
 #Download the data
 sshpass -p $SSH_PASSWORD scp -o ProxyCommand="ssh -A -W %h:%p $JUMP_HOST" \
