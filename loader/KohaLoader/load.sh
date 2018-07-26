@@ -4,6 +4,10 @@ OP=$1              #Which operation to conduct?
 DATA_SOURCE_DIR=$2 #Where the importable files are?
 WORKING_DIR=$3     #Where to put all the conversion tables and generated logs?
 
+test ! -e "$KOHA_CONF" && echo "\$KOHA_CONF=$KOHA_CONF doesn't exist. Aborting!" exit 2
+KOHA_DB=$(xmllint --xpath "yazgfs/config/database/text()" $KOHA_CONF)
+test -z "$KOHA_DB" && echo "\$KOHA_DB is unknown. Couldn't parse it from \$KOHA_CONF=$KOHA_CONF. Aborting!" exit 3
+
 function help {
   echo "NAME"
   echo "  " $(basename $0) "- Load interface"
@@ -45,10 +49,9 @@ function checkUser {
 
 function migrateBulkScripts {
     #Migrate MARC and Items
-    ./bulkmarcimport.pl -v --append -m MARCXML -file $DATA_SOURCE_DIR/biblios.marcxml \
-        -commit 1000 -b --oplibmatcher $DATA_SOURCE_DIR/marc.manualmatching --oplibmatchlog $WORKING_DIR/marc.matchlog \
-        -l $WORKING_DIR/biblionumberConversionTable \
-        &> $WORKING_DIR/bulkmarcimport.log
+    ./bulkBibImport.pl --file $DATA_SOURCE_DIR/biblios.marcxml \
+        --bnConversionTable $WORKING_DIR/biblionumberConversionTable \
+        &> $WORKING_DIR/bulkBibImport.log
 
     ./bulkItemImport.pl --file $DATA_SOURCE_DIR/Item.migrateme \
         --bnConversionTable $WORKING_DIR/biblionumberConversionTable --inConversionTable $WORKING_DIR/itemnumberConversionTable \
@@ -89,7 +92,8 @@ function migrateBulkScripts {
 
 function cleanPastMigrationWorkspace {
     #Remove traces of existing migrations
-    rm $WORKING_DIR/biblionumberConversionTable $WORKING_DIR/itemnumberConversionTable $WORKING_DIR/borrowernumberConversionTable
+    rm $WORKING_DIR/biblionumberConversionTable $WORKING_DIR/itemnumberConversionTable $WORKING_DIR/borrowernumberConversionTable \
+       $WORKING_DIR/subscriptionidConversionTable
     rm $WORKING_DIR/marc.matchlog $WORKING_DIR/marc.manualmatching
 }
 
@@ -99,7 +103,7 @@ function fullReindex {
     $KOHA_PATH/misc/search_tools/rebuild_elastic_search.pl &> $WORKING_DIR/rebuild_elasticsearch.log
 }
 
-if [ "$OP" == "backup"  ]
+if [ "$OP" == "backup" ]
 then
     ##Run this as root to use the backup
     checkUser "root"
@@ -152,7 +156,7 @@ then
     rm -r /home/koha/koha-dev/var/lib/zebradb/biblios/*
     rm -r /home/koha/koha-dev/var/lib/zebradb/authorities/*
     #Empty all previously migrated data, except configurations. You don't want this when merging records :)
-    mysql koha < bulkEmptyMigratedTables.sql
+    mysql $KOHA_DB < bulkEmptyMigratedTables.sql
 
     migrateBulkScripts
 

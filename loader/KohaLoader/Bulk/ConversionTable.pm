@@ -1,4 +1,4 @@
-package Bulk::ConversionTable::ConversionTable;
+package Bulk::ConversionTable;
 
 use Modern::Perl;
 use Carp qw(cluck);

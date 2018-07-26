@@ -7,8 +7,8 @@ BEGIN {
     eval { use lib "$FindBin::Bin/../"; };
 }
 
-use Bulk::ConversionTable::ConversionTable;
-our @ISA = qw(Bulk::ConversionTable::ConversionTable);
+use Bulk::ConversionTable;
+our @ISA = qw(Bulk::ConversionTable);
 
 use Carp qw(cluck);
 
@@ -28,4 +28,12 @@ sub readRow {
         print "warning: ConversionTable::BiblionumberConversionTable->readRow(): Couldn't parse biblionumber row: $_\n";
     }
 }
+
+sub writeRow {
+    my ($self, $legacyBiblionumber, $newBiblionumber, $operation, $statusOfOperation) = @_;
+
+    my $fh = $self->{FILE};
+    print $fh "$legacyBiblionumber;$newBiblionumber;$operation;$statusOfOperation\n";
+}
+
 1;

@@ -1,5 +1,5 @@
 #/usr/bin/perl
-package OplibMatcher;
+package Bulk::OplibMatcher;
 
 use Modern::Perl;
 use Carp;

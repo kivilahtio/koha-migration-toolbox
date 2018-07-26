@@ -7,8 +7,8 @@ BEGIN {
     eval { use lib "$FindBin::Bin/../"; };
 }
 
-use Bulk::ConversionTable::ConversionTable;
-our @ISA = qw(Bulk::ConversionTable::ConversionTable);
+use Bulk::ConversionTable;
+our @ISA = qw(Bulk::ConversionTable);
 
 use Carp qw(cluck);
 

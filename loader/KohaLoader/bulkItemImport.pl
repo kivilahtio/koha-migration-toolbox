@@ -32,7 +32,7 @@ NAME
   $0 - Import Items en masse
 
 SYNOPSIS
-  perl ./bulkItemsImport.pl --file /home/koha/pielinen/items.migrateme -v 6 \
+  perl ./bulkItemsImport.pl --file /home/koha/pielinen/items.migrateme -v $verbosity \
       --bnConversionTable 'bulkmarcimport.log'
 
 DESCRIPTION
@@ -75,7 +75,7 @@ DESCRIPTION
 
     -v level
           Verbose output to the STDOUT,
-          Defaults to 3, 6 is max verbosity, 0 is fatal only.
+          Defaults to $verbosity, 6 is max verbosity, 0 is fatal only.
 
 HELP
 
@@ -90,9 +90,9 @@ my $today = DateTime->now()->iso8601();
 DEBUG "Today is $today";
 
 INFO "Opening BiblionumberConversionTable '$biblionumberConversionTable' for reading";
-$biblionumberConversionTable = ConversionTable::BiblionumberConversionTable->new( $biblionumberConversionTable, 'read' );
+$biblionumberConversionTable = Bulk::ConversionTable::BiblionumberConversionTable->new( $biblionumberConversionTable, 'read' );
 INFO "Opening ItemnumberConversionTable '$itemnumberConversionTable' for writing";
-$itemnumberConversionTable = ConversionTable::ItemnumberConversionTable->new( $itemnumberConversionTable, 'write' );
+$itemnumberConversionTable = Bulk::ConversionTable::ItemnumberConversionTable->new( $itemnumberConversionTable, 'write' );
 my $rotatingCollections = {}; #Collect the references to already created rotating collections here.
 
 sub processRow {
