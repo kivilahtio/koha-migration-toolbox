@@ -204,7 +204,7 @@ sub setDateenrolled($s, $o, $b) {
   }
 }
 sub setDateexpiry($s, $o, $b) {
-  $s->{dateexpiry}   = MMT::Date::translateDateDDMMMYY($o->{expire_date}, $s, 'expire_date->dateexpiry');
+  $s->{dateexpiry}   = MMT::Date::translateDateDDMMMYY($o->{expire_date}, $s, 'expire_date->dateexpiry', 50); #Expiration dates might be 10 years to the future. Probably there are no expiration dates from the past millenium.
   unless ($s->{dateexpiry}) {
     my $notification = "Missing expiration date, expiring now";
     $log->warn($s->logId()." - $notification");

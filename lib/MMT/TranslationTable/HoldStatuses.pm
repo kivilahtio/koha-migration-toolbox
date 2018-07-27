@@ -36,7 +36,7 @@ sub isWaitingForFulfilment($s, $kohaObject, $voyagerObject, $builder, $originalV
 }
 sub isWaitingForPickup($s, $kohaObject, $voyagerObject, $builder, $originalValue, @tableParams) {
   $kohaObject->{found} = 'W';
-  $kohaObject->{waitingdate} = MMT::Date::translateDateDDMMMYY($voyagerObject->{hold_recall_status_date}, $kohaObject, 'hold_recall_status_date->waitingdate');
+  $kohaObject->{waitingdate} = MMT::Date::translateDateDDMMMYY($voyagerObject->{hold_recall_status_date}, $kohaObject, 'hold_recall_status_date->waitingdate', 1); #Hold can be waiting for pickup also next year due to some glitch maybe?
   return $kohaObject->{found};
 }
 sub isInTransitForPickup($s, $kohaObject, $voyagerObject, $builder, $originalValue, @tableParams) {

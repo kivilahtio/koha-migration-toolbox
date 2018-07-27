@@ -87,7 +87,7 @@ sub setBarcode($s, $o, $b) {
   }
 }
 sub setDateDue($s, $o, $b) {
-  $s->{datedue} = MMT::Date::translateDateDDMMMYY($o->{current_due_date}, $s, 'current_due_date->datedue');
+  $s->{datedue} = MMT::Date::translateDateDDMMMYY($o->{current_due_date}, $s, 'current_due_date->datedue', 1); #duedate can possibly be one year in the future
 
   unless ($s->{datedue}) {
     MMT::Exception::Delete->throw($s->logId()."' has no datedue/current_due_date.");

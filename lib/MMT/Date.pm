@@ -39,54 +39,85 @@ sub _monToNum($mon, $o) {
   }
 }
 
-=head2 translateDateMMDDYYYY
-Translate Voyager date format
-  MM.DD.YYYY
-to ISO-8601
+=head1 translate*
+
+All translate*() subroutines share the same signature:
+
+ @param1 String,  date to convert
+ @param2 HASHRef, Voyager object
+ @param3 String,  some description about the attribute for which the data translation is being done.
+                  Used for debugging and error messages.
+ @param4 Integer, Number of years to adjust the turnover point from the 20th century to the 21st century.
+                  Voyager dates only store the decade+year information without the millenium+century information.
+                  So figuring out which century is needed, is context sensitive.
+                  Since we live in the 21st century, we presume that all decades+years (00-18) before our current
+                  year (18 atm) are on the 21st century.
+                  All decade+years larger than the current turnover point,
+                    by default the current year,
+                  probably belong to the past century.
+                  This parameter shifts the turnover point by the amount given, for ex.
+                    3 would increase it from the current year, for ex. 2018, to 2021.
+                    -5 would decrement it to 2013
+
 =cut
-sub translateDateMMDDYYYY($datein, $o, $attribute) {
+
+my $nowYear = (localtime())[5];
+sub _translate($parser, $datein, $o, $attribute, $yearOffsetThreshold=0) {
   unless ($datein) {
     $log->warn("Object '".$o->logId()."' is missing date when setting attribute '$attribute'");
     return undef;
   }
-  my ($month,$day,$year) = $datein =~ /(\d{2}).(\d{2}).(\d{4})/;
-  if ($year > 18) {
-    $year = "19$year";
+  my ($year,$month,$day) = $parser->($datein, $o);
+  if (length $year < 3) {
+    if ($year > $nowYear+$yearOffsetThreshold) {
+      $year = "19$year";
+    }
+    else {
+      $year = "20$year";
+    }
   }
-  else {
-    $year = "20$year";
-  }
-  if ($month && $day && $year) {
+  if ($year && $month && $day) {
     return sprintf "%4d-%02d-%02d",$year,$month,$day;
   }
   else {
     $log->logdie("Object '".$o->logId()."' has malformed Voyager date '$datein' for attribute '$attribute'");
   }
 }
+
+=head2 translateDateMMDDYYYY
+
+Translate Voyager date format
+  MM.DD.YYYY
+to ISO-8601
+
+See translate*()
+
+=cut
+
+sub _translateMMDDYYYYParser($datein, $o) {
+  $datein =~ /(\d{2}).(\d{2}).(\d{4})/;
+  return ($3, $1, $2);
+};
+sub translateDateMMDDYYYY($datein, $o, $attribute, $yearOffsetThreshold=0) {
+  return _translate(\&_translateMMDDYYYYParser, @_);
+}
+
 =head2 translateDateDDMMMYY
+
 Translate Voyager date format
   29-AUG-08
 to ISO-8601
+
+See translate*()
+
 =cut
-sub translateDateDDMMMYY($datein, $o, $attribute) {
-  unless ($datein) {
-    $log->warn("Object '".$o->logId()."' is missing date when setting attribute '$attribute'");
-    return undef;
-  }
-  my ($day,$month,$year) = $datein =~ /(\d{2})-(\w{3}).(\d{2})/;
-  if ($year > 18) {
-    $year = "19$year";
-  }
-  else {
-    $year = "20$year";
-  }
-  $month = _monToNum($month, $o);
-  if ($month && $day && $year) {
-    return sprintf "%4d-%02d-%02d",$year,$month,$day;
-  }
-  else {
-    $log->logdie("Object '".$o->logId()."' has malformed Voyager date '$datein' for attribute '$attribute'");
-  }
+
+sub _translateDDMMMYYParser($datein, $o) {
+  $datein =~ /(\d{2})-(\w{3}).(\d{2})/;
+  return ($3, _monToNum($2, $o), $1);
+};
+sub translateDateDDMMMYY($datein, $o, $attribute, $yearOffsetThreshold=0) {
+  return _translate(\&_translateDDMMMYYParser, @_);
 }
 
 my $re_isIso = qr/^\d\d\d\d-\d\d-\d\d$/;

@@ -100,7 +100,7 @@ sub setStatuses($s, $o, $b) {
   $b->{HoldStatuses}->translate(@_, $o->{queue_position});
 }
 sub setExpirationdate($s, $o, $b) {
-  $s->{expirationdate} = MMT::Date::translateDateDDMMMYY($o->{expire_date}, $s, 'expire_date->expirationdate');
+  $s->{expirationdate} = MMT::Date::translateDateDDMMMYY($o->{expire_date}, $s, 'expire_date->expirationdate', 50); #Expiration dates might be 10 years to the future, probably there are no reserves from the past millenium
 
   unless ($s->{expirationdate}) {
     $log->warn($s->logId()."' has no expire_date/expirationdate.");
