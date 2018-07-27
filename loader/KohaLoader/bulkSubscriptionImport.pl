@@ -98,7 +98,7 @@ my $ser_insert_sth = $dbh->prepare("INSERT INTO serial
                                 VALUES (?,?,?,?,?,
                                         ?,?,?,?)");
 sub migrate_serial($s) {
-    $ser_insert_sth->execute($s->{biblionumber},$s->{subscriptionid},$s->{status},      $s->{planneddate},$s->{publishdate},
+    $ser_insert_sth->execute($s->{biblionumber},$s->{subscriptionid},$s->{status},      $s->{planneddate}, $s->{publisheddate},
                              $s->{serialseq},   $s->{serialseq_x},   $s->{serialseq_y}, $s->{serialseq_z})
       or die "INSERT:ing Serial failed: ".$ser_insert_sth->errstr();
 }

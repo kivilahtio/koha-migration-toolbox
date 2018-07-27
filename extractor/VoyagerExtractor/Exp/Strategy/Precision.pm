@@ -215,13 +215,18 @@ my %queries = (
   "20-subscriptions.csv" => {
     encoding => "iso-8859-1",
     sql =>
-      "SELECT    subscription.subscription_id, line_item.bib_id, component.component_id, subscription.start_date
+      "SELECT    subscription.subscription_id, line_item.bib_id, component.component_id,
+                 subscription.start_date, component_pattern.end_date,
+                 component.create_items
        FROM      subscription
-       LEFT JOIN line_item       ON (subscription.line_item_id = line_item.line_item_id)
-       LEFT JOIN component       ON (component.subscription_id = subscription.subscription_id)
-       LEFT JOIN serial_issues   ON (serial_issues.component_id = component.component_id)
-       LEFT JOIN issues_received ON (issues_received.issue_id = serial_issues.issue_id)
-       GROUP BY  subscription.subscription_id, line_item.bib_id, component.component_id, subscription.start_date",
+       LEFT JOIN line_item         ON (subscription.line_item_id  = line_item.line_item_id)
+       LEFT JOIN component         ON (component.subscription_id  = subscription.subscription_id)
+       LEFT JOIN component_pattern ON (component.component_id     = component_pattern.component_id)
+       LEFT JOIN serial_issues     ON (serial_issues.component_id = component.component_id)
+       LEFT JOIN issues_received   ON (issues_received.issue_id   = serial_issues.issue_id)
+       GROUP BY  subscription.subscription_id, line_item.bib_id, component.component_id,
+                 subscription.start_date, component_pattern.end_date,
+                 component.create_items",
   },
 
   #No data in the Voyager subscription about into which branches it orders serials?

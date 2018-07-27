@@ -75,7 +75,7 @@ sub build($self, $o, $b) {
   $self->setStaffdisplaycount    ($o, $b); #| varchar(10)  | YES  |     | NULL    |                |
   $self->setOpacdisplaycount     ($o, $b); #| varchar(10)  | YES  |     | NULL    |                |
   #$self->setGraceperiod         ($o, $b); #| int(11)      | NO   |     | 0       |                |
-  #$self->setEnddate             ($o, $b); #| date         | YES  |     | NULL    |                |
+  $self->setEnddate             ($o, $b); #| date         | YES  |     | NULL    |                |
   $self->setClosed               ($o, $b); #| int(1)       | NO   |     | 0       |                |
   #$self->setReneweddate         ($o, $b); #| date         | YES  |     | NULL    |                |
   #$self->setItemtype            ($o, $b); #| varchar(10)  | YES  |     | NULL    |                |
@@ -91,7 +91,7 @@ sub logId($s) {
 }
 
 sub setStartdate($s, $o, $b) {
-  $s->{startdate} = MMT::Date::translateDateDDMMMYY($o->{start_date}, $s, 'start_date->startdate');
+  $s->{startdate} = MMT::Date::translateDateDDMMMYY($o->{start_date}, $s, 'start_date->startdate', 50); #Presume no serials started arriving to Voyager before Voyager was in use.
 
   unless ($s->{startdate}) {
     #Voyager seems to have so very few subsription.start_date -values that it is better to default it
@@ -115,13 +115,23 @@ sub setBranchcode($s, $o, $b) {
   }
 }
 sub setSerialsadditems($s, $o, $b) {
-  $s->{serialsadditems} = 0;
+  $s->sourceKeyExists($o, 'create_items');
+  $s->{serialsadditems} = $o->{create_items};
 }
 sub setStaffdisplaycount($s, $o, $b) {
   $s->{staffdisplaycount} = 52;
 }
 sub setOpacdisplaycount($s, $o, $b) {
   $s->{opacdisplaycount} = 52;
+}
+sub setEnddate($s, $o, $b) {
+  $s->{enddate} = MMT::Date::translateDateDDMMMYY($o->{end_date}, $s, 'end_date->startdate', 50); #Presume no serials started arriving to Voyager before Voyager was in use.
+
+  unless ($s->{enddate}) {
+    #Voyager seems to have so very few component_pattern.end_date -values that it is better to default it
+    #DB default is NULL.
+    #Do nothing...
+  }
 }
 sub setClosed($s, $o, $b) {
   $s->{closed} = 1; #Currently only bare minimums are migrated, so enumeration cannot atm. continue in Koha from where voyager left off.

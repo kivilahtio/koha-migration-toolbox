@@ -14,6 +14,7 @@ use Log::Log4perl;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 use MMT::Date;
 use MMT::Validator;
+use MMT::Koha::Serial::Enumerations;
 
 #Inheritance
 use MMT::KohaObject;
@@ -65,14 +66,14 @@ sub logId($s) {
 }
 
 sub setPlanneddate($s, $o, $b) {
-  $s->{planneddate} = MMT::Date::translateDateDDMMMYY($o->{receipt_date} || $o->{expected_date}, $s, 'receipt_date||expected_date->planneddate');
+  $s->{planneddate} = MMT::Date::translateDateDDMMMYY($o->{receipt_date} || $o->{expected_date}, $s, 'receipt_date||expected_date->planneddate', 50); #Serials could be planned way in to the future
 
   unless ($s->{planneddate}) {
     MMT::Exception::Delete->throw($s->logId()."' has no receipt_date||expected_date/planneddate.");
   }
 }
 sub setPublisheddate($s, $o, $b) {
-  $s->{publisheddate} = MMT::Date::translateDateDDMMMYY($o->{expected_date}, $s, 'expected_date->publisheddate');
+  $s->{publisheddate} = MMT::Date::translateDateDDMMMYY($o->{expected_date}, $s, 'expected_date->publisheddate', 50); #Serials could be published way into the future
   unless ($s->{publisheddate}) {
     MMT::Exception::Delete->throw($s->logId()."' has no expected_date/publisheddate.");
   }
@@ -101,33 +102,9 @@ sub setStatus($s, $o, $b) {
     $s->{status} = EXPECTED;
   }
 }
-my @enumChronColsOrderIfChronFirst = qw(chron1 chron2 chron3 chron4 alt_chron lvl1 lvl2 lvl3 lvl4 lvl5 lvl6 alt_lvl1 alt_lvl2);
-my @enumChronColsOrderIfEnumFirst  = qw(lvl1 lvl2 lvl3 lvl4 lvl5 lvl6 alt_lvl1 alt_lvl2 chron1 chron2 chron3 chron4 alt_chron);
+
 sub setEnumerations($s, $o, $b) {
-  $s->sourceKeyExists($o, $_) for @enumChronColsOrderIfChronFirst;
-  #No filtering this time, just pass everything through as is and lets worry about it later.
-  #$s->{serialseq} = $o->{enumchron} =~ s/\s*,\s*/ : /gsm; #Turn , to : for Koha? This is configurable in numbering patterns.
-
-  #Hack something to populate serialseq_[xyz]
-  #If chron1 is a year, use chron1 : chron2 : chron3.others
-  #else lvl1 : lvl2 : lvl3.others
-  my $xyzI = 0; #Iterate serialseq_[xyz]
-  my @xyz;
-  my $colOrder;
-  $colOrder = \@enumChronColsOrderIfChronFirst if (MMT::Validator::probablyAYear($o->{chron1}));
-  $colOrder = \@enumChronColsOrderIfEnumFirst unless $colOrder;
-
-  for my $k (@$colOrder) {
-    if ($o->{$k}) {
-      $xyz[$xyzI] = ($xyz[$xyzI]) ? $xyz[$xyzI].' '.$o->{$k} : $o->{$k};
-      $xyzI++ if $xyzI < 3;
-    }
-  }
-
-  $s->{serialseq_x} = $xyz[0] if $xyz[0];
-  $s->{serialseq_y} = $xyz[1] if $xyz[1];
-  $s->{serialseq_z} = $xyz[2] if $xyz[2];
-  $s->{serialseq}   = join(":", @xyz);
+  MMT::Koha::Serial::Enumerations::enumThenChron(@_);
 }
 
 return 1;
