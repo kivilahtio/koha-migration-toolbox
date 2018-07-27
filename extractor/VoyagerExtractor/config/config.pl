@@ -18,7 +18,7 @@ return {
   #This should be 'Oracle' only, configured this way due to a limitation in IDE code analysis tools
   dbdriver => 'Oracle',
 
-  exportDir => './data', #The default is relative to the directory from where the extract.pl is ran.
+  exportDir => '../data', #The default is relative to the directory from where the extract.pl is ran.
 
 
   ######################################
