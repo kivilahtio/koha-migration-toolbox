@@ -3,6 +3,7 @@
 OP=$1              #Which operation to conduct?
 DATA_SOURCE_DIR=$2 #Where the importable files are?
 WORKING_DIR=$3     #Where to put all the conversion tables and generated logs?
+CONFIRM=$4         #Automatically confirm that you want to cause all kinds of bad side effects on yourself.
 
 test ! -e "$KOHA_CONF" && echo "\$KOHA_CONF=$KOHA_CONF doesn't exist. Aborting!" exit 2
 KOHA_DB=$(xmllint --xpath "yazgfs/config/database/text()" $KOHA_CONF)
@@ -63,6 +64,10 @@ function migrateBulkScripts {
         --bnConversionTable $WORKING_DIR/borrowernumberConversionTable \
         &> $WORKING_DIR/bulkPatronImport.log
 
+    ./bulkPatronImport.pl --messagingPreferencesOnly \
+        --bnConversionTable $WORKING_DIR/borrowernumberConversionTable \
+        &> $WORKING_DIR/bulkPatronImportMessagingDefaults.log & #This is forked on the background
+
     ./bulkCheckoutImport.pl -file $DATA_SOURCE_DIR/Issue.migrateme \
         --inConversionTable $WORKING_DIR/itemnumberConversionTable \
         --bnConversionTable $WORKING_DIR/borrowernumberConversionTable \
@@ -99,7 +104,7 @@ function cleanPastMigrationWorkspace {
 
 function fullReindex {
     #Make a full Zebra reindex.
-    $KOHA_PATH/misc/migration_tools/rebuild_zebra.pl -b -a -r -x -v &> $WORKING_DIR/rebuild_zebra.log
+    #Zebra is no longer used $KOHA_PATH/misc/migration_tools/rebuild_zebra.pl -b -a -r -x -v &> $WORKING_DIR/rebuild_zebra.log
     $KOHA_PATH/misc/search_tools/rebuild_elastic_search.pl &> $WORKING_DIR/rebuild_elasticsearch.log
 }
 
@@ -141,13 +146,17 @@ then
     ##Run this as koha to not break permissions
     checkUser "koha"
 
-    echo "Are you OK with having the Koha database and search index destroyed, and migrating a new batch? OK to accept, anything else to abort."
-    read confirmation
-    if [ $confirmation == "OK"  ]; then
-        echo "I AM HAPPY TO HEAR THAT!"
+    if [ -z $CONFIRM ]; then
+        echo "Are you OK with having the Koha database and search index destroyed, and migrating a new batch? OK to accept, anything else to abort."
+        read confirmation
+        if [ $confirmation == "OK"  ]; then
+            echo "I AM HAPPY TO HEAR THAT!"
+        else
+            echo "Try some other option."
+            exit 1
+        fi
     else
-        echo "Try some other option."
-        exit 1
+        echo "Automatic confirmation given"
     fi
 
     cleanPastMigrationWorkspace
@@ -169,13 +178,17 @@ then
     ##Run this as koha to not break permissions
     checkUser "koha"
 
-    echo "Are you OK with having two databases merged? You should have a Zebra index to merge against. OK to accept, anything else to abort."
-    read confirmation
-    if [ $confirmation == "OK"  ]; then
-        echo "I AM HAPPY TO HEAR THAT!"
+    if [ -z $CONFIRM ]; then
+        echo "Are you OK with having two databases merged? You should have a Zebra index to merge against. OK to accept, anything else to abort."
+        read confirmation
+        if [ $confirmation == "OK"  ]; then
+            echo "I AM HAPPY TO HEAR THAT!"
+        else
+            echo "Try some other option."
+            exit 1
+        fi
     else
-        echo "Try some other option."
-        exit 1
+        echo "Automatic confirmation given"
     fi
 
     cleanPastMigrationWorkspace

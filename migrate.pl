@@ -48,6 +48,28 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
   },
 
 
+  '--items' => {
+    help => 'Transform items from Voyager extracts to Koha',
+    callback => sub {
+      my MMT::Builder $builder = MMT::Builder->new({
+        type => 'Item',
+        inputFile => '02-items.csv',
+        repositories => [
+          {name => 'ItemStats', file => '18-item_stats.csv', keys => ['item_id']},
+          {name => 'ItemStatuses', file => '02-item_status.csv', keys => ['item_id']},
+        ],
+        translationTables => [
+          {name => 'Branchcodes'},
+          {name => 'LocationId'},
+          {name => 'ItemTypes'},
+          {name => 'ItemNoteTypes'},
+        ],
+      });
+      $builder->build();
+    },
+  },
+
+
   '--patrons' => {
     help => 'Transform patrons from Voyager extracts to Koha',
     callback => sub {
@@ -86,28 +108,6 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
         translationTables => [
           {name => 'Branchcodes'},
           {name => 'LocationId'},
-        ],
-      });
-      $builder->build();
-    },
-  },
-
-
-  '--items' => {
-    help => 'Transform items from Voyager extracts to Koha',
-    callback => sub {
-      my MMT::Builder $builder = MMT::Builder->new({
-        type => 'Item',
-        inputFile => '02-items.csv',
-        repositories => [
-          {name => 'ItemStats', file => '18-item_stats.csv', keys => ['item_id']},
-          {name => 'ItemStatuses', file => '02-item_status.csv', keys => ['item_id']},
-        ],
-        translationTables => [
-          {name => 'Branchcodes'},
-          {name => 'LocationId'},
-          {name => 'ItemTypes'},
-          {name => 'ItemNoteTypes'},
         ],
       });
       $builder->build();

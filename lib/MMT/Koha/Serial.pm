@@ -72,7 +72,7 @@ sub setPlanneddate($s, $o, $b) {
   }
 }
 sub setPublisheddate($s, $o, $b) {
-  $s->{publisheddate} = $o->{expected_date};
+  $s->{publisheddate} = MMT::Date::translateDateDDMMMYY($o->{expected_date}, $s, 'expected_date->publisheddate');
   unless ($s->{publisheddate}) {
     MMT::Exception::Delete->throw($s->logId()."' has no expected_date/publisheddate.");
   }
@@ -113,14 +113,17 @@ sub setEnumerations($s, $o, $b) {
   #else lvl1 : lvl2 : lvl3.others
   my $xyzI = 0; #Iterate serialseq_[xyz]
   my @xyz;
-  if (MMT::Validator::probablyAYear($o->{chron1})) {
-    for my $k (@enumChronColsOrderIfChronFirst) {
-      if ($o->{$k}) {
-        $xyz[$xyzI] = ($xyz[$xyzI]) ? $xyz[$xyzI].' '.$o->{$k} : $o->{$k};
-        $xyzI++ if $xyzI < 3;
-      }
+  my $colOrder;
+  $colOrder = \@enumChronColsOrderIfChronFirst if (MMT::Validator::probablyAYear($o->{chron1}));
+  $colOrder = \@enumChronColsOrderIfEnumFirst unless $colOrder;
+
+  for my $k (@$colOrder) {
+    if ($o->{$k}) {
+      $xyz[$xyzI] = ($xyz[$xyzI]) ? $xyz[$xyzI].' '.$o->{$k} : $o->{$k};
+      $xyzI++ if $xyzI < 3;
     }
   }
+
   $s->{serialseq_x} = $xyz[0] if $xyz[0];
   $s->{serialseq_y} = $xyz[1] if $xyz[1];
   $s->{serialseq_z} = $xyz[2] if $xyz[2];

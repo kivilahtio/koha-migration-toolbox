@@ -107,6 +107,7 @@ sub addHold($hold) {
         $hold->{priority},     $hold->{reservenotes},         $hold->{itemnumber},
         $hold->{found},          $hold->{waitingdate},	$hold->{expirationdate}
     ) or die("Adding a new reserve failed: ".$sth_addHold->errstr());
+    $hold->{reserve_id} = $dbh->last_insert_id(undef, undef, 'reserves', 'reserve_id') or die("Fetching last insert if failed: ".$dbh->errstr());
 
     return 1;
 }
@@ -173,12 +174,13 @@ sub createNotification($hold) {
             'borrowers' => $borrower,
             'biblio'    => $hold->{biblionumber},
             'items'     => $hold->{itemnumber},
+            #'reserves'  => {borrowernumber => $hold->{borrowernumber}, biblionumber => $hold->{biblionumber}}, #This part of Koha needs to be fixed to use the reserve_id instead
         },
     );
     DEBUG "Letter: $letter";
 
     unless ($letter) {
-
+        return undef;
     }
     my $admin_email_address = $branch_details->{'branchemail'} || C4::Context->preference('KohaAdminEmailAddress');
 

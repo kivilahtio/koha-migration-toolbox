@@ -35,5 +35,5 @@ ssh $KOHA_HOST "mkdir -p $KOHA_LOAD_WORKING_DIR && chown koha:koha $KOHA_LOAD_WO
 test $? != 0 && echo "Creating load-phase working dir remotely failed!" && exit 13
 
 echo "Start loading"
-ssh $KOHA_HOST "$KOHA_LOADER_DIR/load.sh $KOHA_HOME/KohaImports"
+ssh $KOHA_HOST "cd $KOHA_LOADER_DIR && su -c './load.sh migrate $KOHA_HOME/KohaImports $KOHA_LOAD_WORKING_DIR I_CONSENT_TO_EVERYTHING' koha"
 test $? != 0 && echo "Loading Koha data failed!" && exit 14

@@ -230,9 +230,12 @@ my %queries = (
   "21-ser_issues.csv" => {
     encoding => "iso-8859-1",
     sql =>
-      "SELECT    issue_id, serial_issues.component_id, line_item.bib_id,
-                 enumchron, lvl1, lvl2, lvl3, lvl4, lvl5, lvl6, alt_lvl1, alt_lvl2, chron1, chron2, chron3, chron4, alt_chron,
-                 expected_date, receipt_date, received
+      "SELECT    serial_issues.issue_id, serial_issues.component_id, line_item.bib_id,
+                 serial_issues.enumchron, serial_issues.lvl1, serial_issues.lvl2, serial_issues.lvl3,
+                 serial_issues.lvl4, serial_issues.lvl5, serial_issues.lvl6, serial_issues.alt_lvl1,
+                 serial_issues.alt_lvl2, serial_issues.chron1, serial_issues.chron2, serial_issues.chron3,
+                 serial_issues.chron4, serial_issues.alt_chron,
+                 serial_issues.expected_date, serial_issues.receipt_date, serial_issues.received
        FROM      serial_issues
        LEFT JOIN component       ON (component.component_id = serial_issues.component_id)
        LEFT JOIN subscription    ON (subscription.subscription_id = component.subscription_id)
@@ -268,11 +271,11 @@ my %queries = (
 sub extractSerialsMFHD($) {
   my ($filename) = @_;
   require Exp::nvolk_marc21;
-  require Exp::MARC;
+  require Exp::Strategy::MARC;
   my $csvHeadersPrinted = 0;
 
   #Turn MFHD's into MARCXML, and then use a transformation hook to turn it into .csv instead!! Brilliant! What could go wrong...
-  Exp::MARC::_exportMARC(
+  Exp::Strategy::MARC::_exportMARC(
     $filename,
     "SELECT    mfhd_data.mfhd_id, mfhd_data.seqnum, mfhd_data.record_segment
      FROM      mfhd_data

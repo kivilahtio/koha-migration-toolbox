@@ -63,6 +63,25 @@ unless ($importFile) {
 }
 
 
+use C4::Biblio;
+## Overload C4::Biblio::ModZebra to prevent indexing during migration.
+package C4::Biblio {
+  no warnings 'redefine';
+  sub ModZebra {
+    return undef;
+  }
+  use warnings 'redefine';
+}
+## Overload C4::Items::ModZebra to prevent indexing during migration.
+##          I know there is no such subroutine, but the exporter apparently clones the subroutine definition.
+package C4::Items {
+  no warnings 'redefine';
+  sub ModZebra {
+    return undef;
+  }
+  use warnings 'redefine';
+}
+
 my $fh = Bulk::Util::openFile($importFile);
 INFO "Opening BorrowernumberConversionTable '$borrowernumberConversionTable' for reading";
 $borrowernumberConversionTable = Bulk::ConversionTable::BorrowernumberConversionTable->new($borrowernumberConversionTable, 'read');
@@ -87,7 +106,7 @@ sub migrate_checkout($c) {
     );
 
     C4::Items::ModItem({
-              #holdingbranch    => C4::Context->userenv->{'branch'},
+              holdingbranch    => $c->{branchcode},
               onloan           => $c->{date_due},
             }, $c->{biblionumber} , $c->{itemnumber});
 }

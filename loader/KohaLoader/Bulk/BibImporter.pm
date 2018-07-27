@@ -61,21 +61,7 @@ sub bimp($s) {
   INFO "Opening BiblionumberConversionTable '".$s->p('biblionumberConversionTable')."' for writing";
   $s->{biblionumberConversionTable} = Bulk::ConversionTable::BiblionumberConversionTable->new( $s->p('biblionumberConversionTable'), 'write' );
 
-  my $next;
-  if ($s->p('migrateStrategy') eq 'fast') {
-    INFO "Slurping MARC XML chunks"; #This is very slow and memory intensive, timing it via logger
-    my $recordsAsXml = $s->slurpMarcFile();
-    INFO "Done slurping MARC XML chunks";
-    my $i = 0;
-    $next = sub {
-      return undef unless ($i < scalar(@$recordsAsXml));
-      return (MARC::Record->new_from_xml($recordsAsXml->[$i], 'UTF-8', 'MARC21'), \$recordsAsXml->[$i++]);
-    };
-  }
-  elsif ($s->p('migrateStrategy') eq 'koha') {
-    my $batch = $s->openMarcFile();
-    $next = sub {return ($batch->next(), undef)}; #No access to the plain XML this way
-  }
+  my $next = $s->getMarcFileIterator();
 
   my $i=0;
   while (1) {
@@ -125,7 +111,33 @@ sub bimp($s) {
   print "\n$i MARC records done in $timeneeded seconds\n";
 }
 
-sub slurpMarcFile($s) {
+
+=head2 getMarcFileIterator
+
+ @returns Subroutine, call this to get a list of:
+                      [0] -> the next MARC::Record
+                      [1] -> XML as String
+
+=cut
+
+sub getMarcFileIterator($s) {
+  if ($s->p('migrateStrategy') eq 'fast') {
+    INFO "Slurping MARC XML chunks"; #This is memory intensive, timing it via logger
+    my $recordsAsXml = $s->_slurpMarcFile();
+    INFO "Done slurping MARC XML chunks";
+    my $i = 0;
+    return sub {
+      return undef unless ($i < scalar(@$recordsAsXml));
+      return (MARC::Record->new_from_xml($recordsAsXml->[$i], 'UTF-8', 'MARC21'), \$recordsAsXml->[$i++]);
+    };
+  }
+  elsif ($s->p('migrateStrategy') eq 'koha') {
+    my $batch = $s->_openMarcFile();
+    return sub {return ($batch->next(), undef)}; #No access to the plain XML this way
+  }
+}
+
+sub _slurpMarcFile($s) {
   local $/ = undef;
   open(my $FH, '<:encoding(UTF-8)', $s->p('inputMarcFile')) or die("Opening the MARC file '".$s->p('inputMarcFile')."' for slurping failed: $!"); # Make sure we have the proper encoding set before handing these to the MARC-modules
   my $xmls = <$FH>;
@@ -133,7 +145,7 @@ sub slurpMarcFile($s) {
   return \@xmls;
 }
 
-sub openMarcFile($s) {
+sub _openMarcFile($s) {
   open(my $FH, '<:encoding(UTF-8)', $s->p('inputMarcFile')) or die("Opening the MARC file '".$s->p('inputMarcFile')."' for reading failed: $!"); # Make sure we have the proper encoding set before handing these to the MARC-modules
   $MARC::File::XML::_load_args{BinaryEncoding} = 'UTF-8';
   $MARC::File::XML::_load_args{RecordFormat} = 'USMARC';
