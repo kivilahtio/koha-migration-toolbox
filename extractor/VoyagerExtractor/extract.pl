@@ -11,7 +11,8 @@ use Exp::Config;
 # Getting parameters
 my $config = 'config.pl';
 my $noanonymize = 0;
-my ($help, $verbose, $exportEverything, $exportWithPrecision, $exportBoundRecords, $exportBibliographicRecords, $exportAuthoritiesRecords, $exportHoldingsRecords, $exportByWaterStyle);
+my ($help, $verbose, $exportEverything, $exportBoundRecords, $exportBibliographicRecords, $exportAuthoritiesRecords, $exportHoldingsRecords, $exportByWaterStyle);
+my $exportWithPrecision = 0;
 
 sub print_usage {
   (my $basename = $0) =~ s|.*/||;
@@ -29,7 +30,15 @@ Usage:
   -c, --config=PATH       Default '$config'
                           PATH to the DB connection config.
   --bywater               Export everything but MARC using ByWater export sql statements
-  --precision             Export with precision everything but MARC
+  --precision=1|REGEXP    Defaults '$exportWithPrecision'.
+                          Export with precision everything but MARC.
+                          Parameter is a boolean or a regexp:
+                            Boolean (true): When you want to run the whole Precise extract strategy.
+                            Regexp: Used to select only a desired subset of filenames queries from
+                                    the HASH in \%Exp::Strategy::Precision::queries.
+                                    Used to test changes to extract SQL. Not useful when going live.
+                          Parameter is mandatory if option given, but the
+                          parameter is used only to limit the precision
   -h, --help              Show this help
   -v, --verbose           Show debug information
 USAGE
@@ -43,7 +52,7 @@ GetOptions(
     'A|auth'        => \$exportAuthoritiesRecords,
     'H|holdings'    => \$exportHoldingsRecords,
     'bywater'       => \$exportByWaterStyle,
-    'p|precision'   => \$exportWithPrecision,
+    'p|precision:s' => \$exportWithPrecision,
     'c|config=s'    => \$config,
     'h|help'        => \$help,
     'v|verbose'     => \$verbose,
@@ -67,7 +76,7 @@ if ($exportEverything) {
 
 if ($exportWithPrecision) {
   require Exp::Strategy::Precision;
-  Exp::Strategy::Precision::extract();
+  Exp::Strategy::Precision::extract($exportWithPrecision);
 }
 
 my $boundRecordIds;

@@ -43,7 +43,7 @@ sub build($self, $o, $b) {
   $self->setPrice                ($o, $b);
   #$self->setReplacementprice    ($o, $b);
   #$self->setReplacementpricedate($o, $b);
-  #$self->setDatelastborrowed    ($o, $b);
+  $self->setDatelastborrowed    ($o, $b);
   #$self->setDatelastseen        ($o, $b);
   #$self->setStack               ($o, $b);
   $self->setStatuses             ($o, $b);
@@ -122,6 +122,20 @@ sub setDateaccessioned($s, $o, $b) {
 sub setPrice($s, $o, $b) {
   $s->{price} = $o->{price} ? $o->{price}/100 : undef;
   $log->warn($s->logId()."' has no price.") unless $s->{price};
+}
+sub setDatelastborrowed($s, $o, $b) {
+  my $dates = $b->{LastBorrowDates}->get($s->{barcode});
+  if ($dates && $dates->[0]) {
+    if (ref ($dates->[0]) eq 'HASH' && $dates->[0]->{'last_borrow_date'}) {
+      $s->{datelastborrowed} = $dates->[0]->{'last_borrow_date'};
+    }
+    else {
+      $log->error("datelastborrowed row is malformed?: ".MMT::Validator::dumpObject($dates->[0]));
+    }
+  }
+
+  $s->{datelastborrowed} = MMT::Date::translateDateDDMMMYY($s->{datelastborrowed}, $s, 'last_borrow_date->datelastborrowed')
+    unless MMT::Date::isIso8601($s->{datelastborrowed});
 }
 sub setItemcallnumber($s, $o, $b) {
   $s->{itemcallnumber} = $o->{call_no};

@@ -156,22 +156,30 @@ my %queries = (
   "12-current_circ.csv" => {
     encoding => "iso-8859-1",
     sql =>
-      "SELECT    patron_barcode.patron_barcode, circ_transactions.patron_id, circ_transactions.charge_location, circ_transactions.item_id,
-                 item_barcode.item_barcode,
+      "SELECT    circ_transactions.circ_transaction_id,
+                 circ_transactions.patron_id, patron_barcode.patron_barcode,
+                 circ_transactions.item_id, item_barcode.item_barcode,
                  circ_transactions.charge_date,circ_transactions.current_due_date,
-                 circ_transactions.renewal_count
+                 circ_transactions.renewal_count, circ_transactions.charge_location,
+                 max(renew_transactions.renew_date) as last_renew_date
        FROM      circ_transactions
-       JOIN      patron ON (circ_transactions.patron_id=patron.patron_id)
-       LEFT JOIN patron_barcode ON (circ_transactions.patron_id=patron_barcode.patron_id)
-       LEFT JOIN item_barcode   ON (circ_transactions.item_id=item_barcode.item_id)
+       JOIN      patron             ON (circ_transactions.patron_id=patron.patron_id)
+       LEFT JOIN patron_barcode     ON (circ_transactions.patron_id=patron_barcode.patron_id)
+       LEFT JOIN item_barcode       ON (circ_transactions.item_id=item_barcode.item_id)
+       LEFT JOIN renew_transactions ON (renew_transactions.circ_transaction_id = circ_transactions.circ_transaction_id)
        WHERE     patron_barcode.barcode_status = 1
              AND patron_barcode.patron_barcode IS NOT NULL
-             AND item_barcode.barcode_status = 1",
+             AND item_barcode.barcode_status = 1
+       GROUP BY  circ_transactions.circ_transaction_id,
+                 circ_transactions.patron_id, patron_barcode.patron_barcode,
+                 circ_transactions.item_id, item_barcode.item_barcode,
+                 circ_transactions.charge_date,circ_transactions.current_due_date,
+                 circ_transactions.renewal_count, circ_transactions.charge_location",
   },
-  "13-last_borrow_dates.csv" => {
-    encoding => "iso-8859-1",
+  "13-last_borrow_dates.csv" => { #Merging this to 02-items.csv causes some Item-rows to be multiplicated,
+    encoding => "iso-8859-1",     #especially if they don't have any previous issues. Some strange voodoo.
     sql =>
-      "SELECT    item_vw.barcode,max(charge_date)
+      "SELECT    item_vw.barcode, max(charge_date) as last_borrow_date
        FROM      circ_trans_archive
        JOIN      item_vw ON (circ_trans_archive.item_id = item_vw.item_id)
        GROUP BY  item_vw.barcode",
@@ -481,16 +489,22 @@ sub writeCsvRow($$) {
   print $FH join(",", @$line)."\n";
 }
 
-sub extract() {
+sub extract($) {
+  my ($inclusionRegexp) = @_;
   my $dbh = Exp::DB::dbh();
 
   foreach my $filename (sort keys %queries) {
+    unless (($inclusionRegexp && length $inclusionRegexp < 2) || #Check if the value is a boolean, to just extract all data.
+            $filename =~ /$inclusionRegexp/) {                   #Or use it as a regexp to select the desired datasets to extract.
+      print "Excluding filename='$filename' as it doesn't match the selection regexp=/$inclusionRegexp/\n";
+      next;
+    }
+    print "Extracting '$filename' with precision!\n";
+
     my $query         = $queries{$filename}{sql};
     my $inputEncoding = $queries{$filename}{encoding};
 
-    print "$filename\n";
-
-    if ( $filename eq "serials_mfhd.csv") {
+    if ($filename eq "serials_mfhd.csv") {
       extractSerialsMFHD($filename);
       next;
     }
@@ -516,7 +530,7 @@ sub extract() {
       anonymize($filename, \@line) if ($anonymize);
 
       print "."    unless ($i % 10);
-      print "\r$i" unless ($i % 100);
+      print "\r$i          " unless ($i % 100);
 
       writeCsvRow($out, \@line);
     }

@@ -57,6 +57,7 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
         repositories => [
           {name => 'ItemStats', file => '18-item_stats.csv', keys => ['item_id']},
           {name => 'ItemStatuses', file => '02-item_status.csv', keys => ['item_id']},
+          {name => "LastBorrowDates", file => "13-last_borrow_dates.csv", keys => ['barcode']},
         ],
         translationTables => [
           {name => 'Branchcodes'},
@@ -102,9 +103,7 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
       my MMT::Builder $builder = MMT::Builder->new({
         type => 'Issue',
         inputFile => '12-current_circ.csv',
-        repositories => [
-          {name => "LastBorrowDates", file => "13-last_borrow_dates.csv", keys => ['barcode']},
-        ],
+        repositories => [],
         translationTables => [
           {name => 'Branchcodes'},
           {name => 'LocationId'},

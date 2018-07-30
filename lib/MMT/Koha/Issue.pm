@@ -87,10 +87,10 @@ sub setBarcode($s, $o, $b) {
   }
 }
 sub setDateDue($s, $o, $b) {
-  $s->{datedue} = MMT::Date::translateDateDDMMMYY($o->{current_due_date}, $s, 'current_due_date->datedue', 1); #duedate can possibly be one year in the future
+  $s->{date_due} = MMT::Date::translateDateDDMMMYY($o->{current_due_date}, $s, 'current_due_date->date_due', 1); #duedate can possibly be one year in the future
 
-  unless ($s->{datedue}) {
-    MMT::Exception::Delete->throw($s->logId()."' has no datedue/current_due_date.");
+  unless ($s->{date_due}) {
+    MMT::Exception::Delete->throw($s->logId()."' has no date_due/current_due_date.");
   }
 }
 sub setBranchcode($s, $o, $b) {
@@ -108,28 +108,23 @@ sub setIssuedate($s, $o, $b) {
   $s->{issuedate} = MMT::Date::translateDateDDMMMYY($o->{charge_date}, $s, 'charge_date->issuedate');
 
   unless ($s->{issuedate}) {
-    MMT::Exception::Delete->throw($s->logId()."' has no issuedate.");
+    MMT::Exception::Delete->throw($s->logId()." has no issuedate.");
   }
 }
 sub setLastrenewdate($s, $o, $b) {
-  my $dates = $b->{LastBorrowDates}->get($s->{barcode});
-  if ($dates && $dates->[0]) {
-    if (ref ($dates->[0]) eq 'HASH' && $dates->[0]->{'max(charge_date)'}) {
-      $s->{lastrenewdate} = $dates->[0]->{'max(charge_date)'};
-    }
-    else {
-      $log->error("lastBorrowDates row is malformed?: ".MMT::Validator::dumpObject($dates->[0]));
-    }
+  $s->sourceKeyExists($o, 'last_renew_date'); #Make sure the key exists, so to verify there is nothing wrong with the extract program.
+
+  if (not($s->{lastrenewdate}) && $s->{renewals}) { #Some defensive programming sanity checks
+    $log->warn($s->logId()." has no lastrenewdate but renewal_count|renewals='".$s->{renewals}."'?");
   }
 
-  unless ($s->{lastrenewdate}) {
-    $log->warn($s->logId()."' has no lastrenewdate, using issuedate");
-    $s->{lastrenewdate} = $s->{issuedate};
-  }
+  next unless $o->{last_renew_date}; #But do nothing if the contents of that key are empty
 
-  $s->{lastrenewdate} = MMT::Date::translateDateDDMMMYY($s->{lastrenewdate}, $s, 'max(charge_date)->lastrenewdate')
-    unless MMT::Date::isIso8601($s->{lastrenewdate});
+  $s->{lastrenewdate} = MMT::Date::translateDateDDMMMYY($o->{last_renew_date}, $s, 'last_renew_date->lastrenewdate');
+
+  if ($s->{lastrenewdate} && not($s->{renewals})) { #Some defensive programming sanity checks
+    $log->warn($s->logId()." has lastrenewdate='".$s->{lastrenewdate}."' but no renewal_count|renewals?");
+  }
 }
-
 
 return 1;
