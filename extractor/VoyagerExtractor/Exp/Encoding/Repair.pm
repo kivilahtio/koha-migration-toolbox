@@ -19,6 +19,8 @@ package Exp::Encoding::Repair;
 #Pragmas
 use warnings;
 use strict;
+binmode( STDOUT, ":encoding(UTF-8)" );
+binmode( STDIN,  ":encoding(UTF-8)" );
 
 #External modules
 use Carp;

@@ -72,6 +72,8 @@ sub dbh {
   warn "Init connection to $dataSource, username=".$config->{username}."\n" if ($ENV{DEBUG});
   $dbh = DBI->connect($dataSource, $config->{username}, $config->{password})
     || confess "Could no connect: $DBI::errstr";
+
+  $dbh->do("ALTER SESSION SET nls_date_format = 'yyyy-mm-dd\"T\"hh24:mi:ss'"); #ISO8601 as the default format. Only lower case variable name works here.
   return $dbh;
 }
 
