@@ -69,7 +69,6 @@ sub build($self, $o, $b) {
   #$self->setOnloan($o, $b);
   #$self->setCn_source($o, $b);
   #$self->setCn_sort($o, $b);
-  #$self->setCcode($o, $b);
   #$self->setMaterials($o, $b);
   #$self->setUri($o, $b);
   $self->setItype($o, $b);
@@ -82,6 +81,7 @@ sub build($self, $o, $b) {
   #$self->setSub_location($o, $b);
   #$self->setCirculation_level($o, $b);
   #$self->setReserve_level($o, $b);
+  $self->setCcode($o, $b);
 }
 
 sub id {
@@ -113,7 +113,7 @@ sub setBarcode($s, $o, $b) {
   }
 }
 sub setDateaccessioned($s, $o, $b) {
-  $s->{dateaccessioned} = MMT::Date::translateDateDDMMMYY($o->{add_date}, $s, 'add_date->dateaccessioned');
+  $s->{dateaccessioned} = $o->{add_date};
 
   unless ($s->{dateaccessioned}) {
     $log->warn($s->logId()."' has no dateaccessioned.");
@@ -124,18 +124,9 @@ sub setPrice($s, $o, $b) {
   $log->warn($s->logId()."' has no price.") unless $s->{price};
 }
 sub setDatelastborrowed($s, $o, $b) {
-  my $dates = $b->{LastBorrowDates}->get($s->{barcode});
-  if ($dates && $dates->[0]) {
-    if (ref ($dates->[0]) eq 'HASH' && $dates->[0]->{'last_borrow_date'}) {
-      $s->{datelastborrowed} = $dates->[0]->{'last_borrow_date'};
-    }
-    else {
-      $log->error("datelastborrowed row is malformed?: ".MMT::Validator::dumpObject($dates->[0]));
-    }
-  }
-
-  $s->{datelastborrowed} = MMT::Date::translateDateDDMMMYY($s->{datelastborrowed}, $s, 'last_borrow_date->datelastborrowed')
-    unless MMT::Date::isIso8601($s->{datelastborrowed});
+  $s->sourceKeyExists($o, 'last_borrow_date');
+  $s->{datelastborrowed} = $o->{last_borrow_date};
+  #It is ok for the Item to not have datelastborrowed
 }
 sub setItemcallnumber($s, $o, $b) {
   $s->{itemcallnumber} = $o->{call_no};
@@ -148,9 +139,10 @@ sub setIssues($s, $o, $b) {
   $s->{issues} = $o->{historical_charges} || 0;
 }
 sub setItemnotes($s, $o, $b) {
+  my $itemNotes = $b->{ItemNotes}->get($o->{item_id});
   #Translation table mutates $s directly
-  if ($o->{item_note}) {
-    $b->{ItemNoteTypes}->translate(@_, $o->{item_note_type});
+  if ($itemNotes) {
+    $b->{ItemNoteTypes}->translate(@_, $_->{item_note_type}, $_) for (@$itemNotes);
   }
 }
 sub setHomebranch($s, $o, $b) {
@@ -207,6 +199,24 @@ sub setEnumchron($s, $o, $b) {
   }
   elsif ($o->{chronology}) {
     $s->{enumchron} = $o->{chronology};
+  }
+}
+sub setCcode($s, $o, $b) {
+  my $itemStatisticalCategories = $b->{ItemStats}->get($o->{item_id});
+  return unless $itemStatisticalCategories;
+
+  if (scalar(@$itemStatisticalCategories) > 1) {
+    $log->warn($s->logId()." has '".scalar(@$itemStatisticalCategories)."' statistical categories, but in Koha we can only put one collection code");
+  }
+
+  my $statCat = $itemStatisticalCategories->[-1]->{item_stat_code}; #Pick the last (should be sorted so it is the newest) stat cat.
+  unless ($statCat) {
+    $log->warn($s->logId()." has a statistical category with no attribute 'item_stat_code'?");
+    return;
+  }
+  if ($s->{ccode}) {
+    $log->warn($s->logId()." has collection code '".$s->{ccode}."' and an incoming statistical category '$statCat', but in Koha we can only have one collection code.");
+    return;
   }
 }
 

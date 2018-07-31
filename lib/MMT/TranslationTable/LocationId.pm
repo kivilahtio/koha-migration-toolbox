@@ -29,11 +29,11 @@ sub new($class) {
   return $class->SUPER::new({file => $translationTableFile});
 }
 
-sub branchLoc($s, $kohaObject, $voyagerObject, $builder, $originalValue, $branch, $loc, $collectionCode=undef, $error=undef) {
+sub branchLoc($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tableParams, $transParams) {
   return {
-    branch => uc($branch),
-    location => uc($loc),
-    collectionCode => $collectionCode,
+    branch => uc($tableParams->[0]),
+    location => uc($tableParams->[1]),
+    collectionCode => $tableParams->[2],
   };
 }
 

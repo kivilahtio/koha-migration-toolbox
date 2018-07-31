@@ -75,7 +75,7 @@ sub setKeys($s, $o, $b) {
   $s->{itemnumber} = $o->{item_id};
 }
 sub setDate($s, $o, $b) {
-  $s->{date} = MMT::Date::translateDateDDMMMYY($o->{create_date}, $s, 'create_date->date');
+  $s->{date} = $o->{create_date};
 
   unless ($s->{date}) {
     $log->warn($s->logId()." has no create_date|date.");

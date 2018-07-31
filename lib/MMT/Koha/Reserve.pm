@@ -71,7 +71,7 @@ sub logId($s) {
 }
 
 sub setReservedate($s, $o, $b) {
-  $s->{reservedate} = MMT::Date::translateDateDDMMMYY($o->{create_date}, $s, 'create_date->reservedate');
+  $s->{reservedate} = $o->{create_date};
 
   unless ($s->{reservedate}) {
     MMT::Exception::Delete->throw($s->logId()."' has no create_date/reservedate.");
@@ -100,7 +100,7 @@ sub setStatuses($s, $o, $b) {
   $b->{HoldStatuses}->translate(@_, $o->{queue_position});
 }
 sub setExpirationdate($s, $o, $b) {
-  $s->{expirationdate} = MMT::Date::translateDateDDMMMYY($o->{expire_date}, $s, 'expire_date->expirationdate', 50); #Expiration dates might be 10 years to the future, probably there are no reserves from the past millenium
+  $s->{expirationdate} = $o->{expire_date};
 
   unless ($s->{expirationdate}) {
     $log->warn($s->logId()."' has no expire_date/expirationdate.");

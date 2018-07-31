@@ -25,12 +25,15 @@ Used to slurp Voyager exported tables into memory
 =cut
 
 =head2 new
+
  @param1 HASHRef of constructor params: {
   name => 'patron_notes', #Name of the Cache, or the type of data it contains
   file => 'file.csv',     #Which file is slurped to cache
   keys => ['PATRON_ID'],  #List of column names to use as cache keys. Use the same keys to fetch the result
  }
+
 =cut
+
 sub new {
   my ($class, $p) = _validate(@_);
   my $self = bless({}, $class);
@@ -80,10 +83,13 @@ sub _slurpCsv($s) {
 }
 
 =head2 get
+
  @param1 HASHRef, the Cache key is built using the same HASH keys as the keys defined in this Cache,
          or SCALAR, String representation of a preconstructed Cache key. Useful when the only key is for. ex. the patron_id
  @returns ARRAYRef of cached values.
+
 =cut
+
 sub get($s, $o) {
   if (ref $o) { #Scalar returns undef
     return $s->{_cache}->{$s->key($o)};

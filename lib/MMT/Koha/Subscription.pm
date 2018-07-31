@@ -91,7 +91,7 @@ sub logId($s) {
 }
 
 sub setStartdate($s, $o, $b) {
-  $s->{startdate} = MMT::Date::translateDateDDMMMYY($o->{start_date}, $s, 'start_date->startdate', 50); #Presume no serials started arriving to Voyager before Voyager was in use.
+  $s->{startdate} = $o->{start_date};
 
   unless ($s->{startdate}) {
     #Voyager seems to have so very few subsription.start_date -values that it is better to default it
@@ -103,12 +103,16 @@ sub setStatus($s, $o, $b) {
   $s->{status} = 1;
 }
 sub setLocation($s, $o, $b) {
-  #$s->{location} = 1; #Location can be NULL
+  my $branchcodeLocationCcode = _translateLocationId(@_);
+  $s->{location} = $branchcodeLocationCcode->{location};
+
+  unless ($s->{location}) {
+    MMT::Exception::Delete->throw($s->logId()."' has no location. Set a default in the TranslationTable rules!");
+  }
 }
 sub setBranchcode($s, $o, $b) {
-  #$s->sourceKeyExists($o, 'what_is_the_source_key?');
-  my $branchcodeLocation = $b->{LocationId}->translate(@_, '_DEFAULT_');
-  $s->{branchcode} = $branchcodeLocation->{branch};
+  my $branchcodeLocationCcode = _translateLocationId(@_);
+  $s->{branchcode} = $branchcodeLocationCcode->{branch};
 
   unless ($s->{branchcode}) {
     MMT::Exception::Delete->throw($s->logId()."' has no branchcode. Set a default in the TranslationTable rules!");
@@ -125,7 +129,7 @@ sub setOpacdisplaycount($s, $o, $b) {
   $s->{opacdisplaycount} = 52;
 }
 sub setEnddate($s, $o, $b) {
-  $s->{enddate} = MMT::Date::translateDateDDMMMYY($o->{end_date}, $s, 'end_date->startdate', 50); #Presume no serials started arriving to Voyager before Voyager was in use.
+  $s->{enddate} = $o->{end_date};
 
   unless ($s->{enddate}) {
     #Voyager seems to have so very few component_pattern.end_date -values that it is better to default it
@@ -135,6 +139,30 @@ sub setEnddate($s, $o, $b) {
 }
 sub setClosed($s, $o, $b) {
   $s->{closed} = 1; #Currently only bare minimums are migrated, so enumeration cannot atm. continue in Koha from where voyager left off.
+}
+
+sub _translateLocationId($s, $o, $b) {
+  my $subscriptionLocations = $b->{SubscriptionLocation}->get($o);
+  my $locationId;
+
+  if (not($subscriptionLocations)) {
+    $log->warn($log->logId()." has no location?");
+    $locationId = '_DEFAULT_';
+  }
+  #In theory, there could be multiple locations for one subscription/component, but the extract-phase unique key deduplication should take care of that.
+  elsif (@$subscriptionLocations > 1) { #Doesn't hurt to be a bit defensive sometimes.
+    $log->warn($log->logId()." has multiple subscription locations to choose from? Defaulting to the first one.");
+  }
+
+  if ($subscriptionLocations && $subscriptionLocations->[0]) {
+    $locationId = $subscriptionLocations->[0]->{location_id};
+    unless ($locationId) {
+      $log->error($log->logId()." has a location, but the location is missing attribute 'location_id'? Using defaults.");
+      $locationId = '_DEFAULT_';
+    }
+  }
+
+  return $b->{LocationId}->translate(@_, $locationId);
 }
 
 return 1;

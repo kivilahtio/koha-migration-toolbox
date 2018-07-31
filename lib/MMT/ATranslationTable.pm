@@ -73,7 +73,7 @@ rules.
 
 =cut
 my $re_isSubroutineCall = qr{(.+)\(\s*(.*)\s*\)$};
-sub translate($s, $kohaObject, $voyagerObject, $builder, $val) {
+sub translate($s, $kohaObject, $voyagerObject, $builder, $val, @otherArgs) {
   my $kohaVal = $s->{_mappings}->{$val};
   #Check if using the fallback catch-all -value
   if (not(defined($kohaVal))) {
@@ -89,7 +89,8 @@ sub translate($s, $kohaObject, $voyagerObject, $builder, $val) {
   }
   elsif ($kohaVal =~ $re_isSubroutineCall) {
     my $method = $1;
-    my @params = ($kohaObject, $voyagerObject, $builder, $val, split(/\s*,\s*/, $2));
+    my @params = ($kohaObject, $voyagerObject, $builder, $val, [split(/\s*,\s*/, $2)], (@otherArgs ? \@otherArgs : undef));
+
     $log->trace("Invoking ".ref($s)."->$method(@params)") if $log->is_trace();
     my $rv = $s->$method(@params);
     $log->trace("Returning ".ref($s)."->$method(@params) with '".MMT::Validator::dumpObject($rv)."'.") if $log->is_trace();

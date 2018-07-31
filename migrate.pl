@@ -55,9 +55,9 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
         type => 'Item',
         inputFile => '02-items.csv',
         repositories => [
-          {name => 'ItemStats', file => '18-item_stats.csv', keys => ['item_id']},
+          {name => 'ItemNotes', file => '02a-item_notes.csv', keys => ['item_id']},
+          {name => 'ItemStats', file => '02b-item_stats.csv', keys => ['item_id']},
           {name => 'ItemStatuses', file => '02-item_status.csv', keys => ['item_id']},
-          {name => "LastBorrowDates", file => "13-last_borrow_dates.csv", keys => ['barcode']},
         ],
         translationTables => [
           {name => 'Branchcodes'},
@@ -169,7 +169,9 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
       my MMT::Builder $builder = MMT::Builder->new({
         type => 'Subscription',
         inputFile => '20-subscriptions.csv',
-        repositories => [],
+        repositories => [
+          {name => "SubscriptionLocation", file => '20a-subscription_locations.csv', keys => ['component_id']},
+        ],
         translationTables => [
           {name => 'LocationId'},
         ],

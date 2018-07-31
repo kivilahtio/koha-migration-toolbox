@@ -87,7 +87,7 @@ sub setBarcode($s, $o, $b) {
   }
 }
 sub setDateDue($s, $o, $b) {
-  $s->{date_due} = MMT::Date::translateDateDDMMMYY($o->{current_due_date}, $s, 'current_due_date->date_due', 1); #duedate can possibly be one year in the future
+  $s->{date_due} = $o->{current_due_date}; #duedate can possibly be one year in the future
 
   unless ($s->{date_due}) {
     MMT::Exception::Delete->throw($s->logId()."' has no date_due/current_due_date.");
@@ -105,7 +105,7 @@ sub setRenewals($s, $o, $b) {
   $s->{renewals} = $o->{renewal_count} || 0;
 }
 sub setIssuedate($s, $o, $b) {
-  $s->{issuedate} = MMT::Date::translateDateDDMMMYY($o->{charge_date}, $s, 'charge_date->issuedate');
+  $s->{issuedate} = $o->{charge_date};
 
   unless ($s->{issuedate}) {
     MMT::Exception::Delete->throw($s->logId()." has no issuedate.");
@@ -120,7 +120,7 @@ sub setLastrenewdate($s, $o, $b) {
 
   next unless $o->{last_renew_date}; #But do nothing if the contents of that key are empty
 
-  $s->{lastrenewdate} = MMT::Date::translateDateDDMMMYY($o->{last_renew_date}, $s, 'last_renew_date->lastrenewdate');
+  $s->{lastrenewdate} = $o->{last_renew_date};
 
   if ($s->{lastrenewdate} && not($s->{renewals})) { #Some defensive programming sanity checks
     $log->warn($s->logId()." has lastrenewdate='".$s->{lastrenewdate}."' but no renewal_count|renewals?");

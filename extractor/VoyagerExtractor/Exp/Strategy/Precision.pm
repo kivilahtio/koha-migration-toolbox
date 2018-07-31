@@ -20,6 +20,8 @@ package Exp::Strategy::Precision;
 use warnings;
 use strict;
 use utf8; #This file and all Strings within are utf8-encoded
+binmode( STDOUT, ":encoding(UTF-8)" );
+binmode( STDIN,  ":encoding(UTF-8)" );
 $|=1;
 
 #External modules
@@ -32,6 +34,7 @@ use Exp::Config;
 use Exp::DB;
 use Exp::Encoding;
 use Exp::Encoding::Repair;
+use Exp::Anonymize;
 
 =head2 NAME
 
@@ -49,146 +52,165 @@ warn "Not anonymizing!\n" unless $anonymize;
 my %queries = (
   "02-items.csv" => {
     encoding => "iso-8859-1",
+    uniqueKey => 0,
     sql =>
-      "SELECT    item.item_id, bib_item.bib_id,bib_item.add_date,
-                 item_vw.barcode,item.perm_location,item.temp_location,item.item_type_id,item.temp_item_type_id,
-                 item_vw.enumeration,item_vw.chronology,item_vw.historical_charges,item_vw.call_no,
+      "SELECT    item.item_id,
+                 bib_item.bib_id, bib_item.add_date,
+                 item_vw.barcode, item.perm_location, item.temp_location, item.item_type_id, item.temp_item_type_id,
+                 item_vw.enumeration, item_vw.chronology, item_vw.historical_charges, item_vw.call_no,
                  item_vw.call_no_type,
-                 item.price,item.copy_number,item.pieces,
-                 item_note.item_note, item_note.item_note_type
+                 item.price, item.copy_number, item.pieces,
+                 circ_trans_archive.charge_date as last_borrow_date
        FROM      item_vw
-       JOIN      item        ON (item_vw.item_id = item.item_id)
-       LEFT JOIN item_note   ON (item_vw.item_id = item_note.item_id)
-       JOIN      bib_item    ON  (item_vw.item_id = bib_item.item_id)",
+       JOIN      item               ON (item_vw.item_id = item.item_id)
+       JOIN      bib_item           ON (item_vw.item_id = bib_item.item_id)
+       LEFT JOIN circ_trans_archive ON (circ_trans_archive.item_id = item_vw.item_id)
+       WHERE     circ_trans_archive.charge_date = (
+                     SELECT    max(ct2.charge_date)
+                     FROM      circ_trans_archive ct2
+                     WHERE     ct2.item_id = item_vw.item_id
+                 )",
+  },
+  "02a-item_notes.csv" => {
+    encoding => "iso-8859-1",
+    uniqueKey => -1, #One Item can have multiple item_notes and there is no unique key in the item_notes table
+    anonymize => {"item_note" => "scramble"},
+    sql =>
+      "SELECT    item_note.item_id, item_note.item_note, item_note.item_note_type, item_note_type.note_desc
+       FROM      item_note
+       LEFT JOIN item_note_type ON (item_note_type.note_type = item_note.item_note_type)",
   },
   "02-item_status.csv" => {
     encoding => "iso-8859-1",
+    uniqueKey => -1, #Each Item can have multiple afflictions
     sql =>
-      "SELECT    item_status.item_id,item_status.item_status,item_status_type.item_status_desc
-       FROM      item_status
-       JOIN      item_status_type ON (item_status.item_status = item_status_type.item_status_type)",
+      "SELECT    item_status.item_id, item_status.item_status, item_status_type.item_status_desc, \n".
+      "          item_status.item_status_date \n".
+      "FROM      item_status \n".
+      "JOIN      item_status_type ON (item_status.item_status = item_status_type.item_status_type) \n".
+      "ORDER BY  item_status.item_id ASC ",
   },
-  "03-item_status_descriptions.csv" => {
+  "02b-item_stats.csv" => { #Statistical item tags
     encoding => "iso-8859-1",
+    uniqueKey => -1, #One Item can have many statistical categories
     sql =>
-      "SELECT    item_status_type.item_status_type, item_status_type.item_status_desc
-       FROM      item_status_type",
-  },
-  "04-barcode_statuses.csv" => {
-    encoding => "iso-8859-1",
-    sql =>
-      "SELECT    item_vw.barcode,item_status.item_status
-       FROM      item_vw 
-       JOIN      item_status ON item_vw.item_id = item_status.item_id",
+      "SELECT    item_stats.item_id, item_stat_code.item_stat_code
+       FROM      item_stats
+       JOIN      item_stat_code ON (item_stats.item_stat_id = item_stat_code.item_stat_id)
+       ORDER BY  item_stats.date_applied ASC", #Sort order is important so we can know which row is the newest one
   },
   "05-patron_addresses.csv" => {
     encoding => "iso-8859-1",
+    uniqueKey => 0,
+    anonymize => {address_line1 => "scramble", address_line2 => "scramble",
+                  address_line3 => "scramble", address_line4 => "scramble",
+                  address_line5 => "scramble", zip_postal    => "scramble",},
     sql =>
-      "SELECT    PATRON_ADDRESS.PATRON_ID, PATRON_ADDRESS.ADDRESS_TYPE, PATRON_ADDRESS.ADDRESS_LINE1, 
-                 PATRON_ADDRESS.ADDRESS_LINE2, PATRON_ADDRESS.ADDRESS_LINE3, PATRON_ADDRESS.ADDRESS_LINE4, 
-                 PATRON_ADDRESS.ADDRESS_LINE5, PATRON_ADDRESS.CITY, PATRON_ADDRESS.STATE_PROVINCE, 
-                 PATRON_ADDRESS.ZIP_POSTAL, PATRON_ADDRESS.COUNTRY
-       FROM      PATRON_ADDRESS
-       ORDER BY  PATRON_ADDRESS.PATRON_ID, PATRON_ADDRESS.ADDRESS_TYPE",
+      "SELECT    patron_address.address_id,
+                 patron_address.patron_id, patron_address.address_type,
+                 patron_address.address_line1, patron_address.address_line2, patron_address.address_line3, patron_address.address_line4,
+                 patron_address.address_line5, patron_address.city, patron_address.state_province,
+                 patron_address.zip_postal, patron_address.country
+       FROM      patron_address
+       ORDER BY  patron_address.patron_id, patron_address.address_type",
   },
   "06-patron_groups.csv" => {
     encoding => "iso-8859-1",
+    uniqueKey => 0,
     sql =>
-      "SELECT    patron_barcode.patron_id, patron_barcode.patron_barcode, patron_barcode.barcode_status, 
-                 patron_barcode.patron_group_id FROM patron_barcode
+      "SELECT    patron_barcode.patron_barcode_id,
+                 patron_barcode.patron_id, patron_barcode.patron_barcode, patron_barcode.barcode_status,
+                 patron_barcode.patron_group_id
+       FROM      patron_barcode
        WHERE     patron_barcode.patron_barcode IS NOT NULL
        ORDER BY  patron_barcode.patron_id",
   },
-  "06a-patron_group_names.csv" => {
-    encoding => "iso-8859-1",
-    sql =>
-      "SELECT    patron_group.patron_group_id,patron_group.patron_group_name
-       FROM      patron_group",
-  },
   "07-patron_names_dates.csv" => {
     encoding => "iso-8859-1",
+    uniqueKey => 0,
+    anonymize => {last_name => "surname",    first_name => "firstName",
+                  middle_name => "scramble", institution_id => "ssn",
+                  patron_pin => "scramble",  birth_date => "date"},
     sql =>
-      "SELECT    PATRON.PATRON_ID, PATRON.LAST_NAME, PATRON.FIRST_NAME, PATRON.MIDDLE_NAME, 
-                 PATRON.CREATE_DATE, PATRON.EXPIRE_DATE, PATRON.INSTITUTION_ID,
-                 PATRON.REGISTRATION_DATE,
-                 PATRON.PATRON_PIN,
-                 PATRON.INSTITUTION_ID, PATRON.BIRTH_DATE
-       FROM      PATRON
-       ORDER BY  PATRON.PATRON_ID",
+      "SELECT    patron.patron_id, patron.last_name, patron.first_name, patron.middle_name, 
+                 patron.create_date, patron.expire_date, patron.institution_id,
+                 patron.registration_date,
+                 patron.patron_pin,
+                 patron.institution_id, patron.birth_date
+       FROM      patron
+       ORDER BY  patron.patron_id",
   },
   "08-patron_groups_nulls.csv" => {
     encoding => "iso-8859-1",
+    uniqueKey => 0,
     sql =>
-      "SELECT    patron_barcode.patron_id, patron_barcode.patron_barcode, patron_barcode.barcode_status,
-                 patron_barcode.patron_group_id FROM patron_barcode
+      "SELECT    patron_barcode.patron_barcode_id,
+                 patron_barcode.patron_id, patron_barcode.patron_barcode, patron_barcode.barcode_status,
+                 patron_barcode.patron_group_id
+       FROM      patron_barcode
        WHERE     patron_barcode.patron_barcode IS NULL
              AND patron_barcode.barcode_status=1",
   },
   "09-patron_notes.csv" => {
     encoding => "iso-8859-1",
+    uniqueKey => 0,
+    anonymize => {note => 'scramble'},
     sql =>
-      "SELECT    patron_notes.patron_id, patron_notes.note, patron_notes.note_type
+      "SELECT    patron_notes.patron_note_id,
+                 patron_notes.patron_id, patron_notes.note, patron_notes.note_type
        FROM      patron_notes 
        ORDER BY  patron_notes.patron_id,patron_notes.modify_date",
   },
   "10-patron_phones.csv" => {
     encoding => "iso-8859-1",
+    uniqueKey => 0,
+    anonymize => {phone_number => 'phone'},
     sql =>
-      "SELECT    patron_address.patron_id,
-                 phone_type.phone_desc,
-                 patron_phone.phone_number
+      "SELECT    patron_phone.patron_phone_id,
+                 patron_address.patron_id, phone_type.phone_desc, patron_phone.phone_number
        FROM      patron_phone
        JOIN      patron_address ON (patron_phone.address_id=patron_address.address_id)
        JOIN      phone_type ON (patron_phone.phone_type=phone_type.phone_type)",
   },
   "11-patron_stat_codes.csv" => {
     encoding => "iso-8859-1",
+    uniqueKey => -1, #One patron can have many afflictions
     sql =>
-      "SELECT    patron_stats.patron_id,patron_stats.patron_stat_id,patron_stats.date_applied
-       FROM      patron_stats",
-  },
-  "11a-patron_stat_desc.csv" => {
-    encoding => "iso-8859-1",
-    sql =>
-      "SELECT    patron_stat_code.patron_stat_id,patron_stat_code.patron_stat_desc
-       FROM      patron_stat_code",
+      "SELECT    patron_stats.patron_id, patron_stats.patron_stat_id, patron_stat_code.patron_stat_code, patron_stats.date_applied
+       FROM      patron_stats
+       LEFT JOIN patron_stat_code ON (patron_stat_code.patron_stat_id = patron_stats.patron_stat_id)",
   },
   "12-current_circ.csv" => {
     encoding => "iso-8859-1",
+    uniqueKey => 0,
     sql =>
-      "SELECT    circ_transactions.circ_transaction_id,
-                 circ_transactions.patron_id, patron_barcode.patron_barcode,
-                 circ_transactions.item_id, item_barcode.item_barcode,
-                 circ_transactions.charge_date,circ_transactions.current_due_date,
-                 circ_transactions.renewal_count, circ_transactions.charge_location,
-                 max(renew_transactions.renew_date) as last_renew_date
-       FROM      circ_transactions
-       JOIN      patron             ON (circ_transactions.patron_id=patron.patron_id)
-       LEFT JOIN patron_barcode     ON (circ_transactions.patron_id=patron_barcode.patron_id)
-       LEFT JOIN item_barcode       ON (circ_transactions.item_id=item_barcode.item_id)
-       LEFT JOIN renew_transactions ON (renew_transactions.circ_transaction_id = circ_transactions.circ_transaction_id)
-       WHERE     patron_barcode.barcode_status = 1
-             AND patron_barcode.patron_barcode IS NOT NULL
-             AND item_barcode.barcode_status = 1
-       GROUP BY  circ_transactions.circ_transaction_id,
-                 circ_transactions.patron_id, patron_barcode.patron_barcode,
-                 circ_transactions.item_id, item_barcode.item_barcode,
-                 circ_transactions.charge_date,circ_transactions.current_due_date,
-                 circ_transactions.renewal_count, circ_transactions.charge_location",
-  },
-  "13-last_borrow_dates.csv" => { #Merging this to 02-items.csv causes some Item-rows to be multiplicated,
-    encoding => "iso-8859-1",     #especially if they don't have any previous issues. Some strange voodoo.
-    sql =>
-      "SELECT    item_vw.barcode, max(charge_date) as last_borrow_date
-       FROM      circ_trans_archive
-       JOIN      item_vw ON (circ_trans_archive.item_id = item_vw.item_id)
-       GROUP BY  item_vw.barcode",
+      "SELECT    circ_transactions.circ_transaction_id, \n".
+      "          circ_transactions.patron_id, patron_barcode.patron_barcode, \n".
+      "          circ_transactions.item_id, item_barcode.item_barcode, \n".
+      "          circ_transactions.charge_date,circ_transactions.current_due_date, \n".
+      "          circ_transactions.renewal_count, circ_transactions.charge_location, \n".
+      "          renew_transactions.renew_date as last_renew_date \n". #Using subquery to fetch this.
+      "FROM      circ_transactions \n".
+      "JOIN      patron             ON (circ_transactions.patron_id=patron.patron_id) \n".
+      "LEFT JOIN patron_barcode     ON (circ_transactions.patron_id=patron_barcode.patron_id) \n".
+      "LEFT JOIN item_barcode       ON (circ_transactions.item_id=item_barcode.item_id) \n".
+      "LEFT JOIN renew_transactions ON (renew_transactions.circ_transaction_id = circ_transactions.circ_transaction_id) \n".
+      "WHERE     patron_barcode.barcode_status = 1 \n".
+      "      AND patron_barcode.patron_barcode IS NOT NULL \n".
+      "      AND item_barcode.barcode_status = 1 \n".
+      "      AND renew_transactions.renew_date = ( \n".
+      "              SELECT max(rt2.renew_date) \n".
+      "              FROM   renew_transactions rt2 \n".
+      "              WHERE  renew_transactions.circ_transaction_id = rt2.circ_transaction_id \n".
+      "          ) \n",
   },
   "14-fines.csv" => {
     encoding => "iso-8859-1",
+    uniqueKey => 0,
     sql =>
-      "SELECT    patron_barcode.patron_barcode, fine_fee.patron_id,
-                 item_barcode.item_barcode, fine_fee.item_id,
+      "SELECT    fine_fee.fine_fee_id,
+                 fine_fee.patron_id, patron_barcode.patron_barcode,
+                 fine_fee.item_id, item_barcode.item_barcode,
                  fine_fee.create_date, fine_fee.fine_fee_type, fine_fee.fine_fee_location,
                  fine_fee.fine_fee_amount, fine_fee.fine_fee_balance,
                  fine_fee.fine_fee_note
@@ -201,19 +223,6 @@ my %queries = (
              AND item_barcode.barcode_status = 1
              AND fine_fee.fine_fee_balance != 0",
   },
-  "17-fine_types.csv" => {
-    encoding => "iso-8859-1",
-    sql =>
-      "SELECT    fine_fee_type.fine_fee_type,fine_fee_type.fine_fee_desc
-       FROM      fine_fee_type",
-  },
-  "18-item_stats.csv" => {
-    encoding => "iso-8859-1",
-    sql =>
-      "SELECT    item_stats.item_id,item_stat_code.item_stat_code
-       FROM      item_stats
-       JOIN      item_stat_code ON (item_stats.item_stat_id = item_stat_code.item_stat_id)",
-  },
 
   #Koha has a single subscription for each branch receiving serials.
   #Voyager has a single subscription which orders serials to multiple branches.
@@ -222,19 +231,31 @@ my %queries = (
   #ByWater scripts extract location from MFHD $852b but that doesn't reliably exist here?
   "20-subscriptions.csv" => {
     encoding => "iso-8859-1",
+    uniqueKey => [0, 1], #Whenever a subscription order has been continued, a new component with the same component_id is added.
     sql =>
-      "SELECT    subscription.subscription_id, line_item.bib_id, component.component_id,
-                 subscription.start_date, component_pattern.end_date,
+      "SELECT    component.component_id, component_pattern.end_date,
+                 subscription.subscription_id, line_item.bib_id,
+                 subscription.start_date,
                  component.create_items
-       FROM      subscription
+       FROM      component
+       LEFT JOIN subscription      ON (component.subscription_id  = subscription.subscription_id)
        LEFT JOIN line_item         ON (subscription.line_item_id  = line_item.line_item_id)
-       LEFT JOIN component         ON (component.subscription_id  = subscription.subscription_id)
        LEFT JOIN component_pattern ON (component.component_id     = component_pattern.component_id)
        LEFT JOIN serial_issues     ON (serial_issues.component_id = component.component_id)
        LEFT JOIN issues_received   ON (issues_received.issue_id   = serial_issues.issue_id)
        GROUP BY  subscription.subscription_id, line_item.bib_id, component.component_id,
                  subscription.start_date, component_pattern.end_date,
-                 component.create_items",
+                 component.create_items
+       ORDER BY  component.component_id ASC",
+  },
+  "20a-subscription_locations.csv" => {
+    encoding => "iso-8859-1",
+    uniqueKey => [0, 1], #Check that each component has only one location for received items.
+    sql =>
+      "SELECT    issues_received.component_id, issues_received.location_id
+       FROM      issues_received
+       GROUP BY  issues_received.component_id, issues_received.location_id
+       ORDER BY  issues_received.component_id ASC, issues_received.location_id ASC",
   },
 
   #No data in the Voyager subscription about into which branches it orders serials?
@@ -242,8 +263,10 @@ my %queries = (
   #Currently ignore predictions, because migrating predictions most certainly will be very slow/tedious vs benefits.
   "21-ser_issues.csv" => {
     encoding => "iso-8859-1",
+    uniqueKey => [0, 1],
     sql =>
-      "SELECT    serial_issues.issue_id, serial_issues.component_id, line_item.bib_id,
+      "SELECT    serial_issues.issue_id, serial_issues.component_id,
+                 line_item.bib_id,
                  serial_issues.enumchron, serial_issues.lvl1, serial_issues.lvl2, serial_issues.lvl3,
                  serial_issues.lvl4, serial_issues.lvl5, serial_issues.lvl6, serial_issues.alt_lvl1,
                  serial_issues.alt_lvl2, serial_issues.chron1, serial_issues.chron2, serial_issues.chron3,
@@ -252,31 +275,33 @@ my %queries = (
        FROM      serial_issues
        LEFT JOIN component       ON (component.component_id = serial_issues.component_id)
        LEFT JOIN subscription    ON (subscription.subscription_id = component.subscription_id)
-       LEFT JOIN line_item       ON (subscription.line_item_id = line_item.line_item_id)",
+       LEFT JOIN line_item       ON (subscription.line_item_id = line_item.line_item_id)
+       ORDER BY  serial_issues.issue_id ASC",
   },
 
-  #Extract MFHD only for serials, so the location and subscription history can be extracted
+  #Extract MFHD only for serials, so the location and subscription history can be extracted.
+  #The "20a-subscription_locations.csv" seems to generate rather excellent results for HAMK, but not dropping this feature yet, since
+  # ByWater must have had a good reason to implement it. Prolly this is needed for other Voyager libraries.
   "serials_mfhd.csv" => {
     encoding => "UTF-8",
+    uniqueKey => -1,
     sql =>
       "SELECT 1", #Special processing for this one
   },
   "29-requests.csv" => {
     encoding => "iso-8859-1",
+    #Multiple holds with the same primary key? This is a parallel hold which is fulfillable by any of the reserved items.
+    #TODO: This feature is something that needs to be implemented in Koha first. For the time being, let the extractor complain about it so we wont forget.
+    uniqueKey => 0,
     sql =>
-      "SELECT    HOLD_RECALL.BIB_ID, HOLD_RECALL.PATRON_ID, HOLD_RECALL_ITEMS.ITEM_ID, HOLD_RECALL.REQUEST_LEVEL, HOLD_RECALL_ITEMS.QUEUE_POSITION,
-                 HOLD_RECALL_STATUS.HR_STATUS_DESC, HOLD_RECALL_ITEMS.HOLD_RECALL_STATUS, HOLD_RECALL_ITEMS.HOLD_RECALL_STATUS_DATE,
-                 HOLD_RECALL.CREATE_DATE, HOLD_RECALL.EXPIRE_DATE, HOLD_RECALL.PICKUP_LOCATION
-       FROM      HOLD_RECALL
-       JOIN      HOLD_RECALL_ITEMS  ON (HOLD_RECALL_ITEMS.HOLD_RECALL_ID = HOLD_RECALL.HOLD_RECALL_ID)
-       JOIN      HOLD_RECALL_STATUS ON (HOLD_RECALL_STATUS.HR_STATUS_TYPE = HOLD_RECALL_ITEMS.HOLD_RECALL_STATUS)
-       ORDER BY  HOLD_RECALL_ITEMS.ITEM_ID, HOLD_RECALL_ITEMS.QUEUE_POSITION",
-  },
-  "29a-locations.csv" => {
-    encoding => "iso-8859-1",
-    sql =>
-      "SELECT    location.location_id, location.location_code, location.location_name
-       FROM      location"
+      "SELECT    hold_recall.hold_recall_id,
+                 hold_recall.bib_id, hold_recall.patron_id, hold_recall_items.item_id, hold_recall.request_level, hold_recall_items.queue_position,
+                 hold_recall_status.hr_status_desc, hold_recall_items.hold_recall_status, hold_recall_items.hold_recall_status_date,
+                 hold_recall.create_date, hold_recall.expire_date, hold_recall.pickup_location
+       FROM      hold_recall
+       JOIN      hold_recall_items  on (hold_recall_items.hold_recall_id = hold_recall.hold_recall_id)
+       JOIN      hold_recall_status on (hold_recall_status.hr_status_type = hold_recall_items.hold_recall_status)
+       ORDER BY  hold_recall_items.item_id, hold_recall_items.queue_position",
   },
 );
 
@@ -289,7 +314,7 @@ sub extractSerialsMFHD($) {
 
   #Turn MFHD's into MARCXML, and then use a transformation hook to turn it into .csv instead!! Brilliant! What could go wrong...
   Exp::Strategy::MARC::_exportMARC(
-    $filename,
+    Exp::Config::exportPath($filename),
     "SELECT    mfhd_data.mfhd_id, mfhd_data.seqnum, mfhd_data.record_segment
      FROM      mfhd_data
      LEFT JOIN serials_vw ON (mfhd_data.mfhd_id = serials_vw.mfhd_id)
@@ -306,7 +331,6 @@ sub extractSerialsMFHD($) {
         $location = Exp::nvolk_marc21::marc21_record_get_field($$record_ptr, '852', 'b');
 
         my @holdingsFields = Exp::nvolk_marc21::marc21_record_get_fields($$record_ptr, '863', undef);
-        print "\n".join(" -- ", ($mfhd_id, $location, @holdingsFields))."\n";
         my @holdings = map {Exp::nvolk_marc21::marc21_field_get_subfield($_, 'a')} @holdingsFields;
         $holdings = join(' ', @holdings);
       };
@@ -328,7 +352,18 @@ sub extractSerialsMFHD($) {
   );
 }
 
-#I managed to install SQL::Statement without root permissions, but let's try to keep the extra module deps as small as possible.
+=head2 getColumnEncodings
+
+Voyager has different encodings for each table. When tables are joined in a SELECT-query,
+those encodings are not normalized in the DBD::Oracle-layer.
+Each column must be decoded from the correct encoding, so they can be dealt with without mangling characters.
+
+ @returns ARRAYRef, encoding for each column based on the table encoding of the joined column
+
+P.S. I managed to install SQL::Statement without root permissions, but let's try to keep the extra module deps as small as possible.
+
+=cut
+
 sub getColumnEncodings($) {
   my ($cols) = @_;
   my @encodings;
@@ -344,6 +379,12 @@ sub getColumnEncodings($) {
   return \@encodings;
 }
 
+=head2 extractQuerySelectColumns
+
+ @returns ARRAYRef, The 'table.column' -entries in the SELECT-clause.
+
+=cut
+
 sub extractQuerySelectColumns($) {
   my ($query) = @_;
   my $header_row = $query;
@@ -353,6 +394,7 @@ sub extractQuerySelectColumns($) {
   $header_row =~ s/\tfrom\t.*//i;
   $header_row =~ s/,\t/,/g;
   $header_row =~ tr/A-Z/a-z/;
+  $header_row =~ s/\.\w+\s+as\s+(\w+)/\.$1/g; #Simplify column aliasing... renew_transactions.renew_date as last_renew_date -> renew_transactions.last_renew_date
   my @cols = split(',', $header_row);
   return \@cols;
 }
@@ -364,119 +406,10 @@ sub createHeaderRow($) {
   return $header_row;
 }
 
-sub anonymize($$) {
-  my ($filename, $line) = @_;
-  if ( $filename eq "05-patron_addresses.csv" ) {
-      # "SELECT PATRON_ADDRESS.PATRON_ID, PATRON_ADDRESS.ADDRESS_TYPE, PATRON_ADDRESS.ADDRESS_LINE1, 
-      # PATRON_ADDRESS.ADDRESS_LINE2, PATRON_ADDRESS.ADDRESS_LINE3, PATRON_ADDRESS.ADDRESS_LINE4, 
-      # PATRON_ADDRESS.ADDRESS_LINE5, PATRON_ADDRESS.CITY, PATRON_ADDRESS.STATE_PROVINCE, 
-      # PATRON_ADDRESS.ZIP_POSTAL, PATRON_ADDRESS.COUNTRY
-      if ( $line->[1] eq '3' ) { # email
-        $line->[2] = 'etunimi.sukunimi@hamk.fi';
-        # Nollaa muut kentat varmuuden vuoksi
-        for ( my $k=3; $k < @$line; $k++ ) {
-            $line->[$k] = '';
-        }
-      }
-      else {
-        if ( $line->[2] ) { $line->[2] = 'Katuosoite 1A'; }
-        if ( $line->[3] ) { $line->[3] = 'Toinen osoiterivi'; }
-        if ( $line->[4] ) { $line->[4] = 'Kolmas osoiterivi'; }
-        if ( $line->[5] ) { $line->[5] = 'Neljäs osoiterivi'; }
-        if ( $line->[6] ) { $line->[6] = 'Viides osoiterivi'; }
-        if ( $line->[7] ) { $line->[7] = 'Hämeenlinna'; }
-        #if ( $line->[8] ) { $line->[8] = 'Häme'; } #City is not personally identifiable and helps spot encoding issues
-        if ( $line->[9] ) { $line->[9] = '13100'; }
-        if ( $line->[10] ) { $line->[10] = 'Suomi'; }
-      }
-  }
-  if ( $filename eq "07-patron_names_dates.csv" ) {
-    # "SELECT PATRON.PATRON_ID, PATRON.LAST_NAME, PATRON.FIRST_NAME, PATRON.MIDDLE_NAME, 
-    # PATRON.CREATE_DATE, PATRON.EXPIRE_DATE, PATRON.INSTITUTION_ID
-    if ( $line->[1] ) { $line->[1] = 'Doe'; }
-    if ( $line->[2] ) {
-      $line->[2] = 'John';
-      if ( $line->[6] && $line->[6] =~ /\-\d\d[02468].$/ ) {
-        $line->[2] = 'Jane';
-      }
-    }
-    if ( $line->[3] ) {
-      my $tmp = $line->[0]%25;
-      $line->[3] = chr($tmp+65).".";
-    }
-    if ( $line->[6] ) {
-      $line->[6] =~ s/\d\d(\d).$/00${1}0/;
-      my $tmp = '0104'.int(rand(30)+70);
-      $line->[6] =~ s/^....../$tmp/;
-    }
-    if ( $line->[9] ) { #ssn aka institution_id
-      $line->[9] =~ s/\d/1/gsm;
-    }
-    if ( $line->[10] ) { #BIRTH_DATE
-      $line->[10] =~ s/\d/1/gsm;
-    }
-  }
-
-  if ( $filename eq "09-patron_notes.csv" ) {
-    # SELECT patron_notes.patron_id,patron_notes.note FROM patron_notes 
-    my $new_note = '';
-    my $old_line = $line->[1];
-    while ( $line->[1] ) {
-      if ( $line->[1] =~ s/^\d// ) {
-        $new_note .= int(rand(10));
-      }
-      elsif ( $line->[1] =~ s/^(\s+|[;.\-,:])// ) {
-        $new_note .= $1;
-      }
-      elsif ( $line->[1] =~ s/^\p{Ll}// ) {
-        $new_note .= chr(97+int(rand(25)));
-      }
-      elsif ( $line->[1] =~ s/.// ) {
-        $new_note .= chr(65+int(rand(25)));
-      }
-      if ( $old_line eq $line->[1] ) {
-        $line->[1] = 'ABORT';
-      }
-    }
-    $line->[1] = $new_note;
-  }
-
-  if ( $filename eq "10-patron_phones.csv" ) {
-    # "SELECT patron_address.patron_id,
-    # phone_type.phone_desc, patron_phone.phone_number
-    my $new_note = '';
-    if ( $line->[2] =~ s/^(\+358|040|09|044|050)// ) {
-      $new_note = $1;
-    }
-    while ( $line->[2] ) {
-      if ( $line->[2] =~ s/^\d// ) {
-        $new_note .= int(rand(10));
-      }
-      elsif ( $line->[2] =~ s/^(.)// ) {
-        $new_note .= $1;
-      }
-    }
-    $line->[2] = $new_note;
-  }
-
-  if ( $filename eq "12-current_circ.csv" ) {
-    # "SELECT patron_barcode.patron_barcode, patron.institution_id,circ_transactions.patron_id,
-    # item_barcode.item_barcode,
-    # circ_transactions.charge_date,circ_transactions.current_due_date,
-    # circ_transactions.renewal_count
-
-    if ( 0 && $line->[1] ) { # tässä oli ennen patron.institution_id
-      $line->[1] =~ s/\d\d(\d).$/00${1}0/;
-      my $tmp = '0104'.int(rand(30)+70);
-      $line->[1] =~ s/^....../$tmp/;
-    }
-  }
-}
-
 sub writeCsvRow($$) {
   my ($FH, $line) = @_;
   for my $k (0..scalar(@$line)-1) {
-    if ($line->[$k]) {
+    if (defined($line->[$k])) {
       $line->[$k] =~ s/"/'/g;
       if ($line->[$k] =~ /,/) {
         $line->[$k] = '"'.$line->[$k].'"';
@@ -487,6 +420,44 @@ sub writeCsvRow($$) {
     }
   }
   print $FH join(",", @$line)."\n";
+}
+
+=head2 deduplicateUniqueKey
+
+Catch multiple unique keys here. Make sure the export queries work as expected and the complex joins and groupings
+do not cause unintended duplication of source data.
+
+ @param1 Integer, index of the unique key to deduplicate in the given columns.
+                  or ARRAYRef of indexes if multiple keys
+                  Deduplication is ignored if @param1 < 0
+ @param2 ARRAYRef, column names from the extract query select portion
+ @param3 ARRAYRef, columns of data from the extract query
+
+=cut
+
+my %uniqueColumnVerifier;
+sub deduplicateUniqueKey($$$) {
+  my ($uniqueKeyIndex, $columnNames, $columns) = @_;
+  return if (not(ref($uniqueKeyIndex)) && $uniqueKeyIndex < 0);
+
+  #Merge possible multiple unique indexes into one combined key
+  my ($combinedId, $combinedColName);
+  if (ref($uniqueKeyIndex) eq 'ARRAY') {
+    $combinedId = join('-', map {$columns->[$_] // ''} @$uniqueKeyIndex);
+    $combinedColName = join('-', map {$columnNames->[$_]} @$uniqueKeyIndex);
+  }
+  else {
+    $combinedId      = $columns->[$uniqueKeyIndex];
+    $combinedColName = $columnNames->[$uniqueKeyIndex];
+  }
+
+  if ($uniqueColumnVerifier{$combinedId}) {
+    print "Unique key constraint violated! key='$combinedColName' => '$combinedId', violations='$uniqueColumnVerifier{$combinedId}'\n";
+    $uniqueColumnVerifier{$combinedId}++;
+  }
+  else {
+    $uniqueColumnVerifier{$combinedId} = 1;
+  }
 }
 
 sub extract($) {
@@ -501,8 +472,11 @@ sub extract($) {
     }
     print "Extracting '$filename' with precision!\n";
 
-    my $query         = $queries{$filename}{sql};
-    my $inputEncoding = $queries{$filename}{encoding};
+    my $query          = $queries{$filename}{sql};
+    my $inputEncoding  = $queries{$filename}{encoding};
+    my $anonRules      = $queries{$filename}{anonymize};
+    my $uniqueKeyIndex = $queries{$filename}{uniqueKey};
+    %uniqueColumnVerifier = (); #Reset for every query
 
     if ($filename eq "serials_mfhd.csv") {
       extractSerialsMFHD($filename);
@@ -527,7 +501,9 @@ sub extract($) {
       Exp::Encoding::decodeToPerlInternalEncoding(\@line, $columnEncodings);
       Exp::Encoding::Repair::repair($filename, \@line, \%columnToIndexLookup);
 
-      anonymize($filename, \@line) if ($anonymize);
+      deduplicateUniqueKey($uniqueKeyIndex, $colNames, \@line);
+
+      Exp::Anonymize::anonymize(\@line, $anonRules, \%columnToIndexLookup) if ($anonymize);
 
       print "."    unless ($i % 10);
       print "\r$i          " unless ($i % 100);

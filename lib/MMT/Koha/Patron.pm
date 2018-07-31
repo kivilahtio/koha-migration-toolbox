@@ -197,14 +197,14 @@ sub setSurname($s, $o, $b) {
 }
 sub setDateenrolled($s, $o, $b) {
   if ($o->{registration_date}) { #registration_date might not always exists
-    $s->{dateenrolled} = MMT::Date::translateDateDDMMMYY($o->{registration_date}, $s, 'registration_date->dateenrolled');
+    $s->{dateenrolled} = $o->{registration_date};
   }
   else {
-    $s->{dateenrolled} = MMT::Date::translateDateDDMMMYY($o->{create_date}, $s, 'create_date->dateenrolled');
+    $s->{dateenrolled} = $o->{create_date};
   }
 }
 sub setDateexpiry($s, $o, $b) {
-  $s->{dateexpiry}   = MMT::Date::translateDateDDMMMYY($o->{expire_date}, $s, 'expire_date->dateexpiry', 50); #Expiration dates might be 10 years to the future. Probably there are no expiration dates from the past millenium.
+  $s->{dateexpiry}   = $o->{expire_date};
   unless ($s->{dateexpiry}) {
     my $notification = "Missing expiration date, expiring now";
     $log->warn($s->logId()." - $notification");

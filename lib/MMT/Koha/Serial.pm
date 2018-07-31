@@ -66,14 +66,14 @@ sub logId($s) {
 }
 
 sub setPlanneddate($s, $o, $b) {
-  $s->{planneddate} = MMT::Date::translateDateDDMMMYY($o->{receipt_date} || $o->{expected_date}, $s, 'receipt_date||expected_date->planneddate', 50); #Serials could be planned way in to the future
+  $s->{planneddate} = $o->{receipt_date};
 
   unless ($s->{planneddate}) {
     MMT::Exception::Delete->throw($s->logId()."' has no receipt_date||expected_date/planneddate.");
   }
 }
 sub setPublisheddate($s, $o, $b) {
-  $s->{publisheddate} = MMT::Date::translateDateDDMMMYY($o->{expected_date}, $s, 'expected_date->publisheddate', 50); #Serials could be published way into the future
+  $s->{publisheddate} = $o->{expected_date};
   unless ($s->{publisheddate}) {
     MMT::Exception::Delete->throw($s->logId()."' has no expected_date/publisheddate.");
   }

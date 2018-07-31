@@ -29,8 +29,8 @@ sub new($class) {
   return $class->SUPER::new({file => $translationTableFile});
 }
 
-sub example($s, $kohaObject, $voyagerObject, $builder, $originalValue, @tableParams) {
-  return $tableParams[0];
+sub example($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tableParams, $transParams) {
+  return $tableParams->[0];
 }
 
 return 1;
