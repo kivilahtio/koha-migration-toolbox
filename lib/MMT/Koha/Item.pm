@@ -29,59 +29,64 @@ MMT::Koha::Item - Transforms a bunch of Voyager data into a Koha item
 =cut
 
 =head2 build
+
  @param1 Voyager data object
  @param2 Builder
+
 =cut
+
 sub build($self, $o, $b) {
-  $self->setItemnumber           ($o, $b);
-  $self->setBiblionumber         ($o, $b);
-  $self->setBarcode              ($o, $b);
-  $self->setDateaccessioned      ($o, $b);
-  #$self->setDatereceived        ($o, $b);
-  #$self->setBooksellerid        ($o, $b);
-  $self->setHomebranch           ($o, $b);
-  $self->setPrice                ($o, $b);
-  #$self->setReplacementprice    ($o, $b);
-  #$self->setReplacementpricedate($o, $b);
-  $self->setDatelastborrowed     ($o, $b);
-  #$self->setDatelastseen        ($o, $b);
-  #$self->setStack               ($o, $b);
-  $self->setStatuses             ($o, $b);
-  #  \$self->setNotforloan        ($o, $b);
-  #   \$self->setDamaged           ($o, $b);
-  #    \$self->setItemlost          ($o, $b);
-  #     \$self->setItemlost_on       ($o, $b);
-  #      \$self->setWithdrawn         ($o, $b);
-  #       \$self->setWithdrawn_on      ($o, $b);
-  $self->setItemcallnumber       ($o, $b);
-  #$self->setCoded_location_qualifier($o, $b);
-  $self->setIssues               ($o, $b);
-  #$self->setRenewals            ($o, $b);
-  #$self->setReserves            ($o, $b);
-  #$self->setRestricted          ($o, $b);
-  $self->setItemnotes            ($o, $b);
-  #  \$self->setItemnotes_nonpublic($o, $b);
-  $self->setHoldingbranch        ($o, $b);
-  #$self->setPaidfor($o, $b);
-  #$self->setTimestamp($o, $b);
-  $self->setPermanent_location   ($o, $b);
-  $self->setLocation             ($o, $b);
-  #$self->setOnloan($o, $b);
-  #$self->setCn_source($o, $b);
-  #$self->setCn_sort($o, $b);
-  #$self->setMaterials($o, $b);
-  #$self->setUri($o, $b);
-  $self->setItype                ($o, $b);
-  #$self->setMore_subfields_xml($o, $b);
-  $self->setEnumchron            ($o, $b);
-  #$self->setCopynumber($o, $b);
-  #$self->setStocknumber($o, $b);
-  #$self->setNew_status($o, $b);
-  #$self->setGenre($o, $b);
-  #$self->setSub_location($o, $b);
-  #$self->setCirculation_level($o, $b);
-  #$self->setReserve_level($o, $b);
-  $self->setCcode                ($o, $b);
+  $self->setKeys($o, $b, [['item_id' => 'itemnumber'], ['bib_id' => 'biblionumber']]);
+
+  $self->set(barcode              => 'barcode',            $o, $b);
+  $self->set(add_date             => 'dateaccessioned',    $o, $b);
+  $self->set(perm_location        => 'homebranch',         $o, $b);
+  $self->set(price                => 'price',              $o, $b);
+  $self->set(last_borrow_date     => 'datelastborrowed',   $o, $b);
+  $self->setStatuses                                      ($o, $b);
+  #  \$self->setNotforloan
+  #   \$self->setDamaged
+  #    \$self->setItemlost
+  #     \$self->setItemlost_on
+  #      \$self->setWithdrawn
+  #       \$self->setWithdrawn_on
+  $self->set(call_no              => 'itemcallnumber',     $o, $b);
+  $self->set(historical_charges   => 'issues',             $o, $b);
+  $self->setItemnotes                                     ($o, $b);
+  #  \$self->setItemnotes_nonpublic
+  $self->set(temp_location        => 'holdingbranch',      $o, $b);
+  $self->set(perm_location        => 'permanent_location', $o, $b);
+  $self->set(temp_location        => 'location',           $o, $b);
+  $self->set(item_type_id         => 'itype',              $o, $b);
+  $self->set(['enumeration',
+              'chronology']       ,  'enumchron',          $o, $b);
+  $self->setCcode                                         ($o, $b);
+
+  #$self->set(? => datereceived, $o, $b);
+  #$self->set(? => booksellerid, $o, $b);
+  #$self->set(? => replacementprice, $o, $b);
+  #$self->set(? => replacementpricedate, $o, $b);
+  #$self->set(? => datelastseen, $o, $b);
+  #$self->set(? => stack, $o, $b);
+  #$self->set(? => coded_location_qualifier, $o, $b);
+  #$self->set(? => renewals, $o, $b);
+  #$self->set(? => reserves, $o, $b);
+  #$self->set(? => restricted, $o, $b);
+  #$self->set(? => paidfor, $o, $b);
+  #$self->set(? => timestamp, $o, $b);
+  #$self->set(? => onloan, $o, $b);
+  #$self->set(? => cn_source, $o, $b);
+  #$self->set(? => cn_sort, $o, $b);
+  #$self->set(? => materials, $o, $b);
+  #$self->set(? => uri, $o, $b);
+  #$self->set(? => more_subfields_xml, $o, $b);
+  #$self->set(? => copynumber, $o, $b);
+  #$self->set(? => stocknumber, $o, $b);
+  #$self->set(? => new_status, $o, $b);
+  #$self->set(? => genre, $o, $b);
+  #$self->set(? => sub_location, $o, $b);
+  #$self->set(? => circulation_level, $o, $b);
+  #$self->set(? => reserve_level, $o, $b);
 }
 
 sub id {
@@ -92,18 +97,6 @@ sub logId($s) {
   return 'Item: '.$s->id();
 }
 
-sub setItemnumber($s, $o, $b) {
-  unless ($o->{item_id}) {
-    MMT::Exception::Delete->throw("Item is missing item_id ".MMT::Validator::dumpObject($o));
-  }
-  $s->{itemnumber} = $o->{item_id};
-}
-sub setBiblionumber($s, $o, $b) {
-  unless ($o->{bib_id}) {
-    MMT::Exception::Delete->throw("Item is missing bib_id ".MMT::Validator::dumpObject($o));
-  }
-  $s->{biblionumber} = $o->{bib_id};
-}
 sub setBarcode($s, $o, $b) {
   $s->{barcode} = $o->{barcode};
 
@@ -120,13 +113,10 @@ sub setDateaccessioned($s, $o, $b) {
   }
 }
 sub setPrice($s, $o, $b) {
-  $s->sourceKeyExists($o, 'price');
   $s->{price} = (defined($o->{price})) ? $o->{price}/100 : undef;
-
   #$log->warn($s->logId()."' has no price.") unless $s->{price}; #Too much complaining about the missing price. Hides all other issues.
 }
 sub setDatelastborrowed($s, $o, $b) {
-  $s->sourceKeyExists($o, 'last_borrow_date');
   $s->{datelastborrowed} = $o->{last_borrow_date};
   #It is ok for the Item to not have datelastborrowed
 }
@@ -138,7 +128,6 @@ sub setItemcallnumber($s, $o, $b) {
   }
 }
 sub setIssues($s, $o, $b) {
-  $s->sourceKeyExists($o, 'historical_charges');
   $s->{issues} = $o->{historical_charges} || 0;
 }
 sub setItemnotes($s, $o, $b) {
@@ -222,9 +211,6 @@ sub setCcode($s, $o, $b) {
     return;
   }
 }
-
-
-
 
 sub setStatuses($s, $o, $b) {
   my $itemStatuses = $b->{ItemStatuses}->get($o->{item_id});

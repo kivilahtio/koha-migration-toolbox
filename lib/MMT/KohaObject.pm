@@ -33,6 +33,32 @@ sub new {
   return $self;
 }
 
+=head2 set
+
+Set Koha object attributes via this wrapper.
+This implements some automatic prevalidations for data consistency.
+
+=cut
+
+sub set($s, $sourceColumnName, $kohaAttributeName, $voyagerObject, $builder) {
+  #Prevalidations for data consistency
+  if (ref($sourceColumnName) eq 'ARRAY') {
+    $s->sourceKeyExists($voyagerObject, $_) for @$sourceColumnName;
+  }
+  else {
+    $s->sourceKeyExists($voyagerObject, $sourceColumnName);
+  }
+
+  #Dispatch attribute builder
+  my $subName = 'set'.ucfirst($kohaAttributeName);
+  if ($s->can($subName)) {
+    $s->$subName($voyagerObject, $builder);
+  }
+  else {
+    $log->logdie("No such builder subroutine '$subName' for $s");
+  }
+}
+
 =head2 setKeys
 
 Sets the mandatory primary and foreign keys, drops the KohaObject if one of the given keys is missing
