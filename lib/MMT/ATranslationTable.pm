@@ -31,10 +31,13 @@ more complex logic to translation tables.
 =cut
 
 =head2 new
+
  @param1 HASHRef of constructor params: {
   file => 'translationTables/borrowers.categorycode.yaml' #file containing the translation rules
  }
+
 =cut
+
 sub new {
   $log->trace("Constructor(@_)") if $log->is_trace();
   $log->logdie(__PACKAGE__." is an abstract class") if ($_[0] eq __PACKAGE__);
@@ -51,8 +54,11 @@ sub _validate($class, $p) {
 }
 
 =head2 _loadMappings
+
 Load the translation instructions from the configuration file
+
 =cut
+
 sub _loadMappings($s) {
   $s->{_mappings} = YAML::XS::LoadFile($s->{_params}->{file});
   $log->trace(ref($s)." loaded mappings:".MMT::Validator::dumpObject($s->{_mappings}));
@@ -72,11 +78,13 @@ rules.
  @dies $DELETE if the Object in processing should be removed from migration
 
 =cut
+
 my $re_isSubroutineCall = qr{(.+)\(\s*(.*)\s*\)$};
 sub translate($s, $kohaObject, $voyagerObject, $builder, $val, @otherArgs) {
   my $kohaVal = $s->{_mappings}->{$val};
   #Check if using the fallback catch-all -value
-  if (not(defined($kohaVal))) {
+  if (not(defined($kohaVal)) ||
+      ($val eq '' && not(defined($kohaVal)))) {
     $kohaVal = $s->{_mappings}->{'_DEFAULT_'};
   }
   if (not(defined($kohaVal))) {

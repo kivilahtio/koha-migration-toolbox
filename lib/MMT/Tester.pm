@@ -24,8 +24,11 @@ Instantiate with a .yaml-file of Koha Object tests from the tests/-directory and
 =cut
 
 =head2 new
+
  @param1 file, test suite file path to the test suite to load, eg. tests/patrons.yaml
+
 =cut
+
 sub new($class, $testSuiteFile) {
   $log->trace("Constructor(@_)") if $log->is_trace();
   my $self = bless({}, $class);
@@ -34,25 +37,35 @@ sub new($class, $testSuiteFile) {
 }
 
 =head2 test
+
 Find the test suite matching the Issue's primary key (cardnumber-barcode) and confirm that the transformed ISsue is what is expected
  @param1 MMT::Koha::Issue
  @returns Boolean, true on success, false on failure
+
 =cut
+
 sub test($s, $o) {
   my $test = $s->{tests}->{$o->id()};
   return 1 unless $test;
 
   my @failed;
   while (my ($k, $re) = each(%$test)) {
+    unless (exists $o->{$k}) {
+      push(@failed, '(k):'.$k.' is missing');
+      next;
+    }
+    if ($re =~ /undef|null/i) {
+      push(@failed, '(k):'.$k.' (v):'.$o->{$k}.' (re):'.$re) if (defined($o->{$k}));
+    }
     push(@failed, '(k):'.$k.' (v):'.$o->{$k}.' (re):'.$re) unless ($o->{$k} =~ /$re/);
   }
   if (@failed) {
-    $log->warn("Tests failed for '".$o->logId()."'. @failed");
+    $log->warn("Tests failed for '".$o->logId()."' :\n".join("\n", @failed));
   }
   else {
     return 1;
   }
-  return 0;
+  return 0; #Failing by default, if not explicitly succeeding, is more safe.
 }
 
 sub _loadTestSuite($s, $testSuiteFile) {

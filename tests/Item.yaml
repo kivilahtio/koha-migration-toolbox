@@ -12,6 +12,35 @@
 ##
 
 #PK is item.item_id
-"1":
-  homebranch: HAMK
+128793:
+  barcode: 1583145001
+  biblionumber: 70776
+  dateaccessioned: 2003-11-27T12:49:12
+  datelastborrowed: 2018-03-26T12:02:16
+  holdingbranch: VALKEAKOSK
+  homebranch: VALKEAKOSK
+  issues: 16
+  itemcallnumber: 001 GHAURI
+  itemlost: 2
+  itemnumber: 128793
+  itype: LAINA28
+  location: KIR
+  permanent_location: KIR
+  price: undef
 
+142228:
+  barcode: 1583069269
+  biblionumber: 29356
+  dateaccessioned: 2006-01-12T11:12:33
+  datelastborrowed: 2006-05-02T10:04:57
+  holdingbranch: VALKEAKOSK
+  homebranch: VALKEAKOSK
+  issues: 1
+  itemcallnumber: 001 COFFEY
+  itemnotes: Poistoon kun palautuu. / 1.12.2017 pho
+  itemnumber: 142228
+  itype: LAINA28
+  location: KIR
+  notforloan: 1
+  permanent_location: KIR
+  price: 51.6

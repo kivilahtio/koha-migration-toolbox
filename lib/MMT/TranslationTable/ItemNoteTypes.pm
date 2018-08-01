@@ -37,5 +37,8 @@ sub toItemnotes($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tabl
 sub toItemnotes_nonpublic($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tableParams, $transParams) {
   $kohaObject->{itemnotes_nonpublic} = $transParams->[0]->{item_note};
 }
+sub warning($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tableParams, $transParams) {
+  $log->error($kohaObject->logId()." has an unknown item_note_type '$originalValue'. Note contents: '".$transParams->[0]->{item_note}."'");
+}
 
 return 1;

@@ -33,7 +33,7 @@ MMT::Koha::Item - Transforms a bunch of Voyager data into a Koha item
  @param2 Builder
 =cut
 sub build($self, $o, $b) {
-  $self->setItemnumber          ($o, $b);
+  $self->setItemnumber           ($o, $b);
   $self->setBiblionumber         ($o, $b);
   $self->setBarcode              ($o, $b);
   $self->setDateaccessioned      ($o, $b);
@@ -43,7 +43,7 @@ sub build($self, $o, $b) {
   $self->setPrice                ($o, $b);
   #$self->setReplacementprice    ($o, $b);
   #$self->setReplacementpricedate($o, $b);
-  $self->setDatelastborrowed    ($o, $b);
+  $self->setDatelastborrowed     ($o, $b);
   #$self->setDatelastseen        ($o, $b);
   #$self->setStack               ($o, $b);
   $self->setStatuses             ($o, $b);
@@ -55,25 +55,25 @@ sub build($self, $o, $b) {
   #       \$self->setWithdrawn_on      ($o, $b);
   $self->setItemcallnumber       ($o, $b);
   #$self->setCoded_location_qualifier($o, $b);
-  $self->setIssues              ($o, $b);
+  $self->setIssues               ($o, $b);
   #$self->setRenewals            ($o, $b);
   #$self->setReserves            ($o, $b);
   #$self->setRestricted          ($o, $b);
   $self->setItemnotes            ($o, $b);
   #  \$self->setItemnotes_nonpublic($o, $b);
-  $self->setHoldingbranch($o, $b);
+  $self->setHoldingbranch        ($o, $b);
   #$self->setPaidfor($o, $b);
   #$self->setTimestamp($o, $b);
-  $self->setPermanent_location($o, $b);
-  $self->setLocation($o, $b);
+  $self->setPermanent_location   ($o, $b);
+  $self->setLocation             ($o, $b);
   #$self->setOnloan($o, $b);
   #$self->setCn_source($o, $b);
   #$self->setCn_sort($o, $b);
   #$self->setMaterials($o, $b);
   #$self->setUri($o, $b);
-  $self->setItype($o, $b);
+  $self->setItype                ($o, $b);
   #$self->setMore_subfields_xml($o, $b);
-  $self->setEnumchron($o, $b);
+  $self->setEnumchron            ($o, $b);
   #$self->setCopynumber($o, $b);
   #$self->setStocknumber($o, $b);
   #$self->setNew_status($o, $b);
@@ -81,7 +81,7 @@ sub build($self, $o, $b) {
   #$self->setSub_location($o, $b);
   #$self->setCirculation_level($o, $b);
   #$self->setReserve_level($o, $b);
-  $self->setCcode($o, $b);
+  $self->setCcode                ($o, $b);
 }
 
 sub id {
@@ -120,8 +120,10 @@ sub setDateaccessioned($s, $o, $b) {
   }
 }
 sub setPrice($s, $o, $b) {
-  $s->{price} = $o->{price} ? $o->{price}/100 : undef;
-  $log->warn($s->logId()."' has no price.") unless $s->{price};
+  $s->sourceKeyExists($o, 'price');
+  $s->{price} = (defined($o->{price})) ? $o->{price}/100 : undef;
+
+  #$log->warn($s->logId()."' has no price.") unless $s->{price}; #Too much complaining about the missing price. Hides all other issues.
 }
 sub setDatelastborrowed($s, $o, $b) {
   $s->sourceKeyExists($o, 'last_borrow_date');
@@ -136,6 +138,7 @@ sub setItemcallnumber($s, $o, $b) {
   }
 }
 sub setIssues($s, $o, $b) {
+  $s->sourceKeyExists($o, 'historical_charges');
   $s->{issues} = $o->{historical_charges} || 0;
 }
 sub setItemnotes($s, $o, $b) {
@@ -206,7 +209,7 @@ sub setCcode($s, $o, $b) {
   return unless $itemStatisticalCategories;
 
   if (scalar(@$itemStatisticalCategories) > 1) {
-    $log->warn($s->logId()." has '".scalar(@$itemStatisticalCategories)."' statistical categories, but in Koha we can only put one collection code");
+    $log->warn($s->logId()." has '".scalar(@$itemStatisticalCategories)."' statistical categories, but in Koha we can only put one collection code. Using the newest value.");
   }
 
   my $statCat = $itemStatisticalCategories->[-1]->{item_stat_code}; #Pick the last (should be sorted so it is the newest) stat cat.
@@ -275,6 +278,5 @@ sub setStatuses($s, $o, $b) {
     }
   }
 }
-
 
 return 1;
