@@ -411,7 +411,7 @@ sub writeCsvRow($$) {
   for my $k (0..scalar(@$line)-1) {
     if (defined($line->[$k])) {
       $line->[$k] =~ s/"/'/g;
-      if ($line->[$k] =~ /,/) {
+      if ($line->[$k] =~ /,|\n/) {
         $line->[$k] = '"'.$line->[$k].'"';
       }
     }
