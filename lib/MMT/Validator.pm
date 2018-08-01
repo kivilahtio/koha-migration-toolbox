@@ -90,7 +90,7 @@ sub probablyAYear($value) {
 
 sub voyagerMoneyToKohaMoney($cashMoney) {
   die "Fiscal value '$cashMoney' is not a valid number" unless ($cashMoney =~ /^[-+]?\d+\.?\d*$/);
-  return $cashMoney / 100; #Voyager has cents instead of the "real deal". This might be smart after all.
+  return sprintf("%.2f", $cashMoney / 100); #Voyager has cents instead of the "real deal". This might be smart after all.
 }
 
 sub delimiterAllowed($delim, $fileToDelimit) {
