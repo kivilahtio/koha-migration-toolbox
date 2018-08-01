@@ -208,20 +208,15 @@ my %queries = (
     encoding => "iso-8859-1",
     uniqueKey => 0,
     sql =>
-      "SELECT    fine_fee.fine_fee_id,
-                 fine_fee.patron_id, patron_barcode.patron_barcode,
-                 fine_fee.item_id, item_barcode.item_barcode,
-                 fine_fee.create_date, fine_fee.fine_fee_type, fine_fee.fine_fee_location,
-                 fine_fee.fine_fee_amount, fine_fee.fine_fee_balance,
-                 fine_fee.fine_fee_note
-       FROM      fine_fee
-       JOIN      patron ON (fine_fee.patron_id=patron.patron_id)
-       LEFT JOIN patron_barcode ON (fine_fee.patron_id=patron_barcode.patron_id)
-       LEFT JOIN item_barcode   ON (fine_fee.item_id=item_barcode.item_id)
-       WHERE     patron_barcode.barcode_status = 1
-             AND patron_barcode.patron_barcode IS NOT NULL
-             AND item_barcode.barcode_status = 1
-             AND fine_fee.fine_fee_balance != 0",
+      "SELECT    fine_fee.fine_fee_id, \n".
+      "          patron.patron_id, item_vw.item_id, item_vw.barcode as item_barcode, \n". #Select instead the joined patron and item_vw -tables' primary keys, so we detect if those are missing.
+      "          fine_fee.create_date, fine_fee.fine_fee_type, fine_fee.fine_fee_location, \n".
+      "          fine_fee.fine_fee_amount, fine_fee.fine_fee_balance, \n".
+      "          fine_fee.fine_fee_note \n".
+      "FROM      fine_fee \n".
+      "LEFT JOIN item_vw ON (item_vw.item_id = fine_fee.item_id) \n".
+      "LEFT JOIN patron  ON (fine_fee.patron_id = patron.patron_id) \n".
+      "WHERE     fine_fee.fine_fee_balance != 0 \n",
   },
 
   #Koha has a single subscription for each branch receiving serials.
