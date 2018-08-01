@@ -114,8 +114,8 @@ sub setIssuedate($s, $o, $b) {
 sub setLastrenewdate($s, $o, $b) {
   $s->sourceKeyExists($o, 'last_renew_date'); #Make sure the key exists, so to verify there is nothing wrong with the extract program.
 
-  if (not($s->{lastrenewdate}) && $s->{renewals}) { #Some defensive programming sanity checks
-    $log->warn($s->logId()." has no lastrenewdate but renewal_count|renewals='".$s->{renewals}."'?");
+  if (not($o->{last_renew_date}) && $s->{renewals}) { #Some defensive programming sanity checks
+    $log->warn($s->logId()." has no last_renew_date but renewal_count|renewals='".$s->{renewals}."'?");
   }
 
   next unless $o->{last_renew_date}; #But do nothing if the contents of that key are empty
