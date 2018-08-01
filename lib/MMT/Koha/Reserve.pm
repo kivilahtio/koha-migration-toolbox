@@ -36,27 +36,25 @@ Flesh out the Koha-borrower -object out of the given
 
 =cut
 
-my @keys = (['patron_id' => 'borrowernumber'], ['bib_id' => 'biblionumber'], ['item_id' => 'itemnumber']);
 sub build($self, $o, $b) {
   #$self->setReserve_id                  ($o, $b); #AUTO_INCREMENT
-  $self->setKeys                         ($o, $b, \@keys);
-  #  \$self->setBorrowernumber            ($o, $b);
-  #   \$self->setBiblionumber              ($o, $b);
-  #    \$self->setItemnumber                ($o, $b);
-  $self->setReservedate                  ($o, $b);
-  $self->setBranchcode                   ($o, $b);
+  $self->setKeys($o, $b, [['patron_id' => 'borrowernumber'], ['bib_id' => 'biblionumber'], ['item_id' => 'itemnumber']]);
+
+  $self->set(create_date     => 'reservedate',    $o, $b);
+  $self->set(pickup_location => 'branchcode',     $o, $b);
+  $self->set(queue_position  => 'priority',       $o, $b);
+  $self->setStatuses                             ($o, $b);
+  #  \$self->setFound
+  #   \$self->setWaitingdate
+  $self->set(expire_date     => 'expirationdate', $o, $b);
+  $self->setLowestPriority                       ($o, $b);
+
+  #$self->setTimestamp                   ($o, $b); #ON_UPDATE
+  #$self->setPickupexpired               ($o, $b);
   #$self->setNotificationdate            ($o, $b);
   #$self->setReminderdate                ($o, $b);
   #$self->setCancellationdate            ($o, $b);
   #$self->setReservenotes                ($o, $b);
-  $self->setPriority                     ($o, $b);
-  $self->setStatuses                     ($o, $b);
-  #  \$self->setFound                     ($o, $b);
-  #   \$self->setWaitingdate               ($o, $b);
-  #$self->setTimestamp                   ($o, $b); #ON_UPDATE
-  $self->setExpirationdate               ($o, $b);
-  #$self->setPickupexpired               ($o, $b);
-  $self->setLowestPriority               ($o, $b);
   #$self->setSuspend                     ($o, $b);
   #$self->setSuspend_until               ($o, $b);
   #$self->setItemtype                    ($o, $b);
@@ -95,9 +93,10 @@ sub setPriority($s, $o, $b) {
   }
 }
 sub setStatuses($s, $o, $b) {
+  $s->sourceKeyExists($o, 'hr_status_desc');
   $s->sourceKeyExists($o, 'queue_position');
   $s->sourceKeyExists($o, 'hold_recall_status_date');
-  $b->{HoldStatuses}->translate(@_, $o->{queue_position});
+  $b->{HoldStatuses}->translate(@_, $o->{hr_status_desc});
 }
 sub setExpirationdate($s, $o, $b) {
   $s->{expirationdate} = $o->{expire_date};

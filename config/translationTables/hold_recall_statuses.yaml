@@ -9,11 +9,12 @@
 
 
 #voyager.HOLD_RECALL_STATUS.csv
-#HR_STATUS_TYPE	              HR_STATUS_DESC
+#HR_STATUS_DESC                              # HR_STATUS_ID
 #  mapping
-1: isWaitingForFulfilment() # Active
-2: isWaitingForPickup()     # Pending
-3: $DELETE                  # Canceled
-4: $DELETE                  # Charged
-5: $DELETE                  # Expired
-6: isInTransitForPickup()   # Pending In Transit
+Active:    isWaitingForFulfilment()          # 1
+Pending:   isWaitingForPickup()              # 2
+Cancelled: $DELETE                           # 3
+Charged:   $DELETE                           # 4
+Expired:   $DELETE                           # 5
+Pending In Transit: isInTransitForPickup()   # 6
+_DEFAULT_: warning()

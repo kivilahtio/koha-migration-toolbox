@@ -292,6 +292,7 @@ my %queries = (
     encoding => "iso-8859-1",
     #Multiple holds with the same primary key? This is a parallel hold which is fulfillable by any of the reserved items.
     #TODO: This feature is something that needs to be implemented in Koha first. For the time being, let the extractor complain about it so we wont forget.
+    #TODO: Apparently Voyager implements parallel hold queus via this mechanism, where the hold is targeted to items available via one of the parallel hold queues.
     uniqueKey => 0,
     sql =>
       "SELECT    hold_recall.hold_recall_id,

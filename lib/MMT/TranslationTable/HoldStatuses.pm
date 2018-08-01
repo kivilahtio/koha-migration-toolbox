@@ -37,11 +37,19 @@ sub isWaitingForFulfilment($s, $kohaObject, $voyagerObject, $builder, $originalV
 sub isWaitingForPickup($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tableParams, $transParams) {
   $kohaObject->{found} = 'W';
   $kohaObject->{waitingdate} = $voyagerObject->{hold_recall_status_date};
+  $kohaObject->{priority} = $voyagerObject->{queue_position} -1; #Koha priority 0 is top priority. In voyager 1 is top priority.
+
+  unless ($kohaObject->{priority} == 0) {
+    $log->warn($kohaObject->logId()." is waiting for pickup but hold priority 'voyager('".$voyagerObject->{queue_position}."')->koha(".$kohaObject->{priority}.")' is not 0?");
+  }
+
   return $kohaObject->{found};
 }
 sub isInTransitForPickup($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tableParams, $transParams) {
   $kohaObject->{found} = 'T';
   return $kohaObject->{found};
 }
-
+sub warning($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tableParams, $transParams) {
+  $log->error($kohaObject->logId()." has an unknown hr_status_desc '$originalValue'.");
+}
 return 1;
