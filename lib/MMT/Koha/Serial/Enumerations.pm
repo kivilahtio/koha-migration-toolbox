@@ -88,8 +88,8 @@ sub enumThenChron($s, $o, $b) {
   }
   $s->{serialseq}   = $o->{enumchron};
 
-  my @vals = map {$o->{$_} // ''} @enumChronColsOrderIfEnumFirst;
-  $log->debug(sprintf("%-5s, %-20s - %-20s - %6s, %6s, %6s, %6s, %6s, %6s, %10s, %10s, %10s, %10s, %10s, %10s, %10s", $s->{subscriptionid}, join(':', @xyz), $o->{enumchron}, @vals));
+  #my @vals = map {$o->{$_} // ''} @enumChronColsOrderIfEnumFirst;
+  #$log->debug(sprintf("%-5s, %-20s - %-20s - %6s, %6s, %6s, %6s, %6s, %6s, %10s, %10s, %10s, %10s, %10s, %10s, %10s", $s->{subscriptionid}, join(':', @xyz), $o->{enumchron}, @vals));
 }
 
 return 1;

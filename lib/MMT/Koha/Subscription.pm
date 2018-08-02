@@ -35,11 +35,9 @@ MMT::Koha::Subscription - Transforms a bunch of Voyager data into Koha subscript
 
 =cut
 
-my @keys = (['bib_id' => 'biblionumber'], ['component_id' => 'subscriptionid']);
 sub build($self, $o, $b) {
-  $self->setKeys                 ($o, $b, \@keys);
-  #  \$self->setBiblionumber      ($o, $b); #| int(11)      | NO   |     | 0       |                |
-  #   \$self->setSubscriptionid    ($o, $b); #| int(11)      | NO   | PRI | NULL    | auto_increment |
+  $self->setKeys                 ($o, $b, [['bib_id' => 'biblionumber'], ['component_id' => 'subscriptionid']]);
+
   #$self->setLibrarian           ($o, $b); #| varchar(100) | YES  |     |         |                |
   $self->setStartdate            ($o, $b); #| date         | YES  |     | NULL    |                |
   #$self->setAqbooksellerid      ($o, $b); #| int(11)      | YES  |     | 0       |                |
@@ -75,7 +73,7 @@ sub build($self, $o, $b) {
   $self->setStaffdisplaycount    ($o, $b); #| varchar(10)  | YES  |     | NULL    |                |
   $self->setOpacdisplaycount     ($o, $b); #| varchar(10)  | YES  |     | NULL    |                |
   #$self->setGraceperiod         ($o, $b); #| int(11)      | NO   |     | 0       |                |
-  $self->setEnddate             ($o, $b); #| date         | YES  |     | NULL    |                |
+  $self->setEnddate              ($o, $b); #| date         | YES  |     | NULL    |                |
   $self->setClosed               ($o, $b); #| int(1)       | NO   |     | 0       |                |
   #$self->setReneweddate         ($o, $b); #| date         | YES  |     | NULL    |                |
   #$self->setItemtype            ($o, $b); #| varchar(10)  | YES  |     | NULL    |                |
