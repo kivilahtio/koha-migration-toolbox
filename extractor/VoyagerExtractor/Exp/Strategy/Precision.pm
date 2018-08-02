@@ -106,24 +106,26 @@ my %queries = (
                   address_line3 => "scramble", address_line4 => "scramble",
                   address_line5 => "scramble", zip_postal    => "scramble",},
     sql =>
-      "SELECT    patron_address.address_id,
-                 patron_address.patron_id, patron_address.address_type,
-                 patron_address.address_line1, patron_address.address_line2, patron_address.address_line3, patron_address.address_line4,
-                 patron_address.address_line5, patron_address.city, patron_address.state_province,
-                 patron_address.zip_postal, patron_address.country
-       FROM      patron_address
-       ORDER BY  patron_address.patron_id, patron_address.address_type",
+      "SELECT    patron_address.address_id, \n".
+      "          patron_address.patron_id, \n".
+      "          patron_address.address_type, address_type.address_desc, \n".
+      "          patron_address.address_line1, patron_address.address_line2, patron_address.address_line3, patron_address.address_line4, \n".
+      "          patron_address.address_line5, patron_address.city, patron_address.state_province, patron_address.zip_postal, patron_address.country \n".
+      "FROM      patron_address \n".
+      "LEFT JOIN address_type ON (address_type.address_type = patron_address.address_type) \n".
+      "ORDER BY  patron_address.patron_id, patron_address.address_type \n",
   },
-  "06-patron_groups.csv" => {
+  "06-patron_barcode_groups.csv" => {
     encoding => "iso-8859-1",
     uniqueKey => 0,
     sql =>
       "SELECT    patron_barcode.patron_barcode_id,
-                 patron_barcode.patron_id, patron_barcode.patron_barcode, patron_barcode.barcode_status,
+                 patron_barcode.patron_id, patron_barcode.patron_barcode,
+                 patron_barcode.barcode_status, patron_barcode_status.barcode_status_desc, patron_barcode.barcode_status_date,
                  patron_barcode.patron_group_id
        FROM      patron_barcode
-       WHERE     patron_barcode.patron_barcode IS NOT NULL
-       ORDER BY  patron_barcode.patron_id",
+       LEFT JOIN patron_barcode_status ON (patron_barcode.barcode_status = patron_barcode_status.barcode_status_type)
+       ORDER BY  patron_barcode.patron_id, patron_barcode.barcode_status_date DESC", #It is important to have the newest status first, so we always use the latest status && barcode for the Patron
   },
   "07-patron_names_dates.csv" => {
     encoding => "iso-8859-1",
@@ -132,24 +134,14 @@ my %queries = (
                   middle_name => "scramble", institution_id => "ssn",
                   patron_pin => "scramble",  birth_date => "date"},
     sql =>
-      "SELECT    patron.patron_id, patron.last_name, patron.first_name, patron.middle_name, 
+      "SELECT    patron.patron_id,
+                 patron.last_name, patron.first_name, patron.middle_name, patron.title,
                  patron.create_date, patron.expire_date, patron.institution_id,
                  patron.registration_date,
                  patron.patron_pin,
                  patron.institution_id, patron.birth_date
        FROM      patron
        ORDER BY  patron.patron_id",
-  },
-  "08-patron_groups_nulls.csv" => {
-    encoding => "iso-8859-1",
-    uniqueKey => 0,
-    sql =>
-      "SELECT    patron_barcode.patron_barcode_id,
-                 patron_barcode.patron_id, patron_barcode.patron_barcode, patron_barcode.barcode_status,
-                 patron_barcode.patron_group_id
-       FROM      patron_barcode
-       WHERE     patron_barcode.patron_barcode IS NULL
-             AND patron_barcode.barcode_status=1",
   },
   "09-patron_notes.csv" => {
     encoding => "iso-8859-1",
@@ -245,7 +237,7 @@ my %queries = (
   },
   "20a-subscription_locations.csv" => {
     encoding => "iso-8859-1",
-    uniqueKey => [0, 1], #Check that each component has only one location for received items.
+    uniqueKey => [0, 1], #Check later that each component has only one location for received items.
     sql =>
       "SELECT    issues_received.component_id, issues_received.location_id
        FROM      issues_received
@@ -407,6 +399,7 @@ sub writeCsvRow($$) {
   for my $k (0..scalar(@$line)-1) {
     if (defined($line->[$k])) {
       $line->[$k] =~ s/"/'/g;
+      $line->[$k] =~ s/\r//gsm;
       if ($line->[$k] =~ /,|\n/) {
         $line->[$k] = '"'.$line->[$k].'"';
       }

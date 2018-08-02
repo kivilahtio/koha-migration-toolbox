@@ -80,8 +80,11 @@ sub __scramble($) {
     elsif ( $_[0] =~ s/^\p{Ll}// ) {
       $newText .= chr(97+int(rand(25)));
     }
-    elsif ( $_[0] =~ s/.// ) {
+    elsif ( $_[0] =~ s/^\p{Lu}// ) {
       $newText .= chr(65+int(rand(25)));
+    }
+    elsif ( $_[0] =~ s/^(.)// ) {
+      $newText .= $1;
     }
     if ( $newText eq $_[0] ) {
       $_[0] = 'ABORT';

@@ -1,5 +1,6 @@
 requires "Log::Log4perl";
 requires "YAML::XS";
+requires "Email::Valid";
 requires "Getopt::OO";
 requires "Carp::Always::Color";
 requires "File::Basename";

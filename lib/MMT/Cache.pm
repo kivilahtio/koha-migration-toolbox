@@ -69,7 +69,7 @@ sub _slurpFile($s) {
   $log->info("Cache '".$s->name()."' loaded. '$linesRead' lines read.");
 }
 sub _slurpCsv($s) {
-  my $csv = Text::CSV->new({ binary => 1, sep_char => ',' });
+  my $csv = Text::CSV->new({ binary => 1, sep_char => ',', auto_diag => 9 });
   open(my $FH, '<:encoding(UTF-8)', $s->file());
   $csv->column_names($csv->getline($FH));
   $log->debug("Loading .csv-file '".$s->file()."', identified columns '".join(',', $csv->column_names())."'");
@@ -101,7 +101,7 @@ sub get($s, $o) {
 sub key($s, $o) {
   my $key = '';
   foreach my $k (@{$s->keys()}) {
-    die "Object '".MMT::Validator::dumpObject($o)."' doesn't have the needed Cache key '$k'" unless defined $o->{$k};
+    $log->error("Object '".MMT::Validator::dumpObject($o)."' doesn't have the needed Cache key '$k'") unless defined $o->{$k};
     $key .= $o->{$k};
   }
   return $key;

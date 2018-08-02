@@ -65,7 +65,21 @@ sub new($class, $params) {
   $self->_loadRepositories();
   $self->_loadTranslationTables();
   $self->{tester} = MMT::Tester->new(MMT::Config::testDir.'/'.$self->{type}.'.yaml');
+
+  my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+  $self->{now} = sprintf("%04d-%02d-%02dT%02d:%02d:%02d", $year+1900, $mon+1, $mday, $hour, $min, $sec);
+
   return $self;
+}
+
+=head2 now
+
+ @returns The current datetime in ISO8601 YYYY-MM-DDTHH:MM:SS
+
+=cut
+
+sub now($s) {
+  return $s->{now};
 }
 
 sub build($s) {

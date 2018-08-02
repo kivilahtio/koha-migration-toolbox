@@ -7,6 +7,7 @@ use experimental 'smartmatch', 'signatures';
 use English;
 
 #External modules
+use Email::Valid;
 
 #Local modules
 use MMT::Config;
@@ -30,95 +31,104 @@ MMT::Koha::Patron - Transforms a bunch of Voyager data into a Koha borrower
 =cut
 
 =head2 new
+
 Create the bare reference. Reference is needed to be returned to the builder, so we can do better post-mortem analysis for each die'd Patron.
 build() later.
+
 =cut
+
 sub new {
   my ($class) = @_;
   my $self = bless({}, $class);
   return $self;
 }
+
 =head2 build
+
 Flesh out the Koha-borrower -object out of the given
  @param1 Voyager data object
  @param2 Builder
+
 =cut
+
 sub build($self, $o, $b) {
   $self->setBorrowernumber                   ($o, $b);
   $self->setCardnumber                       ($o, $b);
   $self->setBorrowernotes                    ($o, $b); #Set notes up here, so we can start appending notes regarding validation failures.
-  $self->setSurname                          ($o, $b);
-  $self->setFirstname                        ($o, $b);
-  $self->setSsn                              ($o, $b);
-  #$self->setTitle                           ($o, $b);
-  #$self->setOthernames                      ($o, $b);
-  #$self->setInitials                        ($o, $b);
+  #  \$self->setOpacnote
+  #   \$self->setContactnote
+  $self->set(last_name      => 'surname',     $o, $b);
+  $self->set(first_name     => 'firstname',   $o, $b);
+  $self->set(institution_id => 'ssn',         $o, $b);
+  $self->set(title          => 'title',       $o, $b);
+  $self->set(middle_name    => 'othernames',  $o, $b);
+  $self->setInitials                         ($o, $b);
   $self->setAddresses                        ($o, $b);
-  #  \$self->setStreetnumber                  ($o, $b);
-  #   \$self->setStreettype                    ($o, $b);
-  #    \$self->setAddress                       ($o, $b);
-  #     \$self->setAddress2                      ($o, $b);
-  #      \$self->setCity                          ($o, $b);
-  #       \$self->setState                         ($o, $b);
-  #        \$self->setZipcode                       ($o, $b);
-  #         \$self->setCountry                       ($o, $b);
-  #$self->setAltcontactfirstname($o, $b);
-  #$self->setAltcontactsurname($o, $b);
-  #$self->setAltcontactaddress1($o, $b);
-  #$self->setAltcontactaddress2($o, $b);
-  #$self->setAltcontactaddress3($o, $b);
-  #$self->setAltcontactstate($o, $b);
-  #$self->setAltcontactzipcode($o, $b);
-  #$self->setAltcontactcountry($o, $b);
-  #$self->setAltcontactphone($o, $b);
-  #$self->setB_streetnumber($o, $b);
-  #$self->setB_streettype($o, $b);
-  #$self->setB_address($o, $b);
-  #$self->setB_address2($o, $b);
-  #$self->setB_city($o, $b);
-  #$self->setB_state($o, $b);
-  #$self->setB_zipcode($o, $b);
-  #$self->setB_country($o, $b);
-  #$self->setB_email($o, $b);
-  #$self->setB_phone($o, $b);
-  #$self->setEmail                           ($o, $b);
-  #  \$self->setEmailpro                      ($o, $b);
+  #  \$self->setStreetnumber
+  #   \$self->setStreettype
+  #    \$self->setAddress
+  #     \$self->setAddress2
+  #      \$self->setCity
+  #       \$self->setState
+  #        \$self->setZipcode
+  #         \$self->setCountry
+  #          \$self->setB_streetnumber
+  #           \$self->setB_streettype
+  #            \$self->setB_address
+  #             \$self->setB_address2
+  #              \$self->setB_city
+  #               \$self->setB_state
+  #                \$self->setB_zipcode
+  #                 \$self->setB_country
+  $self->setEmail                            ($o, $b);
+  #  \$self->setEmailpro
   $self->setPhones                           ($o, $b);
-  #  \$self->setMobile                        ($o, $b);
-  #   \$self->setFax                           ($o, $b);
-  #    \$self->setPhonepro                      ($o, $b);
-  #     \$self->setSmsalertnumber                ($o, $b);
-  $self->setDateofbirth($o, $b);
-  $self->setBranchcode($o, $b);
-  $self->setCategorycode($o, $b);
-  $self->setDateenrolled($o, $b);
-  $self->setDateexpiry($o, $b);
-  #$self->setGonenoaddress($o, $b);
-  #$self->setLost($o, $b);
-  #$self->setDebarred($o, $b);
-  #$self->setDebarredcomment($o, $b);
-  #$self->setContactname($o, $b);
-  #$self->setContactfirstname($o, $b);
-  #$self->setContacttitle($o, $b);
-  #$self->setGuarantorid($o, $b);
-  #$self->setRelationship($o, $b);
-  #$self->setSex($o, $b);
-  $self->setPassword($o, $b);
-  $self->setUserid($o, $b);
-  #$self->setOpacnote($o, $b);
-  #$self->setContactnote($o, $b);
-  $self->setSort1($o, $b);
-  $self->setSort2($o, $b);
-  #$self->setSms_provider_id($o, $b);
+  #  \$self->setMobile
+  #   \$self->setFax
+  #    \$self->setPhonepro
+  #     \$self->setSmsalertnumber
+  $self->set(birth_date => 'dateofbirth',     $o, $b);
+  $self->setBranchcode                       ($o, $b);
+  $self->setCategorycode                     ($o, $b);
+  $self->set(registration_date => 'dateenrolled', $o, $b);
+  $self->set(expire_date => 'dateexpiry',     $o, $b);
+  $self->setStatuses                         ($o, $b);
+  #  \$self->setLost
+  #   \$self->setDebarred
+  #    \$self->setDebarredcomment
+  $self->setSex                              ($o, $b);
+  $self->setPassword                         ($o, $b);
+  $self->setUserid                           ($o, $b);
+  $self->setSort1                            ($o, $b);
+  $self->setSort2                            ($o, $b);
   $self->setPrivacy                          ($o, $b);
-  #  \$self->setPrivacy_guarantor_checkouts   ($o, $b);
-  #$self->setCheckprevcheckout($o, $b);
-  #$self->setUpdated_on($o, $b);
-  #$self->setLastseen($o, $b);
+  #  \$self->setPrivacy_guarantor_checkouts
   $self->setLang                             ($o, $b);
-  #$self->setLogin_attempts($o, $b);
-  #$self->setOverdrive_auth_token($o, $b);
   $self->setStatisticExtAttribute            ($o, $b);
+
+  #$self->setAltcontactfirstname
+  #$self->setAltcontactsurname
+  #$self->setAltcontactaddress1
+  #$self->setAltcontactaddress2
+  #$self->setAltcontactaddress3
+  #$self->setAltcontactstate
+  #$self->setAltcontactzipcode
+  #$self->setAltcontactcountry
+  #$self->setAltcontactphone
+  #$self->setB_email
+  #$self->setB_phone
+  #$self->setGonenoaddress
+  #$self->setContactname
+  #$self->setContactfirstname
+  #$self->setContacttitle
+  #$self->setGuarantorid
+  #$self->setRelationship
+  #$self->setSms_provider_id
+  #$self->setCheckprevcheckout
+  #$self->setUpdated_on                      #on update CURRENT_TIMESTAMP, automatically updated when migrated to Koha
+  #$self->setLastseen
+  #$self->setLogin_attempts
+  #$self->setOverdrive_auth_token
 }
 
 sub id {
@@ -145,22 +155,18 @@ sub setBorrowernumber($s, $o, $b) {
   $s->{borrowernumber} = $o->{patron_id};
 }
 sub setCardnumber($s, $o, $b) {
-  my $patron_groups_barcodes = $b->{groups}->get($s->{borrowernumber});
-  if ($patron_groups_barcodes) {
-    foreach my $match (@$patron_groups_barcodes) {
-
-      $s->{cardnumber} = $match->{patron_barcode};
-
-      if ($match->{barcode_status} eq '') {
-        $match->{barcode_status} = 0;
-      }
-      if ($match->{barcode_status} != 1) {
-        $s->{lost} = 1;
-      }
+  my $patronGroupsBarcodes = $b->{Barcodes}->get($s->{borrowernumber});
+  if ($patronGroupsBarcodes) {
+    my $groupBarcode = _getActiveOrLatestBarcodeRow($patronGroupsBarcodes);
+    if (exists $groupBarcode->{patron_barcode}) {
+      $s->{cardnumber} = $groupBarcode->{patron_barcode};
+    }
+    else {
+      $log->logdie("Patron '".$s->logId()."' has a group/barcode/status -row, but it is missing the 'patron_barcode'-attribute. Is the extractor working as expected?");
     }
   }
   else {
-    $log->warn("Patron '".$s->logId()."' has no cardnumber.");
+    $log->warn("Patron '".$s->logId()."' has no cardnumber. Creating a temporary one.");
   }
   unless ($s->{cardnumber}) {
     $s->{cardnumber} = $s->createTemporaryBarcode();
@@ -170,14 +176,14 @@ sub setBorrowernotes($s, $o, $b) {
   my @sb;
   my $patron_notes = $b->{notes}->get($s->{borrowernumber});
   if ($patron_notes) {
-    foreach my $match(@$patron_notes) {
+    foreach my $patronNote (@$patron_notes) {
       push(@sb, ' | ') if (@sb > 0);
-      if ($match->{note_type}) {
-        if (my $noteType = $b->{NoteType}->translate(@_, $match->{note_type})) {
+      if ($patronNote->{note_type}) {
+        if (my $noteType = $b->{NoteType}->translate(@_, $patronNote->{note_type})) {
           push(@sb, $noteType.': ');
         }
       }
-      push(@sb, $match->{note});
+      push(@sb, $patronNote->{note});
     }
   }
   $s->{borrowernotes} = join('', @sb);
@@ -194,6 +200,19 @@ sub setFirstname($s, $o, $b) {
 }
 sub setSurname($s, $o, $b) {
   $s->{surname}       = $o->{last_name};
+}
+sub setOthernames($s, $o, $b) {
+  $s->{othernames} = $o->{middle_name};
+}
+sub setTitle($s, $o, $b) {
+  $s->{title} = $o->{title};
+}
+sub setInitials($s, $o, $b) {
+  my @parts;
+  push(@parts, $s->{firstname}) if $s->{firstname};
+  push(@parts, $s->{othernames}) if $s->{othernames};
+  push(@parts, $s->{surname}) if $s->{surname};
+  $s->{initials} = join('.', map {uc substr($_, 0, 1)} @parts);
 }
 sub setDateenrolled($s, $o, $b) {
   if ($o->{registration_date}) { #registration_date might not always exists
@@ -215,7 +234,7 @@ sub setAddresses($s, $o, $b) {
   my $patronAddresses = $b->{addresses}->get($s->{borrowernumber});
   if ($patronAddresses) {
     foreach my $match (@$patronAddresses) {
-      if ($match->{address_type} == 1) {
+      if ($match->{address_desc} eq 'Permanent') {
         if ($match->{address_line3} ne ''
           || $match->{address_line4} ne ''
           || $match->{address_line5} ne '') {
@@ -231,7 +250,7 @@ sub setAddresses($s, $o, $b) {
         $s->{zipcode} = $match->{zip_postal};
         $s->{country} = $match->{country};
       }
-      elsif ($match->{address_type} == 2) {
+      elsif ($match->{address_desc} == 'Temporary') {
         if ($match->{address_line3} ne ''
           || $match->{address_line4} ne ''
           || $match->{address_line5} ne '') {
@@ -247,8 +266,11 @@ sub setAddresses($s, $o, $b) {
         $s->{B_zipcode} = $match->{zip_postal};
         $s->{B_country} = $match->{country};
       }
-      elsif ($match->{address_type} == 3) {
-        $s->{email} = $match->{address_line1};
+      elsif ($match->{address_desc} eq 'EMail') {
+        #Email is dealt with in setEmail()
+      }
+      else {
+        $log->error("Unknown Patron address_desc='".$match->{address_desc}."', address_type='".$match->{address_type}."'");
       }
     }
   }
@@ -256,32 +278,47 @@ sub setAddresses($s, $o, $b) {
     $log->warn("Patron '".$s->logId()."' has no address.");
   }
 }
+sub setEmail($s, $o, $b) {
+  my $patronAddresses = $b->{addresses}->get($s->{borrowernumber});
+  if ($patronAddresses) {
+    for my $address (@$patronAddresses) {
+       if ($address->{address_desc} eq 'EMail') { #Yes. It is written 'EMail'
+        $log->logdie("Patron addresses row is missing column 'address_line1'. Extractor should always supply it.") unless (exists $address->{address_line1});
+        my $emailCandidate = $address->{address_line1};
+        unless ($emailCandidate) {
+          $log->warn($s->logId()." has an address-row with type 'EMail', but the email address is empty?");
+          next;
+        }
+        if (Email::Valid->address($emailCandidate)) {
+          $s->{email} = $emailCandidate;
+        }
+        else {
+          my $msg = "Kirjastojärjestelmävaihdon yhteydessä havaittu epäselvä sähköpostiosoite '$emailCandidate' poistettu asiakastiedoistanne. Olkaa yhteydessä kirjastoonne.";
+          $s->{opacnote} = ($s->{opacnote}) ? $s->{opacnote}.' | '.$msg : $msg;
+          $log->warn($s->logId()." has a bad email address '$emailCandidate'.");
+        }
+        last;
+      }
+    }
+  }
+
+  $log->warn($s->logId()." has no email.") unless $s->{email};
+}
 sub setBranchcode($s, $o, $b) {
   $s->{branchcode} = $b->{Branchcodes}->translate(@_, '_DEFAULT_');
 }
 sub setCategorycode($s, $o, $b) {
-  my $patron_groups_barcodes = $b->{groups}->get($s->{borrowernumber});
-  if ($patron_groups_barcodes) {
-    foreach my $match (@$patron_groups_barcodes) {
-      $s->{categorycode} = $match->{patron_group_id};
-    }
-  }
-  else {
-    #Try looking from the $patron_groups_barcodes_nulls-Cache first before giving up
-    my $patron_groups_barcodes_nulls = $b->{groups_nulls}->get($s->{borrowernumber});
-    if ($patron_groups_barcodes_nulls) {
-      foreach my $match (@$patron_groups_barcodes_nulls) {
-        if ($match->{barcode_status} eq '') {
-          $match->{barcode_status} = 0;
-        }
-        next if ($match->{barcode_status} != 1);
-        $s->{categorycode} = $match->{patron_group_id};
-      }
+  my $patronGroupsBarcodes = $b->{Barcodes}->get($s->{borrowernumber});
+  if ($patronGroupsBarcodes) {
+    my $groupBarcode = _getActiveOrLatestBarcodeRow($patronGroupsBarcodes);
+    if (exists $groupBarcode->{patron_group_id}) {
+      $s->{categorycode} = $groupBarcode->{patron_group_id};
     }
     else {
-      $log->warn("Patron '".$s->logId()."' has no categorycode.");
+      $log->fatal("Patron '".$s->logId()."' has a group/barcode/status -row, but it is missing the 'patron_group_id'-attribute. Is the extractor working as expected?");
     }
   }
+
   if (! $s->{categorycode}) {
     ##TODO How to get categorycode then?
     $log->warn("Patron '".$s->logId()."' has no categorycode?");
@@ -369,6 +406,13 @@ sub setSsn($s, $o, $b) {
     $log->info("Patron '".$s->logId()."' has no ssn");
   }
 }
+sub setSex($s, $o, $b) {
+  $s->{sex} = 'O';
+  if ($o->{institution_id} && $o->{institution_id} =~ /^\d\d\d\d\d\d.\d\d(\d)/) { #This can be a loose match. Atleast we get some interesting results with bad data.
+    if ($1 % 2 == 0) { $s->{sex} = 'M' }
+    else             { $s->{sex} = 'F' }
+  }
+}
 sub setPrivacy($s, $o, $b) {
   $s->{privacy} = 1;
   # 2 - never save privacy information. Koha tries to save as little info as possible
@@ -377,6 +421,46 @@ sub setPrivacy($s, $o, $b) {
 }
 sub setLang($s, $o, $b) {
   $s->{lang} = 'fi';
+}
+sub setStatuses($s, $o, $b) {
+  my $patronGroupsBarcodes = $b->{Barcodes}->get($s->{borrowernumber});
+  if ($patronGroupsBarcodes) {
+    my $groupBarcode = _getActiveOrLatestBarcodeRow($patronGroupsBarcodes);
+    given ($groupBarcode->{barcode_status_desc}) {
+      when('Active')  {  } #This is ok, no special statuses
+      when('Lost')    { $s->{lost} = 1 } #Patron is lost
+      when('Stolen')  { $s->{lost} = 1 } #Patron has been kidnapped!
+      when('Expired') {
+        if (not($s->{dateexpiry})) {
+          $log->warn($s->logId()." has an expired library card, but the Patron account doesn't have an expiration date?");
+        }
+        elsif ($s->{dateexpiry} lt $b->now()) {
+          $log->warn($s->logId()." has an expired library card, but the Patron account expiration date '".$s->{dateexpiry}."' is to the future from today '".$b->now()."'?");
+        }
+        unless ($s->{dateexpiry} eq $groupBarcode->{barcode_status_date}) {
+          $log->warn($s->logId()." has an expired library card, but the Patron account expiration date '".$s->{dateexpiry}."' is different from when the status has been given '".$groupBarcode->{barcode_status_date}."'?");
+        }
+        #There is no special expired-field in Koha, simply the dateexpiry-column is past the expiration date.
+      }
+      when('Other')   {
+        $s->_addManualDebarment($groupBarcode->{barcode_status_date}, "Barcode status in Voyager '".$groupBarcode->{barcode_status_desc}."'");
+        $log->debug($s->logId()." has a debarment.");
+      }
+    }
+    if (exists $groupBarcode->{barcode_status_desc}) {
+      $s->{categorycode} = $groupBarcode->{patron_group_id};
+    }
+    else {
+      $log->fatal("Patron '".$s->logId()."' has a group/barcode/status -row, but it is missing the 'patron_group_id'-attribute. Is the extractor working as expected?");
+    }
+  }
+
+  if (! $s->{categorycode}) {
+    ##TODO How to get categorycode then?
+    $log->warn("Patron '".$s->logId()."' has no categorycode?");
+    $s->{categorycode} = 'UNKNOWN';
+  }
+  $s->{categorycode} = $b->{PatronCategorycode}->translate(@_, $s->{categorycode});
 }
 
 sub _addExtendedPatronAttribute($s, $attributeName, $val, $isRepeatable) {
@@ -391,6 +475,28 @@ sub _addExtendedPatronAttribute($s, $attributeName, $val, $isRepeatable) {
   elsif (defined($existingValue) && $isRepeatable) {
     push(@$existingValue, $val);
   }
+}
+
+=head2 _addManualDebarment
+
+This prevents the Patron from using his/her library accoutn in Koha.
+
+=cut
+
+sub _addManualDebarment($s, $date, $message) {
+  $s->{debarments} = [] unless ($s->{debarments});
+  push(@{$s->{debarments}}, {created => $date, comment => $message});
+}
+
+sub _getActiveOrLatestBarcodeRow($patronGroupsBarcodes) {
+  for my $pgb (@$patronGroupsBarcodes) {
+    $log->logdie("Repository 'Barcodes' has DB a row '".MMT::Validator::dumpObject($pgb)."' with no column 'barcode_status_desc'. Is the extractor selecting the correct columns?") unless (exists $pgb->{barcode_status_desc});
+
+    if ($pgb->{barcode_status_desc} eq 'Active') {
+      return $pgb;
+    }
+  }
+  return $patronGroupsBarcodes->[0]; #Extractor should ORDER BY so the newest entry is first.
 }
 
 return 1;
