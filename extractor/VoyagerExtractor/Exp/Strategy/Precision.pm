@@ -291,6 +291,14 @@ my %queries = (
        JOIN      hold_recall_status on (hold_recall_status.hr_status_type = hold_recall_items.hold_recall_status)
        ORDER BY  hold_recall_items.item_id, hold_recall_items.queue_position",
   },
+  "30-bib_item.csv" => {
+    encoding => "iso-8859-1",
+    uniqueKey => 0,
+    sql =>
+      "SELECT bib_item.bib_id, bib_item.item_id, bib_item.add_date
+       FROM bib.item
+       ORDER BY bib_item.item_id"
+  }
 );
 
 
