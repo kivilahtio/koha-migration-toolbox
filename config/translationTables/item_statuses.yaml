@@ -1,0 +1,37 @@
+---
+
+##
+## IN THIS FILE
+##
+## This mapping table is used by the module MMT::TranslationTable::ItemNoteType
+## it defines mappings from voyager.item_note_type integer to koha.items.itemnotes|itemnotes_nonpublic
+##
+
+#Voyager.ITEM_STATUS_TYPE
+#ITEM_STATUS_DESC,                    ITEM_STATUS_TYPE
+Not Charged:            ''           # 1
+Charged:                ''           # 2
+Renewed:                ''           # 3
+Overdue:                ''           # 4
+Recall Request:         ''           # 5
+Hold Request:           ''           # 6
+On Hold:                ''           # 7
+In Transit:             ''           # 8
+In Transit Discharged:  ''           # 9
+In Transit On Hold:     ''           # 10
+Discharged:             ''           # 11
+Missing:                itemlost=1   # 12
+Lost--Library Applied:  itemlost=1   # 13
+Lost--System Applied:   itemlost=2   # 14
+Claims Returned:        notforloan=1 # 15
+Damaged:                damaged=1    # 16
+Withdrawn:              withdrawn=1  # 17
+At Bindery:             notforloan=1 # 18
+Cataloging Review:      notforloan=1 # 19
+Circulation Review:     notforloan=1 # 20
+Scheduled:              ''           # 21
+In Process:             notforloan=1 # 22
+Call Slip Request:      ''           # 23
+Short Loan Request:     ''           # 24
+Remote Storage Request: ''           # 25
+_DEFAULT_: warning()

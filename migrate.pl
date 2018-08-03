@@ -63,8 +63,9 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
         translationTables => [
           {name => 'Branchcodes'},
           {name => 'LocationId'},
-          {name => 'ItemTypes'},
           {name => 'ItemNoteTypes'},
+          {name => 'ItemTypes'},
+          {name => 'ItemStatus'},
         ],
       });
       $builder->build();

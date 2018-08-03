@@ -90,7 +90,7 @@ sub build($self, $o, $b) {
 }
 
 sub id {
-  return ($_[0]->{barcode} || $_[0]->{itemnumber} || 'NULL');
+  return sprintf("bc:%s-in:%s", $_[0]->{barcode} || 'NULL', $_[0]->{itemnumber} || 'NULL');
 }
 
 sub logId($s) {
@@ -222,48 +222,24 @@ sub setStatuses($s, $o, $b) {
   for my $affliction (@$itemStatuses) {
     my $desc = $affliction->{item_status_desc};
     $log->trace($s->logId().' has affliction "'.$desc.'"');
+    my $ks = $b->{ItemStatus}->translate(@_, $desc);
+    next unless $ks;
+    my ($kohaStatus, $kohaStatusValue) = split('\W+', $ks);
 
-    if   ($desc eq 'At Bindery' ||
-          $desc eq 'Cataloging Review' ||
-          $desc eq 'Circulation Review' ||
-          $desc eq 'Claims Returned' ||
-          $desc eq 'In Process') {
-      $s->{notforloan} = 1;
-    }
-    elsif($desc eq 'Call Slip Request' ||
-          $desc eq 'Charged' ||
-          $desc eq 'Hold Request' ||
-          $desc eq 'In Transit' ||
-          $desc eq 'In Transit Discharged' ||
-          $desc eq 'In Transit On Hold' ||
-          $desc eq 'On Hold' ||
-          $desc eq 'Overdue' ||
-          $desc eq 'Recall Request' ||
-          $desc eq 'Renewed' ||
-          $desc eq 'Short Loan Request' ||
-          $desc eq "Not Charged") {
-      # Nothing we can do about that
-    }
-    elsif ($desc eq 'Damaged') {
-      $s->{damaged} = 1;
-    }
-    elsif ($desc eq 'Lost--Library Applied') {
-      $s->{itemlost} = 1;
-      # $itemlost_on = DATE...
-    }
-    elsif ($desc eq 'Lost--System Applied') {
-      $s->{itemlost} = 2; # long overdue
-    }
-    elsif ($desc eq "Missing") {
-      $s->{itemlost} = 1;
-      # $itemlost_on = DATE...
-    }
-    elsif ($desc eq "Withdrawn") {
-      $s->{withdrawn} = 1;
-      # $withdrawn_on = DATE
-    }
-    else {
-      $log->error("Unhandled status '$desc'");
+    given ($kohaStatus) {
+      when('itemlost')   { $s->{$_} = $kohaStatusValue;
+                           $s->{itemlost_on} = $affliction->{item_status_date};
+                           $log->error($s->logId()." has affliction '$desc -> $_' but no 'item_status_date'?") unless ($affliction->{item_status_date}) }
+
+      when('notforloan') { $s->{$_} = $kohaStatusValue }
+
+      when('damaged')    { $s->{$_} = $kohaStatusValue }
+
+      when('withdrawn')  { $s->{$_} = $kohaStatusValue;
+                           $s->{withdrawn_on} = $affliction->{item_status_date};
+                           $log->error($s->logId()." has affliction '$desc -> $_' but no 'item_status_date'?") unless ($affliction->{item_status_date}) }
+
+      default { $log->error("Unhandled status '$kohaStatus' with value '$kohaStatusValue'"); }
     }
   }
 }
