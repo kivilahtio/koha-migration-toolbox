@@ -14,7 +14,7 @@
 # along with koha-migration-toolbox; if not, see <http://www.gnu.org/licenses>.
 #
 
-package MMT::Strategy::Everything;
+package Exp::Strategy::Everything;
 
 #Pragmas
 use warnings;
@@ -36,6 +36,7 @@ Export everything exportable in the given DB
 =cut
 
 use Exp::DB;
+use Exp::Config;
 
 sub printAllTableMetadata {
   my $dbh = Exp::DB::dbh();
@@ -59,32 +60,49 @@ sub exportAllTables {
   my $tables = $sth->fetchall_arrayref({}) || confess $dbh->errstr;
 
   for my $tableInfo (@$tables) {
-    my $tableName = $tableInfo->{TABLE_NAME};
-    open(my $FH, ">:raw", '/tmp/'.$Exp::DB::config->{dbname}.'.'.$tableName.'.csv');
-    warn "Exporting table $tableName\n";
-    $sth = $dbh->column_info( '%', $Exp::DB::config->{dbname}, $tableName, '%' ) || confess $dbh->errstr;
-    my $columnInfos = $sth->fetchall_arrayref({}) || confess $dbh->errstr;
-    my @columnNames = map {$_->{COLUMN_NAME}} @$columnInfos;
-    warn "found columns ".join(",", @columnNames)."\n";
-
-    print $FH join(",", @columnNames)."\n";
-    $sth = $dbh->prepare("SELECT * FROM $tableName") || confess $dbh->errstr;
-    $sth->execute() || confess $dbh->errstr;
-    my $rows = $sth->fetchall_arrayref() || confess $dbh->errstr;
-    for my $row (@$rows) {
-      for (my $i=0 ; $i<@$row; $i++) {
-        if (not defined $row->[$i]) {
-          $row->[$i] = '';
-        }
-        else {
-          $row->[$i] =~ s/("|\n|\r)/\\$1/gsm;
-          $row->[$i] = '"'.$row->[$i].'"'
-        }
-      }
-      print $FH join(",", @$row)."\n";
-    }
-    close $FH;
+    eval {
+      exportTable($tableInfo);
+    };
+    warn $@ if ($@);
   }
+
+  print "Done exporting everything. Thank you for your patience!\n";
+}
+
+sub exportTable($) {
+  my ($tableInfo) = @_;
+  my $dbh = Exp::DB::dbh();
+
+  my $tableName = $tableInfo->{TABLE_NAME};
+  if ($tableName =~ /\$/) {
+    warn "Table '$tableName' looks suspicious, skipping it.";
+    next;
+  }
+
+  open(my $FH, ">:raw", Exp::Config::exportPath($tableName.'.csv')) or die("Opening file '".Exp::Config::exportPath($tableName.'.csv')."' for full export failed: $!");
+  warn "Exporting table $tableName\n";
+  my $sth = $dbh->column_info( '%', $Exp::DB::config->{dbname}, $tableName, '%' ) || confess $dbh->errstr;
+  my $columnInfos = $sth->fetchall_arrayref({}) || confess $dbh->errstr;
+  my @columnNames = map {$_->{COLUMN_NAME}} @$columnInfos;
+  warn "found columns ".join(",", @columnNames)."\n";
+
+  print $FH join(",", @columnNames)."\n";
+  $sth = $dbh->prepare("SELECT * FROM $tableName") || confess $dbh->errstr;
+  $sth->execute() || confess $dbh->errstr;
+  my $rows = $sth->fetchall_arrayref() || confess $dbh->errstr;
+  for my $row (@$rows) {
+    for (my $i=0 ; $i<@$row; $i++) {
+      if (not defined $row->[$i]) {
+        $row->[$i] = '';
+      }
+      else {
+        $row->[$i] =~ s/("|\n|\r)/\\$1/gsm;
+        $row->[$i] = '"'.$row->[$i].'"'
+      }
+    }
+    print $FH join(",", @$row)."\n";
+  }
+  close $FH;
 }
 
 return 1;
