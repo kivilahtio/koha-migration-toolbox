@@ -293,7 +293,7 @@ my %queries = (
   },
   "30-bib_item.csv" => {
     encoding => "iso-8859-1",
-    uniqueKey => 0,
+    uniqueKey => -1,
     sql =>
       "SELECT bib_item.bib_id, bib_item.item_id, bib_item.add_date
        FROM bib.item
