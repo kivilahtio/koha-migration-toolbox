@@ -388,7 +388,9 @@ sub setUserid($s, $o, $b) {
 sub setPassword($s, $o, $b) {
   $s->{password} = $o->{patron_pin};
   unless ($s->{password}) {
-    $log->debug($s->logId()."' has no password. Account will be disabled in Koha.");
+    $log->debug($s->logId()."' has no password. Account will be active in Koha, but cannot login.");
+    my $msg = "Kirjastojärjestelmävaihdoksessa havaittu että tililtänne puuttuu salasana. Tilinne on vielä aktiivinen, mutta mitään tunnistautumista vaativa ei voi tehdä.";
+    $s->{opacnote} = ($s->{opacnote}) ? $s->{opacnote}.' | '.$msg : $msg;
   }
 }
 sub setSsn($s, $o, $b) {
