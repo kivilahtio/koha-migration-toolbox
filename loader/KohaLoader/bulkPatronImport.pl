@@ -172,7 +172,7 @@ sub processNewFromRow($patron) {
     }
     #If not, then just add a borrower
     #Extra columns need to be cleaned away, otherwise DBIx cant handle the data.
-    my $standingPenalties = $patron->{standing_penalties};              delete $patron->{standing_penalties};
+    my $debarments = $patron->{debarments};              delete $patron->{debarments};
     my $extendedPatronAttributes = $patron->{ExtendedPatronAttributes}; delete $patron->{ExtendedPatronAttributes};
     my $ssn = $patron->{ssn};                                           delete $patron->{ssn};
     unless ($old_borrowernumber) {
@@ -194,25 +194,14 @@ sub processNewFromRow($patron) {
     ##Save the new borrowernumber to a conversion table so legacy systems references can keep track of the change.
     $borrowernumberConversionTable->writeRow($legacy_borrowernumber, $patron->{borrowernumber}, $patron->{cardnumber});
 
-    if ($standingPenalties) { #Catch borrower_debarments
-        my $standing_penalties = [  split('<\d\d>', $standingPenalties)  ];
-        shift @$standing_penalties; #Remove the empty index in the beginning
-
-        for (my $j=0 ; $j<@$standing_penalties ; $j++) {
-            my $penaltyComment = $standing_penalties->[$j];
-
-            if ($penaltyComment =~ /maksamattomia maksuja (\d+\.\d+)/) { #In Libra3, only the sum of fines is migrated.
-                $patronImporter->fineImport($patron->{borrowernumber}, $penaltyComment, 'Konve', $1, $now);
-            }
-            else {
-                my @dateComment = split("<>",$penaltyComment);
-                $patronImporter->AddDebarment({
-                    borrowernumber => $patron->{borrowernumber},
-                    type           => 'MANUAL', ## enum('FINES','OVERDUES','MANUAL')
-                    comment        => $dateComment[1],
-                    created        => $dateComment[0],
-                });
-            }
+    if ($debarments) { #Catch borrower_debarments
+        for my $debarment (@$debarments) {
+            $patronImporter->AddDebarment({
+                borrowernumber => $patron->{borrowernumber},
+                type           => 'MANUAL', ## enum('FINES','OVERDUES','MANUAL')
+                comment        => $debarment->{comment},
+                created        => $debarment->{created},
+            });
         }
     }
 

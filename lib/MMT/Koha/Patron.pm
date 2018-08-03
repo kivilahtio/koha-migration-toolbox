@@ -97,7 +97,7 @@ sub build($self, $o, $b) {
   #   \$self->setDebarred
   #    \$self->setDebarredcomment
   $self->setSex                              ($o, $b);
-  $self->setPassword                         ($o, $b);
+  $self->set(patron_pin => 'password',        $o, $b);
   $self->setUserid                           ($o, $b);
   $self->setSort1                            ($o, $b);
   $self->setSort2                            ($o, $b);
@@ -196,13 +196,13 @@ sub setSort2($s, $o, $b) {
 }
 sub setFirstname($s, $o, $b) {
   $s->{firstname}     = $o->{first_name};
-  $s->{firstname}    .= $o->{middle_name} ne '' ? ' '.$o->{middle_name} : '';
+  $s->{firstname}    .= ' '.$o->{middle_name} if ($o->{middle_name});
 }
 sub setSurname($s, $o, $b) {
   $s->{surname}       = $o->{last_name};
 }
-sub setOthernames($s, $o, $b) {
-  $s->{othernames} = $o->{middle_name};
+sub setOthernames($s, $o, $b) { #This is actually the reservation alias in Koha-Suomi Koha.
+  $s->{othernames} = $s->{surname}.', '.$o->{first_name};
 }
 sub setTitle($s, $o, $b) {
   $s->{title} = $o->{title};
@@ -388,8 +388,7 @@ sub setUserid($s, $o, $b) {
 sub setPassword($s, $o, $b) {
   $s->{password} = $o->{patron_pin};
   unless ($s->{password}) {
-    $s->{password} = substr($s->{cardnumber}, -4);
-    $log->info("Patron '".$s->logId()."' has no password, using last 4 digits of the cardnumber");
+    $log->debug($s->logId()."' has no password. Account will be disabled in Koha.");
   }
 }
 sub setSsn($s, $o, $b) {
