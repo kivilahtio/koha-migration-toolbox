@@ -103,7 +103,9 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
       my MMT::Builder $builder = MMT::Builder->new({
         type => 'Issue',
         inputFile => '12-current_circ.csv',
-        repositories => [],
+        repositories => [
+          {name => "LastRenewDate",             file => '12a-current_circ_last_renew_date.csv', keys => ['circ_transaction_id']},
+        ],
         translationTables => [
           {name => 'Branchcodes'},
           {name => 'LocationId'},

@@ -185,21 +185,21 @@ my %queries = (
       "          circ_transactions.patron_id, patron_barcode.patron_barcode, \n".
       "          circ_transactions.item_id, item_barcode.item_barcode, \n".
       "          circ_transactions.charge_date,circ_transactions.current_due_date, \n".
-      "          circ_transactions.renewal_count, circ_transactions.charge_location, \n".
-      "          renew_transactions.renew_date as last_renew_date \n". #Using subquery to fetch this.
+      "          circ_transactions.renewal_count, circ_transactions.charge_location \n".
       "FROM      circ_transactions \n".
       "JOIN      patron             ON (circ_transactions.patron_id=patron.patron_id) \n".
       "LEFT JOIN patron_barcode     ON (circ_transactions.patron_id=patron_barcode.patron_id) \n".
-      "LEFT JOIN item_barcode       ON (circ_transactions.item_id=item_barcode.item_id) \n".
-      "LEFT JOIN renew_transactions ON (renew_transactions.circ_transaction_id = circ_transactions.circ_transaction_id) \n".
-      "WHERE     patron_barcode.barcode_status = 1 \n".
-      "      AND patron_barcode.patron_barcode IS NOT NULL \n".
-      "      AND item_barcode.barcode_status = 1 \n".
-      "      AND renew_transactions.renew_date = ( \n".
-      "              SELECT max(rt2.renew_date) \n".
-      "              FROM   renew_transactions rt2 \n".
-      "              WHERE  renew_transactions.circ_transaction_id = rt2.circ_transaction_id \n".
-      "          ) \n",
+      "LEFT JOIN item_barcode       ON (circ_transactions.item_id=item_barcode.item_id) \n",
+  },
+  "12a-current_circ_last_renew_date.csv" => { #Same as 02-items_last_borrow_date.csv
+    encoding => "iso-8859-1",
+    uniqueKey => 0,
+    sql =>
+      "SELECT    renew_transactions.circ_transaction_id, max(renew_transactions.renew_date) as last_renew_date \n".
+      "FROM      renew_transactions \n".
+      "WHERE     renew_transactions.renew_date IS NOT NULL \n".
+      "GROUP BY  renew_transactions.circ_transaction_id \n".
+      "ORDER BY  renew_transactions.circ_transaction_id ASC \n",
   },
   "14-fines.csv" => {
     encoding => "iso-8859-1",
