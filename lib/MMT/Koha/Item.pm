@@ -42,7 +42,7 @@ sub build($self, $o, $b) {
   $self->set(add_date             => 'dateaccessioned',    $o, $b);
   $self->set(perm_location        => 'homebranch',         $o, $b);
   $self->set(price                => 'price',              $o, $b);
-  $self->set(last_borrow_date     => 'datelastborrowed',   $o, $b);
+  $self->setDatelastborrowed                              ($o, $b);
   $self->setStatuses                                      ($o, $b);
   #  \$self->setNotforloan
   #   \$self->setDamaged
@@ -117,7 +117,10 @@ sub setPrice($s, $o, $b) {
   #$log->warn($s->logId()."' has no price.") unless $s->{price}; #Too much complaining about the missing price. Hides all other issues.
 }
 sub setDatelastborrowed($s, $o, $b) {
-  $s->{datelastborrowed} = $o->{last_borrow_date};
+  my $lastBorrowDates = $b->{LastBorrowDate}->get($o);
+  if ($lastBorrowDates) {
+    $s->{datelastborrowed} = $lastBorrowDates->[0]->{last_borrow_date};
+  }
   #It is ok for the Item to not have datelastborrowed
 }
 sub setItemcallnumber($s, $o, $b) {

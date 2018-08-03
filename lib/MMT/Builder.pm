@@ -101,6 +101,12 @@ sub build($s) {
   my $w = 0; #Track how many KohaObjects actually survived the build
   while (my $o = $csv->getline_hr($inFH)){
     $i++;
+
+    if ($o->{DUPLICATE}) {
+      $log->debug("Duplicate entry skipped at input file line '$.'");
+      next;
+    }
+
     my $ko = $objectClass->new(); #Instantiate first, so we get better error handling when we can catch the failed object when building it.
     eval {
       $ko->build($o, $s);

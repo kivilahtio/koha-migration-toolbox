@@ -59,17 +59,22 @@ my %queries = (
                  item_vw.barcode, item.perm_location, item.temp_location, item.item_type_id, item.temp_item_type_id,
                  item_vw.enumeration, item_vw.chronology, item_vw.historical_charges, item_vw.call_no,
                  item_vw.call_no_type,
-                 item.price, item.copy_number, item.pieces,
-                 circ_trans_archive.charge_date as last_borrow_date
+                 item.price, item.copy_number, item.pieces
        FROM      item_vw
        JOIN      item               ON (item_vw.item_id = item.item_id)
-       JOIN      bib_item           ON (item_vw.item_id = bib_item.item_id)
-       LEFT JOIN circ_trans_archive ON (circ_trans_archive.item_id = item_vw.item_id)
-       WHERE     circ_trans_archive.charge_date = (
-                     SELECT    max(ct2.charge_date)
-                     FROM      circ_trans_archive ct2
-                     WHERE     ct2.item_id = item_vw.item_id
-                 )",
+       JOIN      bib_item           ON (item_vw.item_id = bib_item.item_id)", #some items can have multiple bib_item-rows (multiple parent biblios). This is not cool.
+  },
+  "02-items_last_borrow_date.csv" => { #This needs to be separate from the 02-items.csv, because otherwise Oracle drops Item-rows with last_borrow_date == NULL, even if charge_date is NULL in both the comparator and the comparatee.
+    encoding => "iso-8859-1",
+    uniqueKey => 0,
+    sql =>
+      "SELECT    circ_trans_archive.item_id, max(circ_trans_archive.charge_date) as last_borrow_date \n".
+      "FROM      circ_trans_archive \n".
+      "LEFT JOIN item ON (circ_trans_archive.item_id = item.item_id) \n".
+      "WHERE     circ_trans_archive.charge_date IS NOT NULL \n".
+      "      AND item.item_id IS NOT NULL \n".
+      "GROUP BY  circ_trans_archive.item_id \n".
+      "ORDER BY  circ_trans_archive.item_id ASC \n",
   },
   "02a-item_notes.csv" => {
     encoding => "iso-8859-1",
@@ -382,6 +387,7 @@ sub extractQuerySelectColumns($) {
   $header_row =~ s/\tfrom\t.*//i;
   $header_row =~ s/,\t/,/g;
   $header_row =~ tr/A-Z/a-z/;
+  $header_row =~ s/\w+\((.+?)\)/$1/;          #Trim column functions such as max()
   $header_row =~ s/\.\w+\s+as\s+(\w+)/\.$1/g; #Simplify column aliasing... renew_transactions.renew_date as last_renew_date -> renew_transactions.last_renew_date
   my @cols = split(',', $header_row);
   return \@cols;
@@ -391,7 +397,7 @@ sub createHeaderRow($) {
   my ($cols) = @_;
   my $header_row = join(',', @$cols);
   $header_row =~ s/[a-z_]+\.([a-z])/$1/g; #Trim the table definition prefix
-  return $header_row;
+  return $header_row.',DUPLICATE'; #DUPLICATE-column is added to every exported file. This signifies a unique key violation. This way post-analysis from the .csv-files is easier.
 }
 
 sub writeCsvRow($$) {
@@ -442,6 +448,7 @@ sub deduplicateUniqueKey($$$) {
 
   if ($uniqueColumnVerifier{$combinedId}) {
     print "Unique key constraint violated! key='$combinedColName' => '$combinedId', violations='$uniqueColumnVerifier{$combinedId}'\n";
+    push(@$columns, 'DUP!') if $columns->[-1] ne 'DUP!';
     $uniqueColumnVerifier{$combinedId}++;
   }
   else {

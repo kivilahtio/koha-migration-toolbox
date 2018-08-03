@@ -55,9 +55,10 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
         type => 'Item',
         inputFile => '02-items.csv',
         repositories => [
-          {name => 'ItemNotes', file => '02a-item_notes.csv', keys => ['item_id']},
-          {name => 'ItemStats', file => '02b-item_stats.csv', keys => ['item_id']},
-          {name => 'ItemStatuses', file => '02-item_status.csv', keys => ['item_id']},
+          {name => 'ItemNotes',      file => '02a-item_notes.csv',            keys => ['item_id']},
+          {name => 'ItemStats',      file => '02b-item_stats.csv',            keys => ['item_id']},
+          {name => 'ItemStatuses',   file => '02-item_status.csv',            keys => ['item_id']},
+          {name => "LastBorrowDate", file => '02-items_last_borrow_date.csv', keys => ['item_id']},
         ],
         translationTables => [
           {name => 'Branchcodes'},
