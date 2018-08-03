@@ -149,7 +149,7 @@ my %queries = (
     anonymize => {note => 'scramble'},
     sql =>
       "SELECT    patron_notes.patron_note_id,
-                 patron_notes.patron_id, patron_notes.note, patron_notes.note_type
+                 patron_notes.patron_id, patron_notes.note, patron_notes.note_type, patron_notes.modify_date
        FROM      patron_notes 
        ORDER BY  patron_notes.patron_id,patron_notes.modify_date",
   },
