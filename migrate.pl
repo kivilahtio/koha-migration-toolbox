@@ -65,6 +65,7 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
           {name => 'LocationId'},
           {name => 'ItemNoteTypes'},
           {name => 'ItemTypes'},
+          {name => 'ItemStatistics'},
           {name => 'ItemStatus'},
         ],
       });

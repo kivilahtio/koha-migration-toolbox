@@ -99,7 +99,7 @@ my %queries = (
     encoding => "iso-8859-1",
     uniqueKey => -1, #One Item can have many statistical categories
     sql =>
-      "SELECT    item_stats.item_id, item_stat_code.item_stat_code
+      "SELECT    item_stats.item_id, item_stats.item_stat_id, item_stat_code.item_stat_code
        FROM      item_stats
        JOIN      item_stat_code ON (item_stats.item_stat_id = item_stat_code.item_stat_id)
        ORDER BY  item_stats.date_applied ASC", #Sort order is important so we can know which row is the newest one
@@ -487,8 +487,8 @@ sub extract($) {
 
     my $colNames = extractQuerySelectColumns($query);
     my $columnEncodings = getColumnEncodings($colNames); #Columns come from multiple tables via JOINs and can have distinct encodings.
-    #Lookup has the column names only, table names are trimmed
     my %columnToIndexLookup; while(my ($i, $v) = each(@$colNames)) {$v =~ s/^.+\.//; $columnToIndexLookup{$v} = $i}
+    #Lookup has the column names only, table names are trimmed
 
     print $out createHeaderRow($colNames)."\n";
 

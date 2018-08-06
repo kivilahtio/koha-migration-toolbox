@@ -202,7 +202,6 @@ sub setEnumchron($s, $o, $b) {
   }
 }
 sub setCcode($s, $o, $b) {
-  return 1; #Presumably Voyager.item_stats -table is not used in Finland.
   my $itemStatisticalCategories = $b->{ItemStats}->get($o->{item_id});
   return unless $itemStatisticalCategories;
 
@@ -210,17 +209,27 @@ sub setCcode($s, $o, $b) {
     $log->warn($s->logId()." has '".scalar(@$itemStatisticalCategories)."' statistical categories, but in Koha we can only put one collection code. Using the newest value.");
   }
 
-  my $statCat = $itemStatisticalCategories->[-1]->{item_stat_code}; #Pick the last (should be sorted so it is the newest) stat cat.
+  my $itemStatisticalCategory = $itemStatisticalCategories->[-1]; #Pick the last (should be sorted so it is the newest) stat cat.
+  unless ($itemStatisticalCategory->{item_stat_id} && $itemStatisticalCategory->{item_stat_code}) {
+    $log->error($s->logId()." has a misconfigured item statistical category in Voyager? item_stat_id='".$itemStatisticalCategory->{item_stat_id}."' doesn't have a matching item_stat_code");
+    return undef;
+  }
+
+  my $statCat = $itemStatisticalCategory->{item_stat_code};
   unless ($statCat) {
     $log->warn($s->logId()." has a statistical category with no attribute 'item_stat_code'?");
     return;
   }
+
+  my $kohaStatCat = $b->{ItemStatistics}->translate(@_, $statCat);
+  return unless ($kohaStatCat && $kohaStatCat != '');
+
   if ($s->{ccode}) {
-    $log->warn($s->logId()." has collection code '".$s->{ccode}."' (from the LocationId translation table) and an incoming statistical category '$statCat', but in Koha we can only have one collection code. Ignoring the incoming '$statCat'.");
+    $log->warn($s->logId()." has collection code '".$s->{ccode}."' (from the LocationId translation table) and an incoming statistical category '$statCat->$kohaStatCat', but in Koha we can only have one collection code. Ignoring the incoming '$statCat->$kohaStatCat'.");
     return;
   }
   else {
-    $s->{ccode} = $statCat;
+    $s->{ccode} = $kohaStatCat;
   }
 }
 
