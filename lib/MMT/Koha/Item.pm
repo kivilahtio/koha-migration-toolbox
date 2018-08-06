@@ -202,6 +202,7 @@ sub setEnumchron($s, $o, $b) {
   }
 }
 sub setCcode($s, $o, $b) {
+  return 1; #Presumably Voyager.item_stats -table is not used in Finland.
   my $itemStatisticalCategories = $b->{ItemStats}->get($o->{item_id});
   return unless $itemStatisticalCategories;
 
