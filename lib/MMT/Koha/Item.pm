@@ -210,8 +210,11 @@ sub setCcode($s, $o, $b) {
     return;
   }
   if ($s->{ccode}) {
-    $log->warn($s->logId()." has collection code '".$s->{ccode}."' and an incoming statistical category '$statCat', but in Koha we can only have one collection code.");
+    $log->warn($s->logId()." has collection code '".$s->{ccode}."' (from the LocationId translation table) and an incoming statistical category '$statCat', but in Koha we can only have one collection code. Ignoring the incoming '$statCat'.");
     return;
+  }
+  else {
+    $s->{ccode} = $statCat;
   }
 }
 
