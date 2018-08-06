@@ -8,9 +8,11 @@
 ##
 
 #Voyager.LOCATION -table
-#location_id,location_code,location_name
-# 'HAMK' is the branchcode, 'oark' is the location code in the first mapping row.
-1:   branchLoc(EVO,       ARK) #Hamkoark, Evo Arkisto,
+#location_id,location_code,       #location_name
+
+#branchLoc sets the following attributes:
+#       branchcode, shelving_location, collection_code, sub_location
+1:   branchLoc(EVO,       ARK, undef, undef) #Hamkoark, Evo Arkisto, translated values would be: branchcode=EVO, location=ARK, ccode=undef, sub_location=undef
 2:   branchLoc(EVO,       KIR) #Hamkokir, Evo Kirjasto,
 3:   branchLoc(EVO,       VAR) #Hamkovar, Evo Varasto,
 4:   branchLoc(EVO,       LEH) #Hamkoleh, Evo Lehdet,

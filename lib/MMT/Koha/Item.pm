@@ -57,6 +57,7 @@ sub build($self, $o, $b) {
   $self->set(temp_location        => 'holdingbranch',      $o, $b);
   $self->set(perm_location        => 'permanent_location', $o, $b);
   $self->set(temp_location        => 'location',           $o, $b);
+  $self->set(perm_location        => 'sub_location',       $o, $b);
   $self->set(item_type_id         => 'itype',              $o, $b);
   $self->set(['enumeration',
               'chronology']       ,  'enumchron',          $o, $b);
@@ -177,6 +178,10 @@ sub setLocation($s, $o, $b) {
   else {
     $s->{location} = $s->{permanent_location};
   }
+}
+sub setSub_location($s, $o, $b) {
+  my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{perm_location});
+  $s->{sub_location} = $branchcodeLocation->{sub_location} if $branchcodeLocation->{sub_location};
 }
 sub setItype($s, $o, $b) {
   $s->{itype} = $b->{ItemTypes}->translate(@_, $o->{item_type_id});
