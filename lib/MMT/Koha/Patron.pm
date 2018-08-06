@@ -157,7 +157,13 @@ sub setBorrowernumber($s, $o, $b) {
 sub setCardnumber($s, $o, $b) {
   my $patronGroupsBarcodes = $b->{Barcodes}->get($s->{borrowernumber});
   if ($patronGroupsBarcodes) {
-    my $groupBarcode = _getActiveOrLatestBarcodeRow($patronGroupsBarcodes);
+
+    if (scalar(@$patronGroupsBarcodes) > 1) {
+      my @bcStatuses = map {$_->{patron_barcode}.'->'.$_->{barcode_status_desc}.'@'.$_->{barcode_status_date}} @$patronGroupsBarcodes;
+      $log->warn($s->logId()." has multiple barcodes: '@bcStatuses'");
+    }
+
+    my $groupBarcode = $s->_getActiveOrLatestBarcodeRow($patronGroupsBarcodes);
     if (exists $groupBarcode->{patron_barcode}) {
       $s->{cardnumber} = $groupBarcode->{patron_barcode};
     }
@@ -310,7 +316,7 @@ sub setBranchcode($s, $o, $b) {
 sub setCategorycode($s, $o, $b) {
   my $patronGroupsBarcodes = $b->{Barcodes}->get($s->{borrowernumber});
   if ($patronGroupsBarcodes) {
-    my $groupBarcode = _getActiveOrLatestBarcodeRow($patronGroupsBarcodes);
+    my $groupBarcode = $s->_getActiveOrLatestBarcodeRow($patronGroupsBarcodes);
     if (exists $groupBarcode->{patron_group_id}) {
       $s->{categorycode} = $groupBarcode->{patron_group_id};
     }
@@ -426,18 +432,13 @@ sub setLang($s, $o, $b) {
 sub setStatuses($s, $o, $b) {
   my $patronGroupsBarcodes = $b->{Barcodes}->get($s->{borrowernumber});
   if ($patronGroupsBarcodes) {
-    my $groupBarcode = _getActiveOrLatestBarcodeRow($patronGroupsBarcodes);
+    my $groupBarcode = $s->_getActiveOrLatestBarcodeRow($patronGroupsBarcodes);
     given ($groupBarcode->{barcode_status_desc}) {
       when('Active')  {  } #This is ok, no special statuses
       when('Lost')    { $s->{lost} = 1 } #Patron is lost
       when('Stolen')  { $s->{lost} = 1 } #Patron has been kidnapped!
       when('Expired') {
-        if (not($s->{dateexpiry})) {
-          $log->warn($s->logId()." has an expired library card, but the Patron account doesn't have an expiration date?");
-        }
-        elsif ($s->{dateexpiry} lt $b->now()) {
-          $log->warn($s->logId()." has an expired library card, but the Patron account expiration date '".$s->{dateexpiry}."' is to the future from today '".$b->now()."'?");
-        }
+        #This specifically means that the library card has expired, not the patron's library account. It is possible for the Patron to have no active library card.
         unless ($s->{dateexpiry} eq $groupBarcode->{barcode_status_date}) {
           $log->warn($s->logId()." has an expired library card, but the Patron account expiration date '".$s->{dateexpiry}."' is different from when the status has been given '".$groupBarcode->{barcode_status_date}."'?");
         }
@@ -489,12 +490,17 @@ sub _addManualDebarment($s, $date, $message) {
   push(@{$s->{debarments}}, {created => $date, comment => $message});
 }
 
-sub _getActiveOrLatestBarcodeRow($patronGroupsBarcodes) {
+sub _getActiveOrLatestBarcodeRow($s, $patronGroupsBarcodes) {
   for my $pgb (@$patronGroupsBarcodes) {
     $log->logdie("Repository 'Barcodes' has DB a row '".MMT::Validator::dumpObject($pgb)."' with no column 'barcode_status_desc'. Is the extractor selecting the correct columns?") unless (exists $pgb->{barcode_status_desc});
 
     if ($pgb->{barcode_status_desc} eq 'Active') {
-      return $pgb;
+      unless ($pgb->{patron_barcode}) {
+        $log->error($s->logId()." has an 'Active' library card, but the barcode doesn't exist?");
+      }
+      else {
+        return $pgb;
+      }
     }
   }
   return $patronGroupsBarcodes->[0]; #Extractor should ORDER BY so the newest entry is first.
