@@ -72,7 +72,7 @@ sub setItemnumber($s, $o, $b) {
   elsif (not($o->{item_id})) {
     $log->debug($s->logId()." is missing the Item in Voyager.");
   }
-  $s->{itemnumber} = $o->{item_id};
+  $s->{itemnumber} = $o->{item_id} if $o->{item_id}; #There might not be an item_id, and it is important to keep itemnumber undefined, so it NULLs in Koha, otherwise it trigger foreign-key constraint issues with a value of ''
 }
 sub setDate($s, $o, $b) {
   $s->{date} = $o->{create_date};
