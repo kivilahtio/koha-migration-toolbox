@@ -319,7 +319,43 @@ my %queries = (
       JOIN  fund_type ON (fund.fund_type = fund_type.fund_type_id)
       JOIN  ledger    ON (fund.ledger_id = ledger.ledger_id)
       ORDER BY fund.fund_id, ledger_ledger_name"
+  },
+  "32-fundledger.csv" => {
+    encoding => "iso-8859-1",
+    uniqueKey => [0],
+    sql =>
+      "SELECT fundledger_vw.fundline,
+              fundledger_vw.fiscal_period_id,
+              fundledger_vw.fiscal_period_name,
+              fundledger_vw.fiscal_period_start
+              fundledger_vw.fiscal_period_end,
+              fundledger_vw.ledger_id,
+              fundledger_vw.ledger_name,
+              fundledger_vw.policy_name,
+              fundledger_vw.fund_type,
+              fundledger_vw.fund_category,
+              fundledger_vw.fund_id,
+              fundledger_vw.fund_name,
+              fundledger_vw.parent_fund_id,
+              fundledger_vw.parent_fund,
+              fundledger_vw.institution_fund_id,
+              fundledger_vw.begin_date,
+              fundledger_vw.end_date
+              fundledger_vw.current_allocation,
+              fundledger_vw.original_allocation,
+              fundledger_vw.cash_balance,
+              fundledger_vw.free_balance,
+              fundledger_vw.expenditures
+              fundledger_vw.commitments,
+              fundledger_vw.commit_pending,
+              fundledger_vw.expend_pending,
+              fund_note.fund_note
+      FROM  fundledger_vw
+      JOIN  fund_note ON (fundledger_vw.fund_id = fund_note.fund_id AND fundledger_vw.ledger_id = fund_note.ledger_id )
+      ORDER BY fundledger_vw.ledger_name,fundledger_vw.fund_name"
   }
+
+
 );
 
 
