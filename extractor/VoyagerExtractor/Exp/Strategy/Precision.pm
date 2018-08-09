@@ -293,11 +293,32 @@ my %queries = (
   },
   "30-bib_item.csv" => {
     encoding => "iso-8859-1",
-    uniqueKey => -1,
+    uniqueKey => [0, 1],
     sql =>
       "SELECT bib_item.bib_id, bib_item.item_id, bib_item.add_date
-       FROM bib.item
+       FROM bib_item
        ORDER BY bib_item.item_id"
+  },
+
+  "31-funds.csv" => {
+    encoding => "iso-8859-1",
+    uniqueKey => [0],
+    sql =>
+      "SELECT fund.fund_id,
+              ledger.ledger_name,
+              fund.parent_fund,
+              fund.fund_code,
+              fund.fund_name,
+              fund_type.fund_type_name,
+              fund.original_allocation,
+              fund.begin_date,
+              fund.end_date,
+              fund_note.fund_note
+      FROM  fund
+      JOIN  fund_note ON (fund.fund_id = fund_note.fund_id)
+      JOIN  fund_type ON (fund.fund_type = fund_type.fund_type_id)
+      JOIN  ledger    ON (fund.ledger_id = ledger.ledger_id)
+      ORDER BY fund.fund_id, ledger_ledger_name"
   }
 );
 
