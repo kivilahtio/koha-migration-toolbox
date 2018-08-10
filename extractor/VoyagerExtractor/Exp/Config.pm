@@ -38,6 +38,10 @@ our $config;
 sub LoadConfig($) {
   my $filename = $_[0];
   $config = do $filename;
+  unless ($config) {
+    die "Configuration file '$filename' compilation failed: $@" if ($@);
+    die "Configuration file '$filename' reading failed: $!" if ($!);
+  }
 
   $config->{dbname} = $config->{username};
   $config->{exportDir} = '/tmp/'.$config->{dbname} unless $config->{exportDir};
