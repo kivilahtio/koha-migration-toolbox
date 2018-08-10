@@ -327,12 +327,11 @@ my %queries = (
       "SELECT fundledger_vw.fundline,
               fundledger_vw.fiscal_period_id,
               fundledger_vw.fiscal_period_name,
-              fundledger_vw.fiscal_period_start
+              fundledger_vw.fiscal_period_start,
               fundledger_vw.fiscal_period_end,
               fundledger_vw.ledger_id,
               fundledger_vw.ledger_name,
               fundledger_vw.policy_name,
-              fundledger_vw.fund_type,
               fundledger_vw.fund_category,
               fundledger_vw.fund_id,
               fundledger_vw.fund_name,
@@ -340,12 +339,12 @@ my %queries = (
               fundledger_vw.parent_fund,
               fundledger_vw.institution_fund_id,
               fundledger_vw.begin_date,
-              fundledger_vw.end_date
+              fundledger_vw.end_date,
               fundledger_vw.current_allocation,
               fundledger_vw.original_allocation,
               fundledger_vw.cash_balance,
               fundledger_vw.free_balance,
-              fundledger_vw.expenditures
+              fundledger_vw.expenditures,
               fundledger_vw.commitments,
               fundledger_vw.commit_pending,
               fundledger_vw.expend_pending,
@@ -353,6 +352,86 @@ my %queries = (
       FROM  fundledger_vw
       JOIN  fund_note ON (fundledger_vw.fund_id = fund_note.fund_id AND fundledger_vw.ledger_id = fund_note.ledger_id )
       ORDER BY fundledger_vw.ledger_name,fundledger_vw.fund_name"
+  },
+  "33-purchase_orders.csv" => {
+    encoding => "iso-8859-1",
+    uniqueKey => [0],
+    sql =>
+      "SELECT purchase_order.po_number,
+              line_item_funds.fund_id,
+              fund.fund_name,
+              line_item_funds.amount,
+              line_item_funds.amount,
+              vendor.vendor_code,
+              line_item.create_date,
+              line_item.line_price,
+              bib_text.bib_id,
+              bib_text.title_brief,
+              vendor.vendor_type,
+              purchase_order.po_status,
+              purchase_order.po_type,
+              purchase_order.currency_code,
+              purchase_order.conversion_rate,
+              currency_conversion.decimals,
+              line_item_copy_status.location_id
+      FROM    bib_text,
+              line_item_funds,
+              fund,
+              line_item,
+              line_item_copy_status,
+              purchase_order,
+              vendor,
+              currency_conversion
+      WHERE   (line_item_funds.fund_id = fund.fund_id) and
+              (line_item_funds.ledger_id = fund.ledger_id) and
+              (line_item_funds.copy_id = line_item_copy_status.copy_id) and
+              (line_item.line_item_id = line_item_copy_status_line_item_id) and
+              (vendor.vendor_id = purchase_order.vendor_id) and
+              (bib_text.bib_id = line_item.bib_id) and
+              (purchase_order.po_id = line_item.po_id) and
+              (purchase_order.currency_code = currency_conversion.currency_code)
+              ORDER BY purchase_order.po_id"
+  },
+  "34-line_items.csv" => {
+    encoding => "iso-8859-1",
+    uniqueKey => [0],
+    sql =>
+      "SELECT line_item.line_item_id,
+              line_item.po_id,
+              line_item.bib_id,
+              line_item_type.line_item_type_desc,
+              line_item.line_item_number,
+              line_item.piece_identifier,
+              line_item.unit_price,
+              line_item.line_price,
+              line_item.print_std_num,
+              line_item.quantity,
+              line_item.prepay_amount,
+              line_item.rush,
+              line_item.claim_inverval,
+              line_item.cancel_interval,
+              line_item.donor,
+              line_item.requestor,
+              line_item.vendor_title_num,
+              line_item.vendor_ref_qual,
+              line_item.vendor_ref_num,
+              line_item.create_date,
+              line_item.update_date,
+              line_item.edi_ref,
+              line_item.standard_ref
+              line_item_notes.po_id,
+              line_item_notes.print_note,
+              line_item_notes.note,
+              ledger.ledger_name,
+              fund.fund_name,
+              purchase_order.po_create_date
+        FROM  line_item
+        JOIN  line_item_type on (line_item_type.line_item_type = line_item.line_item_type)
+        JOIN  line_item_notes on (line_item_notes.line_item_id = line_item.line_item_id)
+        JOIN  line_item_copy on (line_item_copy.line_item_id = line_item.line_item_id)
+        JOIN  ledger on (ledger.ledger_id = line_item_copy.use_ledger)
+        JOIN  fund on (fund.fund_id = line_item_copy.use_fund)
+        JOIN  purchase_order on (purchase_order.po_id = line_item.po_id)"
   }
 
 
