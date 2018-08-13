@@ -42,7 +42,7 @@ sub build($self, $o, $b) {
   $self->set(add_date             => 'dateaccessioned',    $o, $b);
   $self->set(perm_location        => 'homebranch',         $o, $b);
   $self->set(price                => 'price',              $o, $b);
-  $self->set(last_borrow_date     => 'datelastborrowed',   $o, $b);
+  $self->setDatelastborrowed                              ($o, $b);
   $self->setStatuses                                      ($o, $b);
   #  \$self->setNotforloan
   #   \$self->setDamaged
@@ -57,6 +57,7 @@ sub build($self, $o, $b) {
   $self->set(temp_location        => 'holdingbranch',      $o, $b);
   $self->set(perm_location        => 'permanent_location', $o, $b);
   $self->set(temp_location        => 'location',           $o, $b);
+  $self->set(perm_location        => 'sub_location',       $o, $b);
   $self->set(item_type_id         => 'itype',              $o, $b);
   $self->set(['enumeration',
               'chronology']       ,  'enumchron',          $o, $b);
@@ -90,7 +91,7 @@ sub build($self, $o, $b) {
 }
 
 sub id {
-  return ($_[0]->{barcode} || $_[0]->{itemnumber} || 'NULL');
+  return sprintf("bc:%s-in:%s", $_[0]->{barcode} || 'NULL', $_[0]->{itemnumber} || 'NULL');
 }
 
 sub logId($s) {
@@ -117,7 +118,10 @@ sub setPrice($s, $o, $b) {
   #$log->warn($s->logId()."' has no price.") unless $s->{price}; #Too much complaining about the missing price. Hides all other issues.
 }
 sub setDatelastborrowed($s, $o, $b) {
-  $s->{datelastborrowed} = $o->{last_borrow_date};
+  my $lastBorrowDates = $b->{LastBorrowDate}->get($o);
+  if ($lastBorrowDates) {
+    $s->{datelastborrowed} = $lastBorrowDates->[0]->{last_borrow_date};
+  }
   #It is ok for the Item to not have datelastborrowed
 }
 sub setItemcallnumber($s, $o, $b) {
@@ -175,6 +179,10 @@ sub setLocation($s, $o, $b) {
     $s->{location} = $s->{permanent_location};
   }
 }
+sub setSub_location($s, $o, $b) {
+  my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{perm_location});
+  $s->{sub_location} = $branchcodeLocation->{sub_location} if $branchcodeLocation->{sub_location};
+}
 sub setItype($s, $o, $b) {
   $s->{itype} = $b->{ItemTypes}->translate(@_, $o->{item_type_id});
 
@@ -201,14 +209,27 @@ sub setCcode($s, $o, $b) {
     $log->warn($s->logId()." has '".scalar(@$itemStatisticalCategories)."' statistical categories, but in Koha we can only put one collection code. Using the newest value.");
   }
 
-  my $statCat = $itemStatisticalCategories->[-1]->{item_stat_code}; #Pick the last (should be sorted so it is the newest) stat cat.
+  my $itemStatisticalCategory = $itemStatisticalCategories->[-1]; #Pick the last (should be sorted so it is the newest) stat cat.
+  unless ($itemStatisticalCategory->{item_stat_id} && $itemStatisticalCategory->{item_stat_code}) {
+    $log->error($s->logId()." has a misconfigured item statistical category in Voyager? item_stat_id='".$itemStatisticalCategory->{item_stat_id}."' doesn't have a matching item_stat_code");
+    return undef;
+  }
+
+  my $statCat = $itemStatisticalCategory->{item_stat_code};
   unless ($statCat) {
     $log->warn($s->logId()." has a statistical category with no attribute 'item_stat_code'?");
     return;
   }
+
+  my $kohaStatCat = $b->{ItemStatistics}->translate(@_, $statCat);
+  return unless ($kohaStatCat && $kohaStatCat != '');
+
   if ($s->{ccode}) {
-    $log->warn($s->logId()." has collection code '".$s->{ccode}."' and an incoming statistical category '$statCat', but in Koha we can only have one collection code.");
+    $log->warn($s->logId()." has collection code '".$s->{ccode}."' (from the LocationId translation table) and an incoming statistical category '$statCat->$kohaStatCat', but in Koha we can only have one collection code. Ignoring the incoming '$statCat->$kohaStatCat'.");
     return;
+  }
+  else {
+    $s->{ccode} = $kohaStatCat;
   }
 }
 
@@ -219,48 +240,24 @@ sub setStatuses($s, $o, $b) {
   for my $affliction (@$itemStatuses) {
     my $desc = $affliction->{item_status_desc};
     $log->trace($s->logId().' has affliction "'.$desc.'"');
+    my $ks = $b->{ItemStatus}->translate(@_, $desc);
+    next unless $ks;
+    my ($kohaStatus, $kohaStatusValue) = split('\W+', $ks);
 
-    if   ($desc eq 'At Bindery' ||
-          $desc eq 'Cataloging Review' ||
-          $desc eq 'Circulation Review' ||
-          $desc eq 'Claims Returned' ||
-          $desc eq 'In Process') {
-      $s->{notforloan} = 1;
-    }
-    elsif($desc eq 'Call Slip Request' ||
-          $desc eq 'Charged' ||
-          $desc eq 'Hold Request' ||
-          $desc eq 'In Transit' ||
-          $desc eq 'In Transit Discharged' ||
-          $desc eq 'In Transit On Hold' ||
-          $desc eq 'On Hold' ||
-          $desc eq 'Overdue' ||
-          $desc eq 'Recall Request' ||
-          $desc eq 'Renewed' ||
-          $desc eq 'Short Loan Request' ||
-          $desc eq "Not Charged") {
-      # Nothing we can do about that
-    }
-    elsif ($desc eq 'Damaged') {
-      $s->{damaged} = 1;
-    }
-    elsif ($desc eq 'Lost--Library Applied') {
-      $s->{itemlost} = 1;
-      # $itemlost_on = DATE...
-    }
-    elsif ($desc eq 'Lost--System Applied') {
-      $s->{itemlost} = 2; # long overdue
-    }
-    elsif ($desc eq "Missing") {
-      $s->{itemlost} = 1;
-      # $itemlost_on = DATE...
-    }
-    elsif ($desc eq "Withdrawn") {
-      $s->{withdrawn} = 1;
-      # $withdrawn_on = DATE
-    }
-    else {
-      $log->error("Unhandled status '$desc'");
+    given ($kohaStatus) {
+      when('itemlost')   { $s->{$_} = $kohaStatusValue;
+                           $s->{itemlost_on} = $affliction->{item_status_date};
+                           $log->error($s->logId()." has affliction '$desc -> $_' but no 'item_status_date'?") unless ($affliction->{item_status_date}) }
+
+      when('notforloan') { $s->{$_} = $kohaStatusValue }
+
+      when('damaged')    { $s->{$_} = $kohaStatusValue }
+
+      when('withdrawn')  { $s->{$_} = $kohaStatusValue;
+                           $s->{withdrawn_on} = $affliction->{item_status_date};
+                           $log->error($s->logId()." has affliction '$desc -> $_' but no 'item_status_date'?") unless ($affliction->{item_status_date}) }
+
+      default { $log->error("Unhandled status '$kohaStatus' with value '$kohaStatusValue'"); }
     }
   }
 }

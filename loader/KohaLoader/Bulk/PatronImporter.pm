@@ -60,7 +60,7 @@ sub AddMember($s, $data, $useDBIx=0) {
 
   # create a disabled account if no password provided
   $data->{'password'} = ($data->{'password'}) ?
-                          Koha::AuthUtils::hash_password($data->{'password'}, $s->bcryptSettings(2)) :
+                          Koha::AuthUtils::hash_password($data->{'password'}, $s->bcryptSettings(2)) : #The bcrypt iterations has been dropped from 8 to 2 to significantly speed up the migration.
                           '!';
 
   # Default privacy if none provided
@@ -69,6 +69,8 @@ sub AddMember($s, $data, $useDBIx=0) {
 
   $data->{checkprevcheckout} = 0 unless $data->{checkprevcheckout};
   $data->{lang} = 'fi' unless $data->{lang};
+
+  $data->{othernames} = $s->duplicateOthernamesHandler($data->{othernames});
 
   if ($useDBIx) { #DBIx migrated 8800 Patrons in 8 minutes
     my $patron=Koha::Patron->new($data);
@@ -250,6 +252,32 @@ sub setDefaultMessagingPreferences($s) {
       next;
     }
     $p->set_default_messaging_preferences();
+  }
+}
+
+=head2 duplicateOthernamesHandler
+
+Checks from Koha if the given borrowers.othernames is unique.
+If not,
+
+ @returns String, the given othernames, appended with a random integer.
+
+=cut
+
+sub duplicateOthernamesHandler($s, $othernames) {
+  unless ($s->{sth_othernamesTaken}) {
+    $s->{sth_othernamesTaken} =
+      $s->{dbh}->prepare("SELECT othernames FROM borrowers WHERE othernames = ?") or die("Preparing the othernamesTaken() query failed: ".$s->{dbh}->errstr());
+  }
+
+  $s->{sth_othernamesTaken}->execute($othernames);
+  my ($theOthername) = $s->{sth_othernamesTaken}->fetchrow_array();
+  if (defined($theOthername)) {
+    $othernames .= 100*rand(1);
+    return $s->duplicateOthernamesHandler($othernames); #Recursively keep adding random integers until a free slot is found.
+  }
+  else {
+    return $othernames;
   }
 }
 

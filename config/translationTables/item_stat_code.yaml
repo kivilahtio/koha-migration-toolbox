@@ -1,0 +1,22 @@
+---
+
+##
+## IN THIS FILE
+##
+## This mapping table is used by the module MMT::TranslationTable::ItemStatistics
+## it defines mappings from Voyager.item_stats.item_stat_id types to koha.items.ccode
+##
+
+#Voyager.ITEM_STAT_CODE
+#ITEM_STAT_ID,          ITEM_STAT_CODE,      #ITEM_STAT_CODE_DESC
+am: ''   #1, Tekstiaineisto
+cm: ''   #6, Nuotti
+em: ''   #7, Kartta
+gm: ''   #2, Video
+im: ''   #4, <C4><E4>nite
+km: ''   #3, Kuva
+mm: ''   #5, Elektroninen aineisto
+pm: ''   #8, Moniviestin
+rm: ''   #9, Esine
+ph: ph   #10, Pirkko H<E4>kkisen kokoelma
+_DEFAULT_: warning()

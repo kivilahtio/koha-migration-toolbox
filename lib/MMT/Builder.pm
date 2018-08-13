@@ -85,7 +85,7 @@ sub now($s) {
 sub build($s) {
   $log->info($s->{type}." - Starting to build");
 
-  my $csv=Text::CSV->new({ binary => 1 });
+  my $csv=Text::CSV->new({ binary => 1, decode_utf8 => 0 });
   open(my $inFH, '<:encoding(UTF-8)', $s->{inputFile}) or $log->logdie("Loading file '".$s->{inputFile}."' failed: $!");
   $csv->column_names($csv->getline($inFH));
   $log->info("Loading file '".$s->{inputFile}."', identified columns '".join(',', $csv->column_names())."'");
@@ -101,6 +101,12 @@ sub build($s) {
   my $w = 0; #Track how many KohaObjects actually survived the build
   while (my $o = $csv->getline_hr($inFH)){
     $i++;
+
+    if ($o->{DUPLICATE}) {
+      $log->debug("Duplicate entry skipped at input file line '$.'");
+      next;
+    }
+
     my $ko = $objectClass->new(); #Instantiate first, so we get better error handling when we can catch the failed object when building it.
     eval {
       $ko->build($o, $s);
