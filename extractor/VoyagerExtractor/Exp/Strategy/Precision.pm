@@ -396,7 +396,7 @@ my %queries = (
     encoding => "iso-8859-1",
     uniqueKey => [0],
     sql =>
-      "SELECT line_item.line_item_id,
+      "SELECT DISTINCT line_item.line_item_id,
               line_item.po_id,
               line_item.bib_id,
               line_item_type.line_item_type_desc,
@@ -408,7 +408,7 @@ my %queries = (
               line_item.quantity,
               line_item.prepay_amount,
               line_item.rush,
-              line_item.claim_inverval,
+              line_item.claim_interval,
               line_item.cancel_interval,
               line_item.donor,
               line_item.requestor,
@@ -418,7 +418,7 @@ my %queries = (
               line_item.create_date,
               line_item.update_date,
               line_item.edi_ref,
-              line_item.standard_ref
+              line_item.standard_num,
               line_item_notes.po_id,
               line_item_notes.print_note,
               line_item_notes.note,
@@ -431,7 +431,8 @@ my %queries = (
         JOIN  line_item_copy on (line_item_copy.line_item_id = line_item.line_item_id)
         JOIN  ledger on (ledger.ledger_id = line_item_copy.use_ledger)
         JOIN  fund on (fund.fund_id = line_item_copy.use_fund)
-        JOIN  purchase_order on (purchase_order.po_id = line_item.po_id)"
+        JOIN  purchase_order on (purchase_order.po_id = line_item.po_id)
+        ORDER BY line_item.create_date DESC"
   }
 
 
