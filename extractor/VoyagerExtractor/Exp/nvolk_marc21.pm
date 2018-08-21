@@ -1510,6 +1510,9 @@ sub nvolk_marc212oai_marc($) {
     my $tag = $tags[$i];
     my $content = $contents[$i];
     if ( $tag =~ /^00[1-9]$/ ) {
+      if ( $content =~ s/[\x00-\x08\x0B\x0C\x0E-\x1F]//g ) {
+	print STDERR "WARNING: Removing wierd characters (record $id)\n";
+      }
       $output .= "<controlfield tag=\"$tag\">$content</controlfield>\n";
     }
     elsif ( $content =~ s/^(.)(.)\x1F// ) {
@@ -1526,6 +1529,9 @@ sub nvolk_marc212oai_marc($) {
 	  my $sf_data = $2;
 	  if ( defined($sf_code) ) {
 	    if ( $sf_code =~ /^[a-z0-9]$/ ) {
+	      if ( $sf_data =~ s/[\x00-\x08\x0B\x0C\x0E-\x1F]//g ) {
+		print STDERR "WARNING: Removing wierd characters (record $id)\n";
+	      }
 	      $subfield_contents .= " <subfield code=\"$sf_code\">".html_escapes($sf_data)."</subfield>\n";
 	    }
 	    else {
