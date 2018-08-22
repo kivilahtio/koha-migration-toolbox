@@ -214,7 +214,7 @@ sub setCcode($s, $o, $b) {
   }
 
   my $kohaStatCat = $b->{ItemStatistics}->translate(@_, $statCat);
-  return unless ($kohaStatCat && $kohaStatCat != '');
+  return unless ($kohaStatCat && $kohaStatCat ne '');
 
   if ($s->{ccode}) {
     $log->warn($s->logId()." has collection code '".$s->{ccode}."' (from the LocationId translation table) and an incoming statistical category '$statCat->$kohaStatCat', but in Koha we can only have one collection code. Ignoring the incoming '$statCat->$kohaStatCat'.");
