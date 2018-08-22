@@ -13,6 +13,8 @@ KOHA_HOME="/home/koha"
 KOHA_LOAD_WORKING_DIR="$KOHA_HOME/KohaMigration"
 KOHA_LOADER_DIR="$KOHA_HOME/KohaLoader"
 
+test -z "$MMT_HOME" && echo "Environmental variable MMT_HOME is not defined!" && exit 7
+
 echo "Deploy the loader program"
 scp -r loader/KohaLoader $KOHA_HOST:$KOHA_HOME/
 test $? != 0 && echo "Uploading the Koha Loader failed!" && exit 8
@@ -22,10 +24,10 @@ test $? != 0 && echo "Setting Koha Loader permissions failed!" && exit 9
 
 
 echo "Copy the loadable files in"
-cd ~/MMT-Voyager && tar -czf kohaData.tar.gz KohaImports
+cd $MMT_HOME && tar -czf kohaData.tar.gz KohaImports
 test $? != 0 && echo "Packing Koha data failed!" && exit 10
 
-scp -r   ~/MMT-Voyager/kohaData.tar.gz $KOHA_HOST:$KOHA_HOME
+scp -r $MMT_HOME/kohaData.tar.gz $KOHA_HOST:$KOHA_HOME
 test $? != 0 && echo "Uploading Koha data failed!" && exit 11
 
 ssh $KOHA_HOST "cd $KOHA_HOME && tar -xzf $KOHA_HOME/kohaData.tar.gz && rm $KOHA_HOME/kohaData.tar.gz && chown -R koha:koha $KOHA_HOME/KohaImports"

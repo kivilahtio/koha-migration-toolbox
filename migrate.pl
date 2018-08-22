@@ -32,7 +32,17 @@ $log->debug("Starting $0 using config '".MMT::Validator::dumpObject($MMT::Config
 my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
   '--help' => {
     help => 'Show this friendly help',
-    callback => sub {print $_[0]->Help(); exit 0;},
+    callback => sub {
+      print "\n";
+      print $_[0]->Help();
+      print "
+ENVIRONMENT:
+MMT_HOME: ".($ENV{MMT_HOME} || '')."
+    Configuration and working space for the specific ETL pipeline.
+
+";
+      exit 0;
+    },
   },
 
 

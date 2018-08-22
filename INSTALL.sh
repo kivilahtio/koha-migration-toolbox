@@ -7,8 +7,14 @@
 IS_PERLBREW_INSTALLED=`which perlbrew`
 test $IS_PERLBREW_INSTALLED || ( echo "perlbrew is not installed, install it with 'apt install perlbrew'" && exit 1)
 
-
-MMT_HOME="$HOME/MMT-Voyager" #Put configuration files here and preconfigure paths
+if [ -z "$MMT_HOME" ]; then
+  MMT_HOME="$HOME/MMT-Voyager" #Put configuration files here and preconfigure paths
+  echo "MMT_HOME not defined, installing to default directory '$MMT_HOME'"
+  echo "Is this acceptable? <Ctrl+C to abort, ENTER to accept>"
+  read -t 10 -p "Your answer: "
+else
+  echo "Installing to MMT_HOME='$MMT_HOME'"
+fi
 MMT_CODE=`dirname $0` #Where this installer resides, resides the code to execute
 test $MMT_CODE == "." && MMT_CODE=`pwd`
 CONFIG_MAIN="$MMT_HOME/config/main.yaml"
@@ -18,7 +24,6 @@ LOG_DIR="$MMT_HOME/logs"
 TEST_DIR="$MMT_HOME/tests"
 EXTRACTOR_DIR="$MMT_CODE/extractor"
 LOADER_DIR="$MMT_CODE/loader"
-
 
 cd $MMT_CODE #Make sure we are in the source directory
 test $? != 0 && echo "Couldn't cd to app source code directory '$MMT_CODE', failed with error code '$?'" && exit 7
