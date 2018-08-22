@@ -1,18 +1,12 @@
-use 5.22.1;
-
 package MMT::ATranslationTable;
-#Pragmas
-use Carp::Always::Color;
-use experimental 'smartmatch', 'signatures';
+
+use MMT::Pragmas;
 
 #External modules
 use YAML::XS;
 
 #Local modules
-use MMT::Config;
-use Log::Log4perl;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
-use MMT::Validator;
 
 #Exceptions
 use MMT::Exception::Delete;

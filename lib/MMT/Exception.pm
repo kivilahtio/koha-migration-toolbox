@@ -1,9 +1,6 @@
-use 5.22.1;
-
 package MMT::Exception;
-#Pragmas
-use Carp::Always::Color;
-use experimental 'smartmatch', 'signatures';
+
+use MMT::Pragmas;
 
 use Exception::Class (
     'MMT::Exception' => {

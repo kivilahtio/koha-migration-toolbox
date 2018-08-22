@@ -1,21 +1,12 @@
-use 5.22.1;
-
 package MMT::Koha::Patron;
-#Pragmas
-use Carp::Always::Color;
-use experimental 'smartmatch', 'signatures';
-use English;
+
+use MMT::Pragmas;
 
 #External modules
 use Email::Valid;
 
 #Local modules
-use MMT::Config;
-use Log::Log4perl;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
-use MMT::Date;
-use MMT::Validator;
-use MMT::TranslationTable::PatronCategorycode;
 
 #Inheritance
 use MMT::KohaObject;

@@ -3,23 +3,17 @@
 # Copyright 2018 National Library of Finland
 #
 
-use 5.22.1;
-
 package MAIN;
 #Pragmas
 use lib qw(lib extlib/lib/perl5);
-use experimental 'smartmatch', 'signatures';
-use Carp::Always::Color;
+use MMT::Pragmas;
 
 #External modules
 use Getopt::OO;
 use IPC::Cmd;
 
 #Local modules
-use MMT::Config;
-use Log::Log4perl;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
-use MMT::Validator;
 use MMT::Extractor;
 use MMT::Loader;
 use MMT::Builder;

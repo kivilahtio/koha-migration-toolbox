@@ -1,15 +1,10 @@
-use 5.22.1;
-
 package MMT::Date;
-#Pragmas
-use Carp::Always::Color;
-use experimental 'smartmatch', 'signatures', 'switch';
+
+use MMT::Pragmas;
 
 #External modules
 
 #Local modules
-use MMT::Config;
-use Log::Log4perl;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
 =head1 NAME

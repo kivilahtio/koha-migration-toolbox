@@ -1,7 +1,7 @@
-use 5.22.1;
-
 package MMT::Config;
+
 #Pragmas
+#use MMT::Pragmas; #Do not load this here, because it triggers race condition issues when loading Log4Perl from other dependant modules prior to having it initialized
 use Carp::Always::Color;
 
 #External modules

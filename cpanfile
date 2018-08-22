@@ -10,4 +10,5 @@ requires "Exception::Class";
 requires "experimental";
 requires "Text::CSV_XS";
 requires "IPC::Cmd";
+requires "Import::Into";
 requires "Modern::Perl";

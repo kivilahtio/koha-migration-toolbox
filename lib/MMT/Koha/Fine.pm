@@ -1,19 +1,11 @@
-use Modern::Perl '2016';
-
 package MMT::Koha::Fine;
-#Pragmas
-use Carp::Always::Color;
-use experimental 'smartmatch', 'signatures';
-use English;
+
+use MMT::Pragmas;
 
 #External modules
 
 #Local modules
-use MMT::Config;
-use Log::Log4perl;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
-use MMT::Date;
-use MMT::Validator;
 
 #Inheritance
 use MMT::KohaObject;
