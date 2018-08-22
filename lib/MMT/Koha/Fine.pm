@@ -114,7 +114,7 @@ sub setAccounttype($s, $o, $b) {
   $s->{accounttype} = $b->{FineTypes}->translate(@_, $o->{fine_fee_type});
 
   unless ($s->{accounttype}) {
-    MMT::Exception::Delete->throw($s->logId()."' has no accounttype! fine_fee_type=".$o->{fine_fee_type}.". Define a default in the Branchcodes translation table!");
+    MMT::Exception::Delete->throw($s->logId()."' has no accounttype! fine_fee_type=".$o->{fine_fee_type}.". Define a default in the FineTypes translation table!");
   }
 }
 

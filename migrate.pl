@@ -71,7 +71,6 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
           {name => "LastBorrowDate", file => '02-items_last_borrow_date.csv', keys => ['item_id']},
         ],
         translationTables => [
-          {name => 'Branchcodes'},
           {name => 'LocationId'},
           {name => 'ItemNoteTypes'},
           {name => 'ItemTypes'},
@@ -100,6 +99,7 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
         translationTables => [
           {name => 'PatronCategorycode'},
           {name => 'Branchcodes'},
+          {name => 'LocationId'},
           {name => 'NoteType'},
           {name => 'PatronStatistics'},
         ],
@@ -119,7 +119,6 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
           {name => "LastRenewDate",             file => '12a-current_circ_last_renew_date.csv', keys => ['circ_transaction_id']},
         ],
         translationTables => [
-          {name => 'Branchcodes'},
           {name => 'LocationId'},
         ],
       });

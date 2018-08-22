@@ -6,5 +6,7 @@
 ## This mapping table is used by the module MMT::TranslationTable::Branchcodes
 ## it defines mappings from yet-unknown Voyager column to Koha's branchcode used in various tables.
 ##
+## Currently only the Patrons transformation uses this to default all Patrons to one branch
+##
 
 _DEFAULT_:      HAMK

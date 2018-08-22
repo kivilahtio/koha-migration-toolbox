@@ -141,7 +141,7 @@ my %queries = (
     sql =>
       "SELECT    patron.patron_id,
                  patron.last_name, patron.first_name, patron.middle_name, patron.title,
-                 patron.create_date, patron.expire_date, patron.institution_id,
+                 patron.create_date, patron.expire_date, patron.home_location,
                  patron.registration_date,
                  patron.patron_pin,
                  patron.institution_id, patron.birth_date

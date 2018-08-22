@@ -23,7 +23,7 @@ MMT::ATranslationTable - Abstract class, translates object attributes (source da
 
 =head2 DESCRIPTION
 
-Used to translate configurable parameters, such as item types or branchcodes or borrower categorycodes, etc.
+Used to translate configurable parameters, such as item types or location or borrower categorycodes, etc.
 
 These can be used as a modular extension to the core KohaObject (Patron, Item, ...) builder functions, to delegate
 more complex logic to translation tables.

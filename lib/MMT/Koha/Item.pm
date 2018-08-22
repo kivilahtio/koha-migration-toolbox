@@ -147,7 +147,7 @@ sub setHomebranch($s, $o, $b) {
   $s->{ccode} = $branchcodeLocation->{collectionCode} if $branchcodeLocation->{collectionCode};
 
   unless ($s->{homebranch}) {
-    MMT::Exception::Delete->throw($s->logId()."' has no homebranch! perm_location=".$o->{perm_location}.". Define a default in the Branchcodes translation table!");
+    MMT::Exception::Delete->throw($s->logId()."' has no homebranch! perm_location=".$o->{perm_location}.". Define a default in the LocationId translation table!");
   }
 }
 sub setHoldingbranch($s, $o, $b) {

@@ -43,7 +43,7 @@ MMT::Builder
       ...
     ],
     translationTables => [
-      {name => "Branchcodes", params => [1,2,3]},
+      {name => "LocationId", params => [1,2,3]},
       ...
     ],
   });
