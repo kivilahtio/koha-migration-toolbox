@@ -91,7 +91,7 @@ sub translate($s, $kohaObject, $voyagerObject, $builder, $val, @otherArgs) {
   }
   elsif ($kohaVal =~ $re_isSubroutineCall) {
     my $method = $1;
-    my @params = ($kohaObject, $voyagerObject, $builder, $val, [split(/\s*,\s*/, $2)], (@otherArgs ? \@otherArgs : undef));
+    my @params = ($kohaObject, $voyagerObject, $builder, $val, [split(/\s*,\s*/, $2)], (@otherArgs ? \@otherArgs : []));
 
     $log->trace("Invoking ".ref($s)."->$method(@params)") if $log->is_trace();
     my $rv = $s->$method(@params);
