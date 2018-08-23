@@ -362,7 +362,10 @@ my $re_ssnToDob = qr/^(\d\d)(\d\d)(\d\d)([-+A])/;
 sub setDateofbirth($s, $o, $b) {
   $s->{dateofbirth} = $o->{birth_date};
   if (not($s->{dateofbirth}) && $s->{ssn}) { #Try to get dob from ssn
-    $s->{ssn} =~ $re_ssnToDob;
+    unless ($s->{ssn} =~ $re_ssnToDob) {
+      $log->error($s->logId()." making the date of birth from ssn failed, because the ssn '".$s->{ssn}."' is unparseable");
+      return undef;
+    }
     my $year = ($4 eq 'A') ? "20$3" : "19$3";
     $s->{dateofbirth} = "$year-$2-$1";
   }
