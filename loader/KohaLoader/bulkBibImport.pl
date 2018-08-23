@@ -20,7 +20,7 @@ use Bulk::OplibMatcher;
 our $verbosity = 3;
 my %args;
 $args{inputMarcFile} = '';
-($args{matchLog}, $args{mergeStrategy}, $args{migrateStrategy}) = ('', 'defer', 'fast');
+($args{matchLog}, $args{mergeStrategy}, $args{migrateStrategy}) = ('', 'defer', 'chunk');
 $args{legacyIdFieldDef} = '001';
 $args{biblionumberConversionTable} = 'biblionumberConversionTable';
 
@@ -82,6 +82,7 @@ DESCRIPTION
           Currently supported values:
             'fast' - A memory intensive crunch of hand-tailored direct-SQL migration.
                      ATM is 4 times faster than the 'koha'-strategy. 100 bibs in 1s on koha*-kktest
+            'chunk' - Like fast, uses less memory.
             'koha' - do it like they do it on the Koha channel!
 
     --mergeStrategy name
