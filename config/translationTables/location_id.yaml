@@ -11,7 +11,7 @@
 #location_id,location_code,       #location_name
 
 #branchLoc sets the following attributes:
-#       branchcode, shelving_location, collection_code, sub_location
+#       branchcode, shelving_location, collection_code, sub_location, item.itemtype, item.notforloan-status
 1:   branchLoc(EVO,       ARK, undef, undef) #Hamkoark, Evo Arkisto, translated values would be: branchcode=EVO, location=ARK, ccode=undef, sub_location=undef
 2:   branchLoc(EVO,       KIR) #Hamkokir, Evo Kirjasto,
 3:   branchLoc(EVO,       VAR) #Hamkovar, Evo Varasto,

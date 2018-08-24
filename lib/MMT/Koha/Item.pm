@@ -178,6 +178,11 @@ sub setSub_location($s, $o, $b) {
 sub setItype($s, $o, $b) {
   $s->{itype} = $b->{ItemTypes}->translate(@_, $o->{item_type_id});
 
+  my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{perm_location});
+  if ($branchcodeLocation->{itemtype}) {
+    $s->{itype} = $branchcodeLocation->{itemtype};
+  }
+
   unless ($s->{itype}) {
     MMT::Exception::Delete->throw($s->logId()."' has no itype! item_type_id=".$o->{item_type_id});
   }
@@ -251,6 +256,14 @@ sub setStatuses($s, $o, $b) {
 
       default { $log->error("Unhandled status '$kohaStatus' with value '$kohaStatusValue'"); }
     }
+  }
+
+  my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{perm_location});
+  if ($branchcodeLocation->{notforloan}) {
+    if ($s->{notforloan}) {
+      $log->warn($s->logId()." is getting notforloan='".$s->{notforloan}."' status overloaded with '".$branchcodeLocation->{notforloan}."' from the LocationId translation table.");
+    }
+    $s->{notforloan} = $branchcodeLocation->{notforloan};
   }
 }
 

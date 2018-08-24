@@ -31,6 +31,8 @@ sub branchLoc($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tableP
     location => uc($tableParams->[1]),
     collectionCode => $tableParams->[2],
     sub_location => $tableParams->[3],
+    itemtype => $tableParams->[4],
+    notforloan => $tableParams->[5],
   };
 }
 
