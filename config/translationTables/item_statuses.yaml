@@ -3,8 +3,8 @@
 ##
 ## IN THIS FILE
 ##
-## This mapping table is used by the module MMT::TranslationTable::ItemNoteType
-## it defines mappings from voyager.item_note_type integer to koha.items.itemnotes|itemnotes_nonpublic
+## This mapping table is used by the module MMT::TranslationTable::ItemStatus
+## it defines mappings from voyager.item_status_type to koha.items.*
 ##
 
 #Voyager.ITEM_STATUS_TYPE

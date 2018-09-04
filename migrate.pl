@@ -3,23 +3,17 @@
 # Copyright 2018 National Library of Finland
 #
 
-use 5.22.1;
-
 package MAIN;
 #Pragmas
 use lib qw(lib extlib/lib/perl5);
-use experimental 'smartmatch', 'signatures';
-use Carp::Always::Color;
+use MMT::Pragmas;
 
 #External modules
 use Getopt::OO;
 use IPC::Cmd;
 
 #Local modules
-use MMT::Config;
-use Log::Log4perl;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
-use MMT::Validator;
 use MMT::Extractor;
 use MMT::Loader;
 use MMT::Builder;
@@ -32,7 +26,17 @@ $log->debug("Starting $0 using config '".MMT::Validator::dumpObject($MMT::Config
 my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
   '--help' => {
     help => 'Show this friendly help',
-    callback => sub {print $_[0]->Help(); exit 0;},
+    callback => sub {
+      print "\n";
+      print $_[0]->Help();
+      print "
+ENVIRONMENT:
+MMT_HOME: ".($ENV{MMT_HOME} || '')."
+    Configuration and working space for the specific ETL pipeline.
+
+";
+      exit 0;
+    },
   },
 
 
@@ -61,7 +65,6 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
           {name => "LastBorrowDate", file => '02-items_last_borrow_date.csv', keys => ['item_id']},
         ],
         translationTables => [
-          {name => 'Branchcodes'},
           {name => 'LocationId'},
           {name => 'ItemNoteTypes'},
           {name => 'ItemTypes'},
@@ -90,6 +93,7 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
         translationTables => [
           {name => 'PatronCategorycode'},
           {name => 'Branchcodes'},
+          {name => 'LocationId'},
           {name => 'NoteType'},
           {name => 'PatronStatistics'},
         ],
@@ -109,7 +113,6 @@ my Getopt::OO $opts = Getopt::OO->new(\@ARGV,
           {name => "LastRenewDate",             file => '12a-current_circ_last_renew_date.csv', keys => ['circ_transaction_id']},
         ],
         translationTables => [
-          {name => 'Branchcodes'},
           {name => 'LocationId'},
         ],
       });

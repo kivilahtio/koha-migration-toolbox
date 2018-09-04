@@ -141,7 +141,7 @@ my %queries = (
     sql =>
       "SELECT    patron.patron_id,
                  patron.last_name, patron.first_name, patron.middle_name, patron.title,
-                 patron.create_date, patron.expire_date, patron.institution_id,
+                 patron.create_date, patron.expire_date, patron.home_location,
                  patron.registration_date,
                  patron.patron_pin,
                  patron.institution_id, patron.birth_date
@@ -549,8 +549,8 @@ sub writeCsvRow($$) {
   my ($FH, $line) = @_;
   for my $k (0..scalar(@$line)-1) {
     if (defined($line->[$k])) {
-      $line->[$k] =~ s/"/'/g;
-      $line->[$k] =~ s/\r//gsm;
+      $line->[$k] =~ s/"/'/gsm;
+      $line->[$k] =~ s/[\x00-\x08\x0B-\x1F]//gsm; #Trim "carriage return" and control characters that should no longer be here
       if ($line->[$k] =~ /,|\n/) {
         $line->[$k] = '"'.$line->[$k].'"';
       }

@@ -1,18 +1,12 @@
-use 5.22.1;
-
 package MMT::ATranslationTable;
-#Pragmas
-use Carp::Always::Color;
-use experimental 'smartmatch', 'signatures';
+
+use MMT::Pragmas;
 
 #External modules
 use YAML::XS;
 
 #Local modules
-use MMT::Config;
-use Log::Log4perl;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
-use MMT::Validator;
 
 #Exceptions
 use MMT::Exception::Delete;
@@ -23,7 +17,7 @@ MMT::ATranslationTable - Abstract class, translates object attributes (source da
 
 =head2 DESCRIPTION
 
-Used to translate configurable parameters, such as item types or branchcodes or borrower categorycodes, etc.
+Used to translate configurable parameters, such as item types or location or borrower categorycodes, etc.
 
 These can be used as a modular extension to the core KohaObject (Patron, Item, ...) builder functions, to delegate
 more complex logic to translation tables.
@@ -97,7 +91,7 @@ sub translate($s, $kohaObject, $voyagerObject, $builder, $val, @otherArgs) {
   }
   elsif ($kohaVal =~ $re_isSubroutineCall) {
     my $method = $1;
-    my @params = ($kohaObject, $voyagerObject, $builder, $val, [split(/\s*,\s*/, $2)], (@otherArgs ? \@otherArgs : undef));
+    my @params = ($kohaObject, $voyagerObject, $builder, $val, [split(/\s*,\s*/, $2)], (@otherArgs ? \@otherArgs : []));
 
     $log->trace("Invoking ".ref($s)."->$method(@params)") if $log->is_trace();
     my $rv = $s->$method(@params);

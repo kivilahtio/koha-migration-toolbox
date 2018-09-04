@@ -2,7 +2,7 @@
 #
 # nvolk_marc21.pm - Library for manipulation MARC21 input, mainly records
 #
-# Copyright (c) 2011-2017 Kansalliskirjasto/National Library of Finland
+# Copyright (c) 2011-2018 Kansalliskirjasto/National Library of Finland
 # All Rights Reserved.
 #
 # Author(s): Nicholas Volk (nicholas.volk@helsinki.fi)
@@ -684,7 +684,6 @@ sub marc21_record_get_fields($$$) {
   my $i;
   my $pos = 0;
   for ( $i=0; $i <= $#tags; $i++ ) {
-    #print STDERR " WP2 $i/$#tags: '$tags[$i]'\n";
     if ( $field eq $tags[$i] ) {
 
       my $fc = $contents[$i];
@@ -1104,7 +1103,7 @@ sub marc21_record_replace_nth_field($$$$) {
     }
   }
 
-  if ( $debug ) { print STDERR "No replacement done for $field.\n"; }
+  print STDERR "Warning! No replacement done for $field.\n";
   return $record;
 }
 
@@ -1284,6 +1283,29 @@ sub string_replace($$$) {
 
 
   return $string;
+}
+
+
+sub unicode_strip_diacritics($) {
+  my $str = $_[0];
+
+  $str =~ s/́//g;
+  $str =~ s/̆//g;   $str =~ s/̌//g;
+
+
+  $str =~ s/̂//g;
+  $str =~ s/̀//g;
+  $str =~ s/̈//g; $str =~ s/̈//g;
+  $str =~ s/̊//g;
+
+  $str =~ s/̄//g;
+
+  $str =~ s/̧//g;
+  $str =~ s/̣//g;
+
+  $str =~ s/̃//g;
+
+  return $str;
 }
 
 sub unicode_fixes2($$) {
@@ -1479,6 +1501,8 @@ sub nvolk_marc212oai_marc($) {
   my @tags = @$tags_ref;
   my @contents = @$contents_ref;
 
+  my $id = marc21_record_get_field($record, '001', undef);
+
   my $output = "<record xmlns=\"http://www.loc.gov/MARC21/slim\">\n";
   $output .= "<leader>$leader</leader>\n";
   my $i;
@@ -1486,21 +1510,44 @@ sub nvolk_marc212oai_marc($) {
     my $tag = $tags[$i];
     my $content = $contents[$i];
     if ( $tag =~ /^00[1-9]$/ ) {
+      if ( $content =~ s/[\x00-\x08\x0B\x0C\x0E-\x1F]//g ) {
+	print STDERR "WARNING: Removing wierd characters (record $id)\n";
+      }
       $output .= "<controlfield tag=\"$tag\">$content</controlfield>\n";
     }
     elsif ( $content =~ s/^(.)(.)\x1F// ) {
       my $i1 = $1;
       my $i2 = $2;
-      $output .= "<datafield tag=\"$tag\" ind1=\"$i1\" ind2=\"$i2\">\n";
+
+      # Tee osakentät:
+      my $subfield_contents = '';
       my @subs = split(/\x1F/, $content);
       for ( my $j=0; $j <= $#subs; $j++ ) {
 	my $sf = $subs[$j];
-	$sf =~ /^(.)(.*)$/;
-	my $sf_code = $1;
-	my $sf_data = $2;
-	$output .= " <subfield code=\"$sf_code\">".html_escapes($sf_data)."</subfield>\n";
+	if ( $sf =~ /^(.)(.*)$/ ) {
+	  my $sf_code = $1;
+	  my $sf_data = $2;
+	  if ( defined($sf_code) ) {
+	    if ( $sf_code =~ /^[a-z0-9]$/ ) {
+	      if ( $sf_data =~ s/[\x00-\x08\x0B\x0C\x0E-\x1F]//g ) {
+		print STDERR "WARNING: Removing wierd characters (record $id)\n";
+	      }
+	      $subfield_contents .= " <subfield code=\"$sf_code\">".html_escapes($sf_data)."</subfield>\n";
+	    }
+	    else {
+	      print STDERR "WARNING: Skipping subfield due to bad subfield code (record $id)\n";
+	    }
+	  }
+	  else {
+	    print STDERR "WARNING: Skipping subfield due to erronous marc21 (record $id)\n";
+	  }
+	}
       }
-      $output .= "</datafield>\n";
+      if ( length($subfield_contents) ) {
+	$output .= "<datafield tag=\"$tag\" ind1=\"$i1\" ind2=\"$i2\">\n";
+	$output .= $subfield_contents;
+	$output .= "</datafield>\n";
+      }
     }
     else {
       die("$tag\t'$content'");
@@ -1512,6 +1559,7 @@ sub nvolk_marc212oai_marc($) {
   $output =~ s/'/&#39;/g;
   return $output;
 }
+
 
 sub nvolk_marc212aleph($) {
   my $record = shift();
@@ -1975,7 +2023,7 @@ sub marc21_record_get_publication_language($) {
   return '   ';
 }
 
-sub marc21_record_get_publication_year($) {
+sub marc21_record_get_publication_year_008($) {
   my $record = $_[0];
   my $f008 = marc21_record_get_field($record, '008', '');
   if ( defined($f008) ) {
@@ -1984,11 +2032,121 @@ sub marc21_record_get_publication_year($) {
   return 'uuuu';
 }
 
+sub marc21_record_get_publication_year {
+    my $record = $_[0];
+    my $ydebug = 1;
+    my $y008 = marc21_record_get_publication_year_008($record);
+    if ( $y008 =~ /^[0-9]{4}$/ ) {
+	return $y008;
+    }
+    #print STDERR " Warninging: 008 fail failed: '$year'\n";
+    my $cand = marc21_record_get_field($record, '260', 'c');
+    if ( defined($cand) && $cand =~ /^\D*([0-9]{4})\D*$/ ) {
+	my $y260 = $1;
+	my $id = marc21_record_get_field($record, '001', undef);
+	print STDERR "$id\t260\$c '$cand' overrides 008 '$y008'\n";
+	return $y260;
+    }
 
+    my @cands = marc21_record_get_fields($record, '264', undef);
+    for ( my $i=0; $i <= $#cands; $i++ ) {
+	my $f = $cands[$i];
+	if ( defined($f) && $f =~ /^.1/ ) {
+	    $cand = marc21_field_get_subfield($f, 'c');
 
-sub marc21_record_get_publisher($) {
+	    if ( defined($cand) && $cand =~ /^\D*([0-9]{4})\D*$/ ) {
+		my $y264 = $1;
+		my $id = marc21_record_get_field($record, '001', undef);
+		print STDERR "$id\t264 I2=1\$c '$cand' overrides 008 '$y008'\n";
+		return $y264;
+	    }
+	}
+    }
+
+    for ( my $i=0; $i <= $#cands; $i++ ) {
+	my $f = $cands[$i];
+	if ( defined($f) && $f =~ /^.4/ ) {
+	    $cand = marc21_field_get_subfield($f, 'c');
+
+	    if ( $cand =~ /^\D*([0-9]{4})\D*$/ ) {
+		my $y264 = $1;
+		my $id = marc21_record_get_field($record, '001', undef);
+		print STDERR "$id\t264 I2=4\$c '$cand' overrides 008 '$y008'\n";
+		return $y264;
+	    }
+	}
+    }
+
+    return $y008;
+}
+
+# Tämä ei kuuluisi tänne, mutta olkoon...
+sub _publisher_b($) {
+  my $field = $_[0];
+  my $b = marc21_field_get_subfield($field, 'b');
+  if ( defined($b) && $b =~ /\S/ ) {
+    if ( $b !~ /tuntematon/i ) {
+      $b =~ s/( *:|,)$//;
+      return $b;
+    }
+  }
+  return undef;
+}
+
+sub marc21_record_get_publisher_field($) {
   my $record = $_[0];
+  my $publisher = marc21_record_get_field($record, '260', undef);
+
+  my @cands = marc21_record_get_fields($record, '264', undef);
+
+  for ( my $i=$#cands; $i >= 0; $i-- ) {
+    my $cand = $cands[$i];
+    if ( $cand !~ /^.1/ ) {
+      splice(@cands, $i, 1)
+    }
+  }
+
+  # Käytä 260-kenttää vain jos 264 on tyhjä:
+  if ( defined($publisher) ) {
+    if ( $#cands == -1 && defined(_publisher_b($publisher)) ) {
+      return $publisher;
+    }
+  }
+
+  for ( my $i=0; $i <= $#cands; $i++ ) {
+    my $cand = $cands[$i];
+    if ( defined(_publisher_b($cand)) ) {
+      return $cands[$i];
+    }
+  }
+
+  if ( $#cands > -1 ) { return $cands[0]; }
+  return undef;
+}
+
+
+sub marc21_record_get_publisher_new($) {
+  my $record = $_[0];
+
+  my $publisher_data = marc21_record_get_publisher_field($record);
+
+  if ( defined($publisher_data) ) {
+    print STDERR " '$publisher_data'\n";
+    my $b = marc21_field_get_subfield($publisher_data, 'b');
+    if ( defined($b) && $b !~ /tuntematon/i ) {
+      $b =~ s/( *:|,)$//;
+      return $b;
+    }
+  }
+  return undef;
+}
+
+sub marc21_record_get_publisher_old($) {
+  my $record = $_[0];
+
+  # old version
   my $publisher = marc21_record_get_field($record, '260', 'b');
+
   if ( defined($publisher) && $publisher =~ /\S/ ) {
     if ( $publisher !~ /tuntematon/i ) {
       $publisher =~ s/( *:|,)$//;
@@ -2007,6 +2165,23 @@ sub marc21_record_get_publisher($) {
     }
   }
   return undef;
+}
+
+sub marc21_record_get_publisher($) {
+  my $record = $_[0];
+  my $new = marc21_record_get_publisher_new($record);
+  return $new;
+  my $old = marc21_record_get_publisher_old($record);
+  
+  
+  if ( !defined($old) && !defined($new) ) {
+    return undef;
+  }
+  
+  if ( $old ne $new ) {
+    die("'$old' vs '$new'");
+  }
+  return $old;
 }
 
 sub marc21_record_get_title($) {
@@ -2337,9 +2512,7 @@ sub marc21_record_enrich_fields($$$$) {
       my $cand_target_field = $target_fields[$i];
       if ( defined($cand_target_field) &&
 	   pair_field($orig_source_fields[$i], $orig_target_fields[$i], $field, $subfield_codes) ) {
-	#die(" '".$orig_target_fields[$i]. "' => \n '".$orig_source_fields[$i] . "'\n");
 
-	# $orig_source_fields[$j] ne $orig_target_fields[$i] ) {
 	$cand_source_field = $orig_source_fields[$j];
 	$target_record = marc21_record_replace_nth_field($target_record, $field, $cand_source_field, $i);
 	if ( $debug ) {
@@ -2790,6 +2963,9 @@ sub remove_id_from_035($$) {
       ## eli ei käytetä ehtoa "if ( $a eq $id2remove )"
       if ( $field eq "  \x1Fa$id2remove" ) {
 	$hit = $i;
+	if ( $f001 eq $id2remove ) { # poistetaan (muuten korvataa foo id:llä)
+	  $f001_in_035a = 1;
+	}
       }
       elsif ( $a eq $f001 ) {
 	$f001_in_035a = 1;
@@ -2810,4 +2986,291 @@ sub remove_id_from_035($$) {
   return $voyager_record;
 }
 
+
+sub marc21_record_replace_field_with_field($$$$) {
+  my ( $record, $tag, $from_field, $to_field) = @_;
+
+  my @fields = marc21_record_get_fields($record, $tag, undef);
+  for ( my $i=0; $i <= $#fields; $i++ ) {
+    my $field = $fields[$i];
+    if ( $field eq $from_field ) {
+      $record = marc21_record_replace_nth_field($record, $tag, $to_field, $i);
+      return $record;
+    }
+  }
+  return $record;
+}
+
+
+sub marc21_remove_duplicate_fields($$) {
+  my ( $record, $tag ) = @_;
+  my $id = 0;
+  my @fields = marc21_record_get_fields($record, '035', undef);
+  for ( my $i = $#fields; $i > 0; $i-- ) {
+    my $f1 = $fields[$i];
+    my $poista = 0;
+    for ( my $j = 0; !$poista && $j < $i; $j++ ) {
+      my $f2 = $fields[$j];
+      if ( $f1 eq $f2 ) {
+	$poista = 1;
+      }
+    }
+    if ( $poista ) {
+      if ( $id == 0 ) {
+	$id = marc21_record_get_field($record, '001', undef);
+      }
+      print STDERR "$id\tPoistettu 035 '", $fields[$i], "'\n";
+      $record = marc21_record_remove_nth_field($record, '035', '', $i);
+    }
+  }
+  return $record;
+}
+
+sub get_773d_from_host($) {
+  my $record = $_[0];
+
+  my $d = '';
+  my $publisher_field = marc21_record_get_publisher_field($record);
+
+  if ( defined($publisher_field) ) {
+    my $h26Xa = marc21_field_get_subfield($publisher_field, 'a');
+    my $h26Xb = marc21_field_get_subfield($publisher_field, 'b');
+    my $h26Xc = marc21_field_get_subfield($publisher_field, 'c');
+    my @d;
+
+    if ( defined($h26Xa) ) { $d[$#d+1] = $h26Xa; }
+    if ( defined($h26Xb) ) { $d[$#d+1] = $h26Xb; }
+    if ( defined($h26Xc) ) { $d[$#d+1] = $h26Xc; }
+    if( $#d > -1 ) {
+      $d = join(' ', @d);
+      # $d =~ s/\] *℗ ?\d+$/\]/; # siivoa vähän (ei kyl pyydetty)
+      # $d =~ s/, *℗ ?\d+$//;; # siivoa vähän (ei kyl pyydetty)
+      $d =~ s/\.$//;
+    }
+  }
+  return $d;
+}
+sub get_773h_from_host($) {
+  my $record = $_[0];
+
+  my $h = marc21_record_get_field($record, '300', 'a');
+  if ( !defined($h) ) { return ''; }
+
+  $h =~ s/[ \.:;\+]*$//;
+  $h =~ s/(\S)\s*\([^\)]*\)$/$1/; # loppusulut (kesto) pois.
+  return $h;
+}
+
+sub get_773k_from_host($) {
+  my $record = $_[0];
+  my $k = '';
+
+  my $h490 = marc21_record_get_field($record, '490', undef);
+  if ( defined($h490) ) {
+    my $h490a = marc21_field_get_subfield($h490, 'a');
+    my $h490n = marc21_field_get_subfield($h490, 'n');
+    my $h490p = marc21_field_get_subfield($h490, 'p');
+    my $h490x = marc21_field_get_subfield($h490, 'x');
+    my $h490v = marc21_field_get_subfield($h490, 'v');
+    my @k;
+    if ( defined($h490a) ) { $k[$#k+1] = $h490a; }
+    if ( defined($h490n) ) { $k[$#k+1] = $h490n; }
+    if ( defined($h490p) ) { $k[$#k+1] = $h490p; }
+    if ( defined($h490x) ) { $k[$#k+1] = $h490x; }
+    if ( defined($h490v) ) { $k[$#k+1] = $h490v; }
+    
+    if( $#k > -1 ) {
+      $k = join(' ', @k);
+      $k =~ s/[ \.:]*$//;
+    }
+  }
+  
+  return $k;
+}
+
+sub get_773os_from_host($) {
+  my $record = $_[0];
+
+  my @ostack;
+
+
+  if ( $record =~ /^......[acdo]/ ) {
+    my @h024 = marc21_record_get_fields($record, '024', undef);
+    for ( my $i=0; $i <= $#h024; $i++ ) {
+      my $o = '';
+      my $h024 = $h024[$i];
+      if ( defined($h024) ) {
+	my $h024a = marc21_field_get_subfield($h024, 'a');
+	if ( defined($h024a) ) {
+	  $ostack[$#ostack+1] = $h024a;
+	}
+      }
+    }
+
+    my @h028 = marc21_record_get_fields($record, '028', undef);
+    for ( my $j=0; $j <= $#h028; $j++ ) {
+      my $h028 = $h028[$j];
+      if ( defined($h028) && $h028 =~ /^3/ ) {
+	#my $h028b = marc21_field_get_subfield($h028, 'b');
+	my $h028a = marc21_field_get_subfield($h028, 'a');
+
+	#if ( defined($h028b) ) { $o[$#o+1] = $h028b; }
+	if ( defined($h028a) ) {
+	  $ostack[$#ostack+1] = $h028a;
+	}
+      }
+
+    }
+  }
+  elsif ( $record =~ /^......[gj]/ ) {
+    my @h028 = marc21_record_get_fields($record, '028', undef);
+    for ( my $i=0; $i <= $#h028; $i++ ) {
+      my $h028 = $h028[$i];
+      if ( defined($h028) ) {
+	my $h028a = marc21_field_get_subfield($h028, 'a');
+	my $h028b = marc21_field_get_subfield($h028, 'b');
+	my @o;
+	if ( defined($h028b) ) { $o[$#o+1] = $h028b; } # B tulee ensin
+	if ( defined($h028a) ) { $o[$#o+1] = $h028a; }
+	if( $#o > -1 ) {
+	  my $o = join(' ', @o);
+	  $ostack[$#ostack+1] = $o;
+	  if ( $#o == 1 ) {
+	    $ostack[$#ostack] = $o[1];
+	  }
+	}
+      }
+    }
+  }
+
+  return @ostack;
+}
+
+sub get_773o_from_host($) {
+  my $record = $_[0];
+  my $o = '';
+
+  if ( $record =~ /^......[acdo]/ ) {
+    my $h024 = marc21_record_get_field($record, '024', undef);
+    if ( defined($h024) ) {
+      my $h024a = marc21_field_get_subfield($h024, 'a');
+      if ( defined($h024a) ) {
+	$o = $h024a;
+      }
+    }
+
+    my $h028 = marc21_record_get_field($record, '028', undef);
+    if ( defined($h028) && $h028 =~ /^3/ ) {
+      #my $h028b = marc21_field_get_subfield($h028, 'b');
+      my $h028a = marc21_field_get_subfield($h028, 'a');
+
+      #if ( defined($h028b) ) { $o[$#o+1] = $h028b; }
+      if ( defined($h028a) ) {
+	my @o;
+	if ( $o ) {
+	  $o[0] = $o;
+	}
+	$o[$#o+1] = $h028a;
+	if( $#o > -1 ) {
+	  $o = join(' ', @o);
+	}
+      }
+    }
+  }
+  elsif ( $record =~ /^......[gj]/ ) {
+    my $h028 = marc21_record_get_field($record, '028', undef);
+    if ( defined($h028) ) {
+
+      my $h028a = marc21_field_get_subfield($h028, 'a');
+      my $h028b = marc21_field_get_subfield($h028, 'b');
+      my @o;
+      if ( defined($h028b) ) { $o[$#o+1] = $h028b; } # B tulee ensin
+      if ( defined($h028a) ) { $o[$#o+1] = $h028a; }
+      if( $#o > -1 ) {
+	$o = join(' ', @o);
+      }
+    }
+  }
+
+  $o =~ s/\.$//;
+  $o =~ s/\s+$//;
+  return $o;
+}
+
+sub get_773t_from_host($) {
+  my $record = $_[0];
+  my $h245a = marc21_record_get_field($record, '245', 'a');
+  my $h245b = marc21_record_get_field($record, '245', 'b');
+  my $h245n = marc21_record_get_field($record, '245', 'n');
+  my $h245p = marc21_record_get_field($record, '245', 'p');
+  my $h245c = marc21_record_get_field($record, '245', 'c');
+  if ( !defined($h245a) ) {
+    die();
+  }
+  my $t = $h245a;
+  if ( defined($h245b) ) { $t .= " " . $h245b; }
+  if ( defined($h245n) ) { $t .= " " . $h245n; }
+  if ( defined($h245p) ) { $t .= " " . $h245p; }
+  if ( defined($h245c) ) { $t .= " " . $h245c; }
+  return $t;
+}
+
+sub get_773z_from_host($) {
+  my $record = $_[0];
+  my $z = '';
+
+  if ( $record =~ /^......[acdo]/ ) {
+    my $h020 = marc21_record_get_field($record, '020', undef);
+    if ( defined($h020) ) {
+      my $h020a = marc21_field_get_subfield($h020, 'a');
+      if ( defined($h020a) ) {
+	$z = $h020a;
+      }
+    }
+  }
+  return $z;
+}
+
+sub create773($$$) {
+  my ( $host_id, $host_record, $g ) = @_;
+
+  if ( $host_record =~ /^......([acdgjo])/ ) {
+    my $type = $1;
+    
+    my $t = get_773t_from_host($host_record);
+    my $d = get_773d_from_host($host_record);
+    my $h = get_773h_from_host($host_record);
+    my $k = get_773k_from_host($host_record);
+    my $z = get_773z_from_host($host_record);
+    my $o = get_773o_from_host($host_record);
+
+    my $new773 = "0 " .
+      "\x1F7" . "nn${type}m" .
+      "\x1Fw" . $host_id .
+      "\x1Ft" . $t .
+      ( length($d) ? " -\x1Fd" . $d . '.' : '' ) .
+      ( length($h) ? " -\x1Fh" . $h . "." : '' ) .
+      ( length($k) ? " -\x1Fk" . $k . "." : '' ) .
+      ( length($z) ? " -\x1Fz" . $z . "." : '' ) .
+      ( length($o) ? " -\x1Fo" . $o . "." : '' ) .
+      ( defined($g) && $g ? " -\x1Fg\u$g" : '' );
+      # . " -\x1Fg" . "Raita"
+      # . " -\x1Fnnvolk 790"
+
+    $new773 =~ s/\.$//;
+    return $new773;
+  }
+  else {
+    print STDERR "Sanity check...\n";
+  }
+
+  return undef;
+}
+
 1;
+
+
+
+# update ANNUAL_STAT_DATA set VALUE='*' where YEAR=2012 and LIBRARY_ID=1 and VALUE<>'*' and VALUE=INHERITED_VALUE;
+
+# 

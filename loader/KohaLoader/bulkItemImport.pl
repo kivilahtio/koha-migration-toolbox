@@ -167,6 +167,7 @@ close $fh;
 
 =cut
 
+my $createCheckoutStatistics_sth;
 sub createCheckoutStatistics {
     return if $populateStatistics;
     my ( $item, $lastrun ) = @_;
@@ -175,31 +176,22 @@ sub createCheckoutStatistics {
     $dbh->{'mysql_enable_utf8'} = 1;
     $dbh->do('SET NAMES utf8');
 
-    my $issues = [];
-    my $returns = [];    #Collect all the statistics elements here for one huge insertion!
+    my $issues = []; #Collect all the statistics elements here for one huge insertion!
 
-    my $createCheckoutStatisticsSQL_issue =
-      "INSERT INTO statistics (branch, type, other, itemnumber, itemtype) VALUES ";
-    my $createCheckoutStatisticsSQL_return =
-      "INSERT INTO statistics (branch, type, other, itemnumber, itemtype) VALUES ";
+    $createCheckoutStatistics_sth = $dbh->prepare("INSERT INTO statistics (branch, itemnumber, itemtype, type, other) ".
+                                                  "VALUES                 (?     , ?         , ?       , ?   , ?)")
+        unless $createCheckoutStatistics_sth;
 
     if ($item) {
         my $issuesCount = $item->{issues};
 
         if ( defined $issuesCount && $issuesCount > 0 ) {
             foreach ( 0 .. $issuesCount ) {
-                push @$issues,
-                    '("'
-                  . $item->{homebranch}
-                  . '", "issue",  "KONVERSIO", "'
-                  . $item->{itemnumber} . '", "'
-                  . $item->{itype} . '")';
-                push @$returns,
-                    '("'
-                  . $item->{homebranch}
-                  . '", "return", "KONVERSIO", "'
-                  . $item->{itemnumber} . '", "'
-                  . $item->{itype} . '")';
+                push @$issues, [
+                    $item->{homebranch},
+                    $item->{itemnumber},
+                    $item->{itype},
+                ];
             }
         }
     }
@@ -208,12 +200,16 @@ sub createCheckoutStatistics {
         my $star = time;
         INFO "Writing statistics---";
 
-        $dbh->do( $createCheckoutStatisticsSQL_issue . join( ',', @$issues ) );
-        $dbh->do(
-            $createCheckoutStatisticsSQL_return . join( ',', @$returns ) );
+        my $prevAutoCommit = $dbh->{AutoCommit};
+        $dbh->{AutoCommit} = 0;
+        foreach my $iss (@$issues) {
+            $createCheckoutStatistics_sth->execute(@$iss, 'issue',  undef);
+            $createCheckoutStatistics_sth->execute(@$iss, 'return', undef);
+        }
+        $dbh->commit();
+        $dbh->{AutoCommit} = $prevAutoCommit;
 
         $issues  = [];
-        $returns = [];
         INFO "Statistics written in " . ( $star - time ) . "s\n";
         $dbh->disconnect();
         $dbh = C4::Context->dbh; #Refresh the DB handle, because it occasionally gets mangled and spits bad utf8.

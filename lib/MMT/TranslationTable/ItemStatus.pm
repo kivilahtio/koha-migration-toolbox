@@ -1,16 +1,11 @@
-use Modern::Perl '2016';
-
 package MMT::TranslationTable::ItemStatus;
-#Pragmas
-use Carp::Always::Color;
-use experimental 'smartmatch', 'signatures';
+
+use MMT::Pragmas;
 
 #External modules
+
 #Local modules
-use MMT::Config;
-use Log::Log4perl;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
-use MMT::Date;
 
 #Inheritance
 use MMT::ATranslationTable;

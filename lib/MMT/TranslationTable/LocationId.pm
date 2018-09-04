@@ -1,14 +1,10 @@
-use 5.22.1;
-
 package MMT::TranslationTable::LocationId;
-#Pragmas
-use Carp::Always::Color;
-use experimental 'smartmatch', 'signatures';
+
+use MMT::Pragmas;
 
 #External modules
+
 #Local modules
-use MMT::Config;
-use Log::Log4perl;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
 #Inheritance
@@ -35,6 +31,8 @@ sub branchLoc($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tableP
     location => uc($tableParams->[1]),
     collectionCode => $tableParams->[2],
     sub_location => $tableParams->[3],
+    itemtype => $tableParams->[4],
+    notforloan => $tableParams->[5],
   };
 }
 

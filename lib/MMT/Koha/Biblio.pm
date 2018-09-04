@@ -1,20 +1,12 @@
-use 5.22.1;
-
 package MMT::Koha::Biblio;
-#Pragmas
-use Carp::Always::Color;
-use experimental 'smartmatch', 'signatures';
-use English;
+
+use MMT::Pragmas;
 
 #External modules
 
 #Local modules
-use MMT::Config;
-use Log::Log4perl;
-my $log = Log::Log4perl->get_logger(__PACKAGE__);
-use MMT::Date;
-use MMT::Validator;
 use MMT::Shell;
+my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
 =head1 NAME
 

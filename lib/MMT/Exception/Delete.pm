@@ -1,6 +1,6 @@
 package MMT::Exception::Delete;
 
-use 5.22.1;
+use MMT::Pragmas;
 
 use Exception::Class (
     'MMT::Exception::Delete' => {

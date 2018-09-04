@@ -1,21 +1,14 @@
-use 5.22.1;
-
 package MMT::Builder;
-#Pragmas
-use Carp::Always::Color;
-use experimental 'smartmatch', 'signatures';
+
+use MMT::Pragmas;
 
 #External modules
 use Text::CSV;
-use Data::Dumper;
 
 #Local modules
-use MMT::Config;
-use Log::Log4perl;
-my $log = Log::Log4perl->get_logger(__PACKAGE__);
-use MMT::Validator;
 use MMT::Cache;
 use MMT::Tester;
+my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
 #Add a bit of type-safety
 use fields qw(inputFile outputFile type);
@@ -43,7 +36,7 @@ MMT::Builder
       ...
     ],
     translationTables => [
-      {name => "Branchcodes", params => [1,2,3]},
+      {name => "LocationId", params => [1,2,3]},
       ...
     ],
   });

@@ -1,21 +1,12 @@
-use 5.22.1;
-
 package MMT::Koha::Patron;
-#Pragmas
-use Carp::Always::Color;
-use experimental 'smartmatch', 'signatures';
-use English;
+
+use MMT::Pragmas;
 
 #External modules
 use Email::Valid;
 
 #Local modules
-use MMT::Config;
-use Log::Log4perl;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
-use MMT::Date;
-use MMT::Validator;
-use MMT::TranslationTable::PatronCategorycode;
 
 #Inheritance
 use MMT::KohaObject;
@@ -311,7 +302,11 @@ sub setEmail($s, $o, $b) {
   $log->warn($s->logId()." has no email.") unless $s->{email};
 }
 sub setBranchcode($s, $o, $b) {
-  $s->{branchcode} = $b->{Branchcodes}->translate(@_, '_DEFAULT_');
+  my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{home_location});
+  $s->{branchcode} = $branchcodeLocation->{branch};
+  return if $s->{branchcode};
+
+  $s->{branchcode} = $b->{Branchcodes}->translate(@_, '_DEFAULT_'); #Waiting for https://tiketti.koha-suomi.fi:83/issues/3265
 }
 sub setCategorycode($s, $o, $b) {
   my $patronGroupsBarcodes = $b->{Barcodes}->get($s->{borrowernumber});
@@ -367,7 +362,10 @@ my $re_ssnToDob = qr/^(\d\d)(\d\d)(\d\d)([-+A])/;
 sub setDateofbirth($s, $o, $b) {
   $s->{dateofbirth} = $o->{birth_date};
   if (not($s->{dateofbirth}) && $s->{ssn}) { #Try to get dob from ssn
-    $s->{ssn} =~ $re_ssnToDob;
+    unless ($s->{ssn} =~ $re_ssnToDob) {
+      $log->error($s->logId()." making the date of birth from ssn failed, because the ssn '".$s->{ssn}."' is unparseable");
+      return undef;
+    }
     my $year = ($4 eq 'A') ? "20$3" : "19$3";
     $s->{dateofbirth} = "$year-$2-$1";
   }

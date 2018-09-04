@@ -7,6 +7,7 @@ binmode( STDOUT, ":encoding(UTF-8)" );
 binmode( STDIN,  ":encoding(UTF-8)" );
 use utf8;
 use Carp;
+use English;
 #$|=1; #Are hot filehandles necessary?
 
 # External modules
@@ -114,21 +115,36 @@ sub bimp($s) {
 
 =head2 getMarcFileIterator
 
+  my $i = $s->getMarcFileIterator();
+  my ($marcRecord, $marcXmlPointer) = $i->();
+
+Pick an marcxml collection iteration strategy.
+The built-in way Koha uses is way too slow.
+Trying different strategies to speed it up while maintaining optimal memory footprint.
+
  @returns Subroutine, call this to get a list of:
                       [0] -> the next MARC::Record
-                      [1] -> XML as String
+                      [1] -> XML as a reference to String
 
 =cut
 
 sub getMarcFileIterator($s) {
   if ($s->p('migrateStrategy') eq 'fast') {
-    INFO "Slurping MARC XML chunks"; #This is memory intensive, timing it via logger
+    INFO "Slurping MARC XML collection in-memory"; #This is memory intensive, timing it via logger
     my $recordsAsXml = $s->_slurpMarcFile();
-    INFO "Done slurping MARC XML chunks";
+    INFO "Done slurping MARC XML collection";
     my $i = 0;
     return sub {
       return undef unless ($i < scalar(@$recordsAsXml));
       return (MARC::Record->new_from_xml($recordsAsXml->[$i], 'UTF-8', 'MARC21'), \$recordsAsXml->[$i++]);
+    };
+  }
+  elsif ($s->p('migrateStrategy') eq 'chunk') {
+    my $i = $s->_fastMARCXMLIterationStrategyIterator();
+    return sub {
+      my $xmlPtr = $i->();
+      return undef unless ($$xmlPtr);
+      return (MARC::Record->new_from_xml($$xmlPtr, 'UTF-8', 'MARC21'), $xmlPtr);
     };
   }
   elsif ($s->p('migrateStrategy') eq 'koha') {
@@ -137,10 +153,34 @@ sub getMarcFileIterator($s) {
   }
 }
 
+sub _fastMARCXMLIterationStrategyIterator($s) {
+  local $INPUT_RECORD_SEPARATOR = '</record>'; #Let perl split MARCXML for us
+  open(my $FH, '<:encoding(UTF-8)', $s->p('inputMarcFile')) or die("Opening the MARC file '".$s->p('inputMarcFile')."' for slurping failed: $!"); # Make sure we have the proper encoding set before handing these to the MARC-modules
+
+  return sub {
+    local $INPUT_RECORD_SEPARATOR = '</record>'; #Let perl split MARCXML for us
+
+    my $xml = <$FH>;
+    unless ($xml) {
+      DEBUG "No more MARC XMLs";
+      return undef;
+    }
+    unless ($xml =~ /^<record.+?<\/record>$/sm) {
+      TRACE "Dirty MARCXML:\n$xml";
+      unless ($xml =~ /(<record.+<\/record>)/sm) {
+        die "Broken MARCXML:\n$xml";
+      }
+      return \$1;
+    }
+    return \$xml;
+  };
+}
+
 sub _slurpMarcFile($s) {
   local $/ = undef;
   open(my $FH, '<:encoding(UTF-8)', $s->p('inputMarcFile')) or die("Opening the MARC file '".$s->p('inputMarcFile')."' for slurping failed: $!"); # Make sure we have the proper encoding set before handing these to the MARC-modules
   my $xmls = <$FH>;
+
   my @xmls = $xmls =~ /(<record>.+?<\/record>)/gsm;
   return \@xmls;
 }
@@ -247,14 +287,11 @@ sub mergeRecords($s, $record, $recordXmlPtr, $legacyBiblionumber, $matchedBiblio
 =cut
 
 sub addRecord($s, $record, $recordXmlPtr, $legacyBiblionumber) {
-  if ($s->p('migrateStrategy') eq 'fast') {
+  if ($s->p('migrateStrategy') eq 'fast' || $s->p('migrateStrategy') eq 'chunk') {
     $s->addRecordFast($record, $recordXmlPtr, $legacyBiblionumber);
   }
   elsif ($s->p('migrateStrategy') eq 'koha') {
     $s->addRecordKoha($record, $recordXmlPtr, $legacyBiblionumber);
-  }
-  else {
-    die ("Unknown migration strategy '".$s->p('migrateStrategy')."'");
   }
 }
 
@@ -286,6 +323,8 @@ sub addRecordFast($s, $record, $recordXmlPtr, $legacyBiblionumber) {
     ERROR "Error2=$error2";
     return ("insert", "ERROR2", $newBiblionumber);
   }
+
+  die "Biblionumber '$newBiblionumber' and biblioitemnumber '$newBiblioitemnumber' do not match! This causes critical issues in Koha!\n" if $newBiblionumber != $newBiblioitemnumber;
 
   unless ($s->{sth_insertBiblioMetadata}) {
     $s->{sth_insertBiblioMetadata} = $dbh->prepare("INSERT INTO biblio_metadata (biblionumber, format, marcflavour, metadata) VALUES (?, ?, ?, ?)");

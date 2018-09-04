@@ -1,19 +1,11 @@
-use 5.22.1;
-
 package MMT::Koha::Item;
-#Pragmas
-use Carp::Always::Color;
-use experimental 'smartmatch', 'signatures';
-use English;
+
+use MMT::Pragmas;
 
 #External modules
 
 #Local modules
-use MMT::Config;
-use Log::Log4perl;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
-use MMT::Date;
-use MMT::Validator;
 
 #Inheritance
 use MMT::KohaObject;
@@ -147,7 +139,7 @@ sub setHomebranch($s, $o, $b) {
   $s->{ccode} = $branchcodeLocation->{collectionCode} if $branchcodeLocation->{collectionCode};
 
   unless ($s->{homebranch}) {
-    MMT::Exception::Delete->throw($s->logId()."' has no homebranch! perm_location=".$o->{perm_location}.". Define a default in the Branchcodes translation table!");
+    MMT::Exception::Delete->throw($s->logId()."' has no homebranch! perm_location=".$o->{perm_location}.". Define a default in the LocationId translation table!");
   }
 }
 sub setHoldingbranch($s, $o, $b) {
@@ -186,6 +178,11 @@ sub setSub_location($s, $o, $b) {
 sub setItype($s, $o, $b) {
   $s->{itype} = $b->{ItemTypes}->translate(@_, $o->{item_type_id});
 
+  my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{perm_location});
+  if ($branchcodeLocation->{itemtype}) {
+    $s->{itype} = $branchcodeLocation->{itemtype};
+  }
+
   unless ($s->{itype}) {
     MMT::Exception::Delete->throw($s->logId()."' has no itype! item_type_id=".$o->{item_type_id});
   }
@@ -222,7 +219,7 @@ sub setCcode($s, $o, $b) {
   }
 
   my $kohaStatCat = $b->{ItemStatistics}->translate(@_, $statCat);
-  return unless ($kohaStatCat && $kohaStatCat != '');
+  return unless ($kohaStatCat && $kohaStatCat ne '');
 
   if ($s->{ccode}) {
     $log->warn($s->logId()." has collection code '".$s->{ccode}."' (from the LocationId translation table) and an incoming statistical category '$statCat->$kohaStatCat', but in Koha we can only have one collection code. Ignoring the incoming '$statCat->$kohaStatCat'.");
@@ -259,6 +256,14 @@ sub setStatuses($s, $o, $b) {
 
       default { $log->error("Unhandled status '$kohaStatus' with value '$kohaStatusValue'"); }
     }
+  }
+
+  my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{perm_location});
+  if ($branchcodeLocation->{notforloan}) {
+    if ($s->{notforloan}) {
+      $log->warn($s->logId()." is getting notforloan='".$s->{notforloan}."' status overloaded with '".$branchcodeLocation->{notforloan}."' from the LocationId translation table.");
+    }
+    $s->{notforloan} = $branchcodeLocation->{notforloan};
   }
 }
 

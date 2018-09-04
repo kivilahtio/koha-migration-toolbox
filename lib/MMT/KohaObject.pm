@@ -1,17 +1,11 @@
-use 5.22.1;
-
 package MMT::KohaObject;
-#Pragmas
-use Carp::Always::Color;
-use experimental 'smartmatch', 'signatures';
-use English;
+
+use MMT::Pragmas;
 
 #External modules
 use YAML::XS;
 
 #Local modules
-use MMT::Config;
-use Log::Log4perl;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
 =head1 NAME
