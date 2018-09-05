@@ -14,24 +14,24 @@ Charged:                ''           # 2
 Renewed:                ''           # 3
 Overdue:                ''           # 4
 Recall Request:         ''           # 5
-Hold Request:           ''           # 6
-On Hold:                ''           # 7
+Hold Request:           ''           # 6 - #varauspyyntö, jonka pitäisi kohdistua nimekkeelle tai varauskokoelmaan.
+On Hold:                ''           # 7 - #Varaushyllyssä oleva
 In Transit:             ''           # 8
-In Transit Discharged:  ''           # 9
-In Transit On Hold:     ''           # 10
+In Transit Discharged:  ''           # 9 - #kuljetuksessa kotitoimipaikkaan palautuksen jälkeen
+In Transit On Hold:     ''           # 10 - #kuljetuksessa noutopaikkaan
 Discharged:             ''           # 11
-Missing:                itemlost=1   # 12
+Missing:                itemlost=4   # 12
 Lost--Library Applied:  itemlost=1   # 13
 Lost--System Applied:   itemlost=2   # 14
-Claims Returned:        notforloan=1 # 15
+Claims Returned:        itemlost=4   # 15
 Damaged:                damaged=1    # 16
 Withdrawn:              withdrawn=1  # 17
-At Bindery:             notforloan=1 # 18
-Cataloging Review:      notforloan=1 # 19
-Circulation Review:     notforloan=1 # 20
-Scheduled:              ''           # 21
-In Process:             notforloan=1 # 22
-Call Slip Request:      ''           # 23
-Short Loan Request:     ''           # 24
-Remote Storage Request: ''           # 25
+At Bindery:             notforloan=2 # 18 - #HAMKilla tässä on henkilökuntakokoelmaa (muilla kirjastoilla arvo olisi 3 eli atbindery)
+Cataloging Review:      notforloan=4 # 19
+Circulation Review:     notforloan=5 # 20
+Scheduled:              ''           # 21 - #Ei käytössä
+In Process:             notforloan=-2 # 22 - #Hankinnan kautta saapuneiksi käsitellyt
+Call Slip Request:      ''           # 23 - #aineistopyyntö, pitäisi konvertoida nidekohtaiseksi varaukseksi
+Short Loan Request:     ''           # 24 - #ei käytössä
+Remote Storage Request: ''           # 25 - #Ei käytössä
 _DEFAULT_: warning()
