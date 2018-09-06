@@ -159,4 +159,13 @@ sub sourceKeyExists($s, $o, $key) {
   return 1;
 }
 
+sub concatenate($s, $what, $where, $separator=' | ') {
+  unless (defined $s->{$where}) {
+    $s->{$where} = $what;
+  }
+  else {
+    $s->{$where} .= $separator.$what;
+  }
+}
+
 return 1;

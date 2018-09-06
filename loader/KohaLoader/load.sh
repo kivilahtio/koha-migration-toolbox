@@ -91,6 +91,10 @@ function migrateBulkScripts {
         --bnConversionTable $WORKING_DIR/biblionumberConversionTable \
         &> $WORKING_DIR/bulkSubscriptionImport.log
 
+    ./bulkBranchtransfersImport.pl -file $DATA_SOURCE_DIR/Branchtransfer.migrateme \
+        --inConversionTable $WORKING_DIR/itemnumberConversionTable
+        &> $WORKING_DIR/bulkBranchtransfersImport.log
+
     #./bulkRotatingCollectionsImport.pl --file $DATA_SOURCE_DIR/Siirtolaina.migrateme &> $WORKING_DIR/bulkRotatingCollectionsImport.log
     #./bulkHistoryImport.pl --file /home/koha/pielinen/histories.migrateme &> bulkHistoryImport.log
 }

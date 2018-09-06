@@ -104,6 +104,68 @@ my %queries = (
        JOIN      item_stat_code ON (item_stats.item_stat_id = item_stat_code.item_stat_id)
        ORDER BY  item_stats.date_applied ASC", #Sort order is important so we can know which row is the newest one
   },
+  "03-transfers.csv" => {
+    encoding => "iso-8859-1",
+    uniqueKey => 0,
+    sql =>
+      # (In Transit On Hold) - Transfers for reserve fulfillment
+      "
+      SELECT item.item_id, item_status.item_status,
+             item_status.item_status_date, circ_trans_archive.discharge_date,
+             circ_trans_archive.discharge_location,
+             hold_recall.pickup_location as to_location
+      FROM   item
+      LEFT JOIN item_status       ON item_status.item_id        = item.item_id
+      LEFT JOIN circ_trans_archive ON circ_trans_archive.item_id = item.item_id
+      LEFT JOIN hold_recall_items ON hold_recall_items.item_id  = item.item_id
+      LEFT JOIN hold_recall       ON hold_recall.hold_recall_id = hold_recall_items.hold_recall_id
+      WHERE  item_status.item_status = 10
+         AND hold_recall_items.hold_recall_status > 1
+         AND ( TRUNC(circ_trans_archive.discharge_date) = TRUNC(item_status.item_status_date)
+               OR
+               circ_trans_archive.circ_transaction_id = (SELECT MAX(circ_transaction_id) FROM circ_trans_archive WHERE item_id = item.item_id)
+               OR
+               circ_trans_archive.circ_transaction_id IS NULL
+             )
+
+      UNION
+      ".
+      # (In Transit Discharged) - Transfers for check-ins travelling home
+      "
+      SELECT item.item_id, item_status.item_status,
+             item_status.item_status_date, circ_trans_archive.discharge_date,
+             circ_trans_archive.discharge_location,
+             item.perm_location as to_location
+      FROM   item
+      LEFT JOIN item_status        ON item_status.item_id        = item.item_id
+      LEFT JOIN circ_trans_archive ON circ_trans_archive.item_id = item.item_id
+      WHERE  item_status.item_status = 9
+         AND ( TRUNC(circ_trans_archive.discharge_date) = TRUNC(item_status.item_status_date)
+               OR
+               circ_trans_archive.circ_transaction_id = (SELECT MAX(circ_transaction_id) FROM circ_trans_archive WHERE item_id = item.item_id)
+               OR
+               circ_trans_archive.circ_transaction_id IS NULL
+             )
+
+      UNION
+      ".
+      # (In Transit) - Transfers ???
+      "
+      SELECT item.item_id, item_status.item_status,
+             item_status.item_status_date, circ_trans_archive.discharge_date,
+             circ_trans_archive.discharge_location,
+             item.perm_location as to_location
+      FROM   item
+      LEFT JOIN item_status       ON item_status.item_id        = item.item_id
+      LEFT JOIN circ_trans_archive ON circ_trans_archive.item_id = item.item_id
+      WHERE  item_status.item_status = 8
+         AND ( TRUNC(circ_trans_archive.discharge_date) = TRUNC(item_status.item_status_date)
+               OR
+               circ_trans_archive.circ_transaction_id = (SELECT MAX(circ_transaction_id) FROM circ_trans_archive WHERE item_id = item.item_id)
+               OR
+               circ_trans_archive.circ_transaction_id IS NULL
+             )",
+  },
   "05-patron_addresses.csv" => {
     encoding => "iso-8859-1",
     uniqueKey => 0,
