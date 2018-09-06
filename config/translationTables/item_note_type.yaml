@@ -10,7 +10,7 @@
 #voyager.item_note_type
 #note_type,                  note_desc
 #    mapping
-1: toItemnotes()           # regular
+1: toItemnotes_nonpublic() # regular (sisäinen huomautus, ei haluta asiakaliittymään näkyviin)
 2: toItemnotes_nonpublic() # charge
 3: toItemnotes_nonpublic() # discharge
 _DEFAULT_: warning()
