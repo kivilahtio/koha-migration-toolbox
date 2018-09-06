@@ -12,9 +12,6 @@
 
 #branchLoc sets the following attributes:
 #       branchcode, shelving_location, collection_code, sub_location, item.itemtype, item.notforloan-status
-Uudet tarkistetut arvot HAMKista
-#branchLoc sets the following attributes:
-branchcode, shelving_location, collection_code, sub_location
 1: branchLoc(Hamko, EI_KOHAAN, undef, undef) #Hamkoark, Evo Arkisto
 2: branchLoc(Hamko, kir, undef, undef) #Hamkokir, Evo Kirjasto,translated values would be: branchcode=Hamko, location=kir, ccode=undef, sub_location=undef
 3: branchLoc(Hamko, var) #Hamkovar, Evo Varasto,
@@ -134,4 +131,4 @@ branchcode, shelving_location, collection_code, sub_location
 118: branchLoc(Hamk, wwwn) #Hamkwwwn, Tietokannat Vanaicatissa,
 119: branchLoc(Hamko, mus) #Hamkomus, Evo Museo, #Uusi museokokoelma kirjastona
 120: branchLoc(EI_KOHAAN, EI_KOHAAN) #MAKSU, Verkkomaksaminen,
-DEFAULT: branchLoc(Hamk, KONVERSIO, ERROR, ERROR) #By default, print a warning and use defaults )
+_DEFAULT_: branchLoc(Hamk, KONVERSIO, ERROR, ERROR) #By default, print a warning and use defaults )

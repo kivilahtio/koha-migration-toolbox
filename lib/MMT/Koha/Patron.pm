@@ -247,7 +247,7 @@ sub setAddresses($s, $o, $b) {
         $s->{zipcode} = $match->{zip_postal};
         $s->{country} = $match->{country};
       }
-      elsif ($match->{address_desc} == 'Temporary') {
+      elsif ($match->{address_desc} eq 'Temporary') {
         if ($match->{address_line3} ne ''
           || $match->{address_line4} ne ''
           || $match->{address_line5} ne '') {
