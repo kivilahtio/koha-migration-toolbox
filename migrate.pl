@@ -7,6 +7,7 @@ package MAIN;
 #Pragmas
 use lib qw(lib extlib/lib/perl5);
 use MMT::Pragmas;
+use MMT::MonkeyPatch;
 
 #External modules
 use Getopt::OO;

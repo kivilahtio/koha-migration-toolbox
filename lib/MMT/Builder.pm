@@ -78,7 +78,7 @@ sub now($s) {
 sub build($s) {
   $log->info($s->{type}." - Starting to build");
 
-  my $csv=Text::CSV->new({ binary => 1, decode_utf8 => 0 });
+  my $csv = Text::CSV->new({ binary => 1, sep_char => ',', auto_diag => 9 });
   open(my $inFH, '<:encoding(UTF-8)', $s->{inputFile}) or $log->logdie("Loading file '".$s->{inputFile}."' failed: $!");
   $csv->column_names($csv->getline($inFH));
   $log->info("Loading file '".$s->{inputFile}."', identified columns '".join(',', $csv->column_names())."'");
