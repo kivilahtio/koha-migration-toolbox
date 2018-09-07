@@ -2,7 +2,7 @@ extlib
 ~$
 .vstags
 *.komodoproject
-.vscode/settings*
+.vscode
 *.swp
 usemarcon/rules-hamk/error.txt
 
