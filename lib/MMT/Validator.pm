@@ -4,6 +4,7 @@ use MMT::Pragmas;
 
 #External modules
 use File::Basename;
+use Data::Printer colored => 1;
 
 #Local modules
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
@@ -104,12 +105,8 @@ sub delimiterAllowed($delim, $fileToDelimit) {
   }
 }
 
-$Data::Dumper::Indent = 0;
-$Data::Dumper::Terse = 1;
-$Data::Dumper::Maxdepth = 2;
-$Data::Dumper::Sortkeys = 1;
 sub dumpObject($o) {
-  return Data::Dumper::Dumper($o);
+  return Data::Printer::np($o);
 }
 
 =head2 filetype

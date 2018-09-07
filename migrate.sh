@@ -6,7 +6,8 @@
 #Override MMT_HOME to support multiple pipelines on one control/transformation machine
 test ! -z $1 && MMT_HOME=$1
 
-
+echo "MMT_HOME='$MMT_HOME'"
+echo -e "Log output uses shell colouring. Remember to set your reader to accept the colour codes.\n \$> less -R <file>\n "
 
 MMT_HOME="$MMT_HOME" perl migrate.pl --extract         &> $MMT_HOME/logs/01-extract.log
 MMT_HOME="$MMT_HOME" perl migrate.pl --biblios         &> $MMT_HOME/logs/02-biblios.log

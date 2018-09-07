@@ -55,7 +55,7 @@ Load the translation instructions from the configuration file
 
 sub _loadMappings($s) {
   $s->{_mappings} = YAML::XS::LoadFile($s->{_params}->{file}) or die("Failed to load '".$s->{_params}->{file}."'. $!");
-  $log->trace(ref($s)." loaded mappings: ".MMT::Validator::dumpObject($s->{_mappings}));
+  $log->debug(ref($s)." loaded mappings: ".MMT::Validator::dumpObject($s->{_mappings})." from file '".$s->{_params}->{file}."'");
 }
 
 =head2 translate

@@ -121,6 +121,7 @@ $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Useqq = 1;
 $Data::Dumper::Purity = 1;
 $Data::Dumper::Useperl = 1;
+$Data::Dumper::Terse = 1;
 sub serialize($s) {
   my $dump = Data::Dumper::Dumper($s);
   $dump =~ s/\n/\\n/g;
