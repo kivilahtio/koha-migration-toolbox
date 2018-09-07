@@ -62,7 +62,13 @@ my %queries = (
                  item.price, item.copy_number, item.pieces
        FROM      item_vw
        JOIN      item               ON (item_vw.item_id = item.item_id)
-       JOIN      bib_item           ON (item_vw.item_id = bib_item.item_id)", #some items can have multiple bib_item-rows (multiple parent biblios). This is not cool.
+       JOIN      bib_item           ON (item_vw.item_id = bib_item.item_id)
+       JOIN      (
+                  SELECT bib_item.item_id,
+                  COUNT(item_id)
+                  FROM bib_item
+                  GROUP BY bib_item.item_id
+                  HAVING COUNT(item_id) = 1) filtered_items ON (filtered_items.item_id = item.item_id)" #items with multiple bib_item-rows are related to bound bibs which are to be imported separately. 
   },
   "02-items_last_borrow_date.csv" => { #This needs to be separate from the 02-items.csv, because otherwise Oracle drops Item-rows with last_borrow_date == NULL, even if charge_date is NULL in both the comparator and the comparatee.
     encoding => "iso-8859-1",
