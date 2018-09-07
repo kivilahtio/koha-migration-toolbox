@@ -183,7 +183,7 @@ sub setBorrowernotes($s, $o, $b) {
       push(@sb, $patronNote->{note});
     }
   }
-  $s->{borrowernotes} = join('', @sb);
+  $s->concatenate(join('', @sb) => 'borrowernotes');
 }
 sub setSort1($s, $o, $b) {
   $s->{sort1} = $o->{patron_id};
@@ -224,7 +224,7 @@ sub setDateexpiry($s, $o, $b) {
   unless ($s->{dateexpiry}) {
     my $notification = "Missing expiration date, expiring now";
     $log->warn($s->logId()." - $notification");
-    $s->{borrowernotes} = ($s->{borrowernotes}) ? $s->{borrowernotes}.' | '.$notification : $notification;
+    $s->concatenate($notification => 'borrowernotes');
   }
 }
 sub setAddresses($s, $o, $b) {
@@ -291,7 +291,7 @@ sub setEmail($s, $o, $b) {
         }
         else {
           my $msg = "Kirjastojärjestelmävaihdon yhteydessä havaittu epäselvä sähköpostiosoite '$emailCandidate' poistettu asiakastiedoistanne. Olkaa yhteydessä kirjastoonne.";
-          $s->{opacnote} = ($s->{opacnote}) ? $s->{opacnote}.' | '.$msg : $msg;
+          $s->concatenate($msg => 'opacnote');
           $log->warn($s->logId()." has a bad email address '$emailCandidate'.");
         }
         last;
@@ -330,26 +330,39 @@ sub setCategorycode($s, $o, $b) {
 sub setPhones($s, $o, $b) {
   my $patron_phones = $b->{phones}->get($s->{borrowernumber});
   if ($patron_phones) {
-    foreach my $match(@$patron_phones) {
-      unless (MMT::Validator::checkIsValidFinnishPhoneNumber($match->{phone_number})) {
-        my $notification = "Finnish phone number validation failed for number '".$match->{phone_number}."'";
+    foreach my $match (@$patron_phones) {
+
+      #Drop any non-numberal characters first
+      #https://tiketti.koha-suomi.fi:83/issues/3301
+      my $number = $match->{phone_number};
+      $number =~ s/[^+0-9]//gsm;
+      my $strippedCharactersCount = length($match->{phone_number}) - length($number);
+      if ($strippedCharactersCount >= 3) { #Dont complain about every small mistake. Expect large differences to have some special type of information embedded which the librarians might want to manually verify.
+        my $msg = "Messy phone number '".$match->{phone_number}."' trimmed as '$number'.";
+        $s->concatenate($msg => 'borrowernotes');
+        $log->warn($s->logId().' - '.$msg);
+      }
+
+      unless (MMT::Validator::checkIsValidFinnishPhoneNumber($number)) {
+        my $notification = "Finnish phone number validation failed for number '$number'. opacnote generated.";
         $log->warn($s->logId()." - $notification");
-        $s->{borrowernotes} = ($s->{borrowernotes}) ? $s->{borrowernotes}.' | '.$notification : $notification;
+        $s->concatenate($notification => 'borrowernotes');
+        $s->concatenate("Kirjastojärjestelmävaihdon yhteydessä havaittu, että puhelinnumero '$number' ei ole Suomen viestintäministeriön asettaman mallin mukainen. Ota yhteyttä kirjastoosi asian korjaamiseksi." => 'opacnote');
         return undef;
       }
       given ($match->{phone_desc}) {
         when ('Primary') {
-          $s->{phone} = $match->{phone_number};
+          $s->{phone} = $number;
         }
         when ('Other') {
-          $s->{phonepro} = $match->{phone_number};
+          $s->{phonepro} = $number;
         }
         when ('Fax') {
-          $s->{fax} = $match->{phone_number};
+          $s->{fax} = $number;
         }
         when ('Mobile') {
-          $s->{mobile} = $match->{phone_number};
-          $s->{smsalertnumber} = $match->{phone_number};
+          $s->{mobile} = $number;
+          $s->{smsalertnumber} = $number;
         }
       }
     }
@@ -394,7 +407,7 @@ sub setPassword($s, $o, $b) {
   unless ($s->{password}) {
     $log->debug($s->logId()."' has no password. Account will be active in Koha, but cannot login.");
     my $msg = "Kirjastojärjestelmävaihdoksessa havaittu että tililtänne puuttuu salasana. Tilinne on vielä aktiivinen, mutta mitään tunnistautumista vaativa ei voi tehdä.";
-    $s->{opacnote} = ($s->{opacnote}) ? $s->{opacnote}.' | '.$msg : $msg;
+    $s->concatenate($msg => 'opacnote');
   }
 }
 sub setSsn($s, $o, $b) {
@@ -404,7 +417,7 @@ sub setSsn($s, $o, $b) {
       my $notification = "SSN is not a valid Finnish SSN";
       $log->warn("Patron '".$s->logId()."' $notification");
 
-      $s->{borrowernotes} = ($s->{borrowernotes}) ? $s->{borrowernotes}.' | '.$notification : $notification;
+      $s->concatenate($notification => 'borrowernotes');
     }
   }
   else {
