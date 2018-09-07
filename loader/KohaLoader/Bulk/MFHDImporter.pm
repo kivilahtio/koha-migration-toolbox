@@ -29,7 +29,6 @@ use Thread::Queue;
 # Koha modules used
 use C4::Context;
 use C4::Holdings;
-use Koha::Caches;
 
 #Local modules
 use Bulk::ConversionTable::BiblionumberConversionTable;
@@ -107,7 +106,9 @@ sub doImport($s) {
 }
 
 sub worker($s) {
-  my $tid = threads->tid();
+  my $tid;
+  eval {
+  $tid = threads->tid();
 
   Bulk::Util::invokeThreadCompatibilityMagic();
 
@@ -144,6 +145,10 @@ sub worker($s) {
   }
 
   DEBUG "Thread $tid - Finished";
+  };
+  if ($@) {
+    warn "Thread ".($tid//'undefined')." - died:\n$@\n";
+  }
 }
 
 sub _getMFHDFileIterator($s) {
@@ -153,13 +158,17 @@ sub _getMFHDFileIterator($s) {
   return sub {
     local $INPUT_RECORD_SEPARATOR = '</record>'; #Let perl split MARCXML for us
     my $xml = <$FH>;
+
     $xml =~ s/(?:^\s+)|(?:\s+$)//gsm if $xml; #Trim leading and trailing whitespace
+    #Trim colection information or other whitespace fluff
+    $xml =~ s!^.+?<record!<record!sm;
+    $xml =~ s!</record>.+$!</record>!sm;
 
     unless ($xml) {
       DEBUG "No more MARC XMLs";
       return undef;
     }
-    unless ($xml =~ /^<record.+?<\/record>$/sm) {
+    unless ($xml =~ /(<record.+?<\/record>)/sm) {
       die "Broken MARCXML:\n$xml";
     }
     return \$xml;

@@ -20,6 +20,7 @@ use Bulk::OplibMatcher;
 our $verbosity = 3;
 my %args;
 $args{inputMarcFile} = '';
+$args{workers} = 4;
 ($args{matchLog}, $args{mergeStrategy}, $args{migrateStrategy}) = ('', 'defer', 'chunk');
 $args{legacyIdFieldDef} = '001';
 $args{biblionumberConversionTable} = 'biblionumberConversionTable';
@@ -30,7 +31,8 @@ Getopt::Long::GetOptions(
   'mergeStrategy:s'     => \$args{mergeStrategy},
   'migrateStrategy:s'   => \$args{migrateStrategy},
   'bnConversionTable:s' => \$args{biblionumberConversionTable},
-  'v:i'                 => \$args{verbose},
+  'workers:i'           => \$args{workers},
+  'v:i'                 => \$verbosity,
   'legacyIdField:s'     => \$args{legacyIdFieldDef},
   'version'             => sub { Getopt::Long::VersionMessage() },
   'h|help'              => sub {
@@ -111,6 +113,10 @@ DESCRIPTION
               ...
 
           Defaults to '$args{biblionumberConversionTable}'
+
+    --workers count
+          Into how many workers the migration is parallellized to.
+          Defaults to '$args{workers}'
 
     -v level
           Verbose output to the STDOUT,

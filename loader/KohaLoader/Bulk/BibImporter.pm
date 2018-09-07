@@ -8,11 +8,23 @@ binmode( STDIN,  ":encoding(UTF-8)" );
 use utf8;
 use Carp;
 use English;
+use threads;
+use threads::shared;
 #$|=1; #Are hot filehandles necessary?
+
+## Thank you https://stackoverflow.com/questions/12696375/perl-share-filehandle-with-threads
+# Flag to inform all threads that application is terminating
+my $SIG_TERMINATE_RECEIVED :shared = 0;
+$SIG{INT} = $SIG{TERM} = sub {
+  print("\n>>> Terminating <<<\n\n");
+  $SIG_TERMINATE_RECEIVED = 1;
+};
+my $jobBufferMaxSize = 500;
 
 # External modules
 use Time::HiRes qw(gettimeofday);
 use Log::Log4perl qw(:easy);
+use Thread::Queue;
 
 # Koha modules used
 use MARC::File::XML;
@@ -22,6 +34,10 @@ use C4::Biblio;
 
 #Local modules
 use Bulk::ConversionTable::BiblionumberConversionTable;
+
+
+# Distribute jobs to workers via this structure since a shared file handle can no longer be reliably accessed from threads even when using locks
+my $recordQueue = Thread::Queue->new();
 
 ## Overload C4::Biblio::ModZebra to prevent indexing during record migration.
 package C4::Biblio {
@@ -36,6 +52,10 @@ sub new($class, $params) {
   my %params = %$params; #Shallow copy to prevent unintended side-effects
   my $self = bless({}, $class);
   $self->{_params} = \%params;
+
+  INFO "Opening BiblionumberConversionTable '".$self->p('biblionumberConversionTable')."' for writing";
+  $self->{biblionumberConversionTable} = Bulk::ConversionTable::BiblionumberConversionTable->new( $self->p('biblionumberConversionTable'), 'write' );
+
   return $self;
 }
 
@@ -53,28 +73,59 @@ Does the actual MARC::Record migration
 sub bimp($s) {
   my $starttime = gettimeofday;
 
+  my @threads;
+  push @threads, threads->create(\&worker, $s)
+    for 1..$s->p('workers');
+
+  my $next = $s->getMarcFileIterator();
+  #Enqueue MFHDs to the job queue. This way we avoid strange race conditions in the file handle
+  while (not($SIG_TERMINATE_RECEIVED) && defined(my $record = $next->())) {
+    if ($recordQueue->pending() > $jobBufferMaxSize) { # This is a type of buffering to avoid loading too much into memory. Wait for a while, if the job queue is getting large.
+      TRACE "Thread MAIN - Jobs queued '".$recordQueue->pending()."' , sleeping";
+      while (not($SIG_TERMINATE_RECEIVED) && $recordQueue->pending() > $jobBufferMaxSize/2) {
+        sleep(1); #Wait for the buffer to cool down
+      }
+    }
+
+    chomp($record);
+    $recordQueue->enqueue($record);
+
+    INFO "Queued $. Records" if ($. % 1000 == 0);
+  }
+
+  # Signal to threads that there is no more work.
+  $recordQueue->end();
+
+  # Wait for all the threads to finish.
+  for (@threads) {
+    $_->join();
+    INFO "Thread ".$_->tid()." - Joined";
+  }
+
+  my $timeneeded = gettimeofday - $starttime;
+  print "\n$. MARC records done in $timeneeded seconds\n";
+
+  return undef;
+}
+
+sub worker($s) {
+  my $tid;
+  eval {
+  $tid = threads->tid();
+
+  Bulk::Util::invokeThreadCompatibilityMagic();
+
   my $oplibMatcher;
   if ($s->p('matchLog')) {
     die ("Bulk::OplibMatcher is TODO for ElasticSearch");
     $oplibMatcher = Bulk::OplibMatcher->new($s->p('matchLog'), $s->p('verbose'));
   }
 
-  INFO "Opening BiblionumberConversionTable '".$s->p('biblionumberConversionTable')."' for writing";
-  $s->{biblionumberConversionTable} = Bulk::ConversionTable::BiblionumberConversionTable->new( $s->p('biblionumberConversionTable'), 'write' );
+  while (not($SIG_TERMINATE_RECEIVED) && defined(my $recordXmlPtr = $recordQueue->dequeue())) {
+    DEBUG "Thread $tid - New job";
+    TRACE "$$recordXmlPtr\n";
 
-  my $next = $s->getMarcFileIterator();
-
-  my $i=0;
-  while (1) {
-    my ($record, $recordXmlPtr) = eval { $next->() };
-    if ( $@ ) {
-      print "Bad MARC record $i: $@ skipped\n";
-      next;
-    }
-    last unless ($record);
-    $i++;
-    INFO "Processed $i Bibs" if ($i % 100 == 0);
-
+    my $record = MARC::Record->new_from_xml($$recordXmlPtr, 'UTF-8', 'MARC21');
     my $legacyBiblionumber = $s->getLegacyBiblionumber($record);
     next unless $legacyBiblionumber;
 
@@ -107,9 +158,10 @@ sub bimp($s) {
     ($operation, $statusOfOperation, $newBiblionumber) = $s->addRecord   ($record, $recordXmlPtr, $legacyBiblionumber)  unless ($matchedBiblionumber);
     $s->{biblionumberConversionTable}->writeRow($legacyBiblionumber, $matchedBiblionumber // $newBiblionumber // 0, $operation, $statusOfOperation);
   }
-
-  my $timeneeded = gettimeofday - $starttime;
-  print "\n$i MARC records done in $timeneeded seconds\n";
+  };
+  if ($@) {
+    warn "Thread ".($tid//'undefined')." - died:\n$@\n";
+  }
 }
 
 
@@ -122,75 +174,32 @@ Pick an marcxml collection iteration strategy.
 The built-in way Koha uses is way too slow.
 Trying different strategies to speed it up while maintaining optimal memory footprint.
 
- @returns Subroutine, call this to get a list of:
-                      [0] -> the next MARC::Record
-                      [1] -> XML as a reference to String
+ @returns Subroutine, call this to get XML as a reference to String
 
 =cut
 
 sub getMarcFileIterator($s) {
-  if ($s->p('migrateStrategy') eq 'fast') {
-    INFO "Slurping MARC XML collection in-memory"; #This is memory intensive, timing it via logger
-    my $recordsAsXml = $s->_slurpMarcFile();
-    INFO "Done slurping MARC XML collection";
-    my $i = 0;
-    return sub {
-      return undef unless ($i < scalar(@$recordsAsXml));
-      return (MARC::Record->new_from_xml($recordsAsXml->[$i], 'UTF-8', 'MARC21'), \$recordsAsXml->[$i++]);
-    };
-  }
-  elsif ($s->p('migrateStrategy') eq 'chunk') {
-    my $i = $s->_fastMARCXMLIterationStrategyIterator();
-    return sub {
-      my $xmlPtr = $i->();
-      return undef unless ($$xmlPtr);
-      return (MARC::Record->new_from_xml($$xmlPtr, 'UTF-8', 'MARC21'), $xmlPtr);
-    };
-  }
-  elsif ($s->p('migrateStrategy') eq 'koha') {
-    my $batch = $s->_openMarcFile();
-    return sub {return ($batch->next(), undef)}; #No access to the plain XML this way
-  }
-}
-
-sub _fastMARCXMLIterationStrategyIterator($s) {
   local $INPUT_RECORD_SEPARATOR = '</record>'; #Let perl split MARCXML for us
   open(my $FH, '<:encoding(UTF-8)', $s->p('inputMarcFile')) or die("Opening the MARC file '".$s->p('inputMarcFile')."' for slurping failed: $!"); # Make sure we have the proper encoding set before handing these to the MARC-modules
 
   return sub {
     local $INPUT_RECORD_SEPARATOR = '</record>'; #Let perl split MARCXML for us
-
     my $xml = <$FH>;
+
+    $xml =~ s/(?:^\s+)|(?:\s+$)//gsm if $xml; #Trim leading and trailing whitespace
+    #Trim colection information or other whitespace fluff
+    $xml =~ s!^.+?<record!<record!sm;
+    $xml =~ s!</record>.+$!</record>!sm;
+
     unless ($xml) {
       DEBUG "No more MARC XMLs";
       return undef;
     }
-    unless ($xml =~ /^<record.+?<\/record>$/sm) {
-      TRACE "Dirty MARCXML:\n$xml";
-      unless ($xml =~ /(<record.+<\/record>)/sm) {
-        die "Broken MARCXML:\n$xml";
-      }
-      return \$1;
+    unless ($xml =~ /<record.+?<\/record>/sm) {
+      die "Broken MARCXML:\n$xml";
     }
     return \$xml;
   };
-}
-
-sub _slurpMarcFile($s) {
-  local $/ = undef;
-  open(my $FH, '<:encoding(UTF-8)', $s->p('inputMarcFile')) or die("Opening the MARC file '".$s->p('inputMarcFile')."' for slurping failed: $!"); # Make sure we have the proper encoding set before handing these to the MARC-modules
-  my $xmls = <$FH>;
-
-  my @xmls = $xmls =~ /(<record>.+?<\/record>)/gsm;
-  return \@xmls;
-}
-
-sub _openMarcFile($s) {
-  open(my $FH, '<:encoding(UTF-8)', $s->p('inputMarcFile')) or die("Opening the MARC file '".$s->p('inputMarcFile')."' for reading failed: $!"); # Make sure we have the proper encoding set before handing these to the MARC-modules
-  $MARC::File::XML::_load_args{BinaryEncoding} = 'UTF-8';
-  $MARC::File::XML::_load_args{RecordFormat} = 'USMARC';
-  my $file = MARC::File::XML->in($FH) or die("Loading MARC File '".$s->p('inputMarcFile')."' with MARC::File failed: ".$MARC::File::ERROR);
-  return $file;
 }
 
 =head2 disableUnnecessarySystemSettings
@@ -309,20 +318,25 @@ sub addRecordKoha($s, $record, $recordXmlPtr, $legacyBiblionumber) {
 
 sub addRecordFast($s, $record, $recordXmlPtr, $legacyBiblionumber) {
   my $dbh = C4::Context->dbh();
+  $dbh->{AutoCommit} = 0;
+
   my $frameworkcode = '';
   my $olddata = C4::Biblio::TransformMarcToKoha($record, $frameworkcode);
-  my ($newBiblionumber, $error1)     = C4::Biblio::_koha_add_biblio($dbh, $olddata, $frameworkcode);
+  my ($newBiblionumber, $error1)     = _koha_add_biblio($dbh, $olddata, $frameworkcode);
   if ($error1) {
     ERROR "Error1=$error1";
     return ("insert", "ERROR1", $newBiblionumber);
   }
 
   $olddata->{'biblionumber'} = $newBiblionumber;
-  my ($newBiblioitemnumber, $error2) = C4::Biblio::_koha_add_biblioitem($dbh, $olddata);
+  $olddata->{'biblioitemnumber'} = $newBiblionumber;
+  my ($newBiblioitemnumber, $error2) = _koha_add_biblioitem($dbh, $olddata);
   if ($error2) {
     ERROR "Error2=$error2";
     return ("insert", "ERROR2", $newBiblionumber);
   }
+
+  $dbh->commit();
 
   die "Biblionumber '$newBiblionumber' and biblioitemnumber '$newBiblioitemnumber' do not match! This causes critical issues in Koha!\n" if $newBiblionumber != $newBiblioitemnumber;
 
@@ -336,6 +350,108 @@ sub addRecordFast($s, $record, $recordXmlPtr, $legacyBiblionumber) {
   }
 
   return ("insert", "OK", $newBiblionumber);
+}
+
+sub _koha_add_biblio {
+    my ( $dbh, $biblio, $frameworkcode ) = @_;
+
+    my $error;
+
+    # set the series flag
+    unless (defined $biblio->{'serial'}){
+        $biblio->{'serial'} = 0;
+        if ( $biblio->{'seriestitle'} ) { $biblio->{'serial'} = 1 }
+    }
+
+    my $query = "INSERT INTO biblio
+        SET biblionumber = ?,
+            frameworkcode = ?,
+            author = ?,
+            title = ?,
+            unititle =?,
+            notes = ?,
+            serial = ?,
+            seriestitle = ?,
+            copyrightdate = ?,
+            datecreated=NOW(),
+            abstract = ?
+        ";
+    my $sth = $dbh->prepare($query);
+    $sth->execute(
+        $biblio->{biblionumber}, $frameworkcode, $biblio->{'author'},      $biblio->{'title'},         $biblio->{'unititle'}, $biblio->{'notes'},
+        $biblio->{'serial'},        $biblio->{'seriestitle'}, $biblio->{'copyrightdate'}, $biblio->{'abstract'}
+    );
+
+    my $biblionumber = $dbh->{'mysql_insertid'};
+    if ( $dbh->errstr ) {
+        $error .= "ERROR in _koha_add_biblio $query" . $dbh->errstr;
+        warn $error;
+    }
+
+    $sth->finish();
+
+    #warn "LEAVING _koha_add_biblio: ".$biblionumber."\n";
+    return ( $biblionumber, $error );
+}
+
+sub _koha_add_biblioitem {
+    my ( $dbh, $biblioitem ) = @_;
+    my $error;
+
+    my ($cn_sort) = C4::ClassSource::GetClassSort( $biblioitem->{'biblioitems.cn_source'}, $biblioitem->{'cn_class'}, $biblioitem->{'cn_item'} );
+    my $query = "INSERT INTO biblioitems SET
+        biblioitemnumber = ?,
+        biblionumber    = ?,
+        volume          = ?,
+        number          = ?,
+        itemtype        = ?,
+        isbn            = ?,
+        issn            = ?,
+        publicationyear = ?,
+        publishercode   = ?,
+        volumedate      = ?,
+        volumedesc      = ?,
+        collectiontitle = ?,
+        collectionissn  = ?,
+        collectionvolume= ?,
+        editionstatement= ?,
+        editionresponsibility = ?,
+        illus           = ?,
+        pages           = ?,
+        notes           = ?,
+        size            = ?,
+        place           = ?,
+        lccn            = ?,
+        url             = ?,
+        cn_source       = ?,
+        cn_class        = ?,
+        cn_item         = ?,
+        cn_suffix       = ?,
+        cn_sort         = ?,
+        totalissues     = ?,
+        ean             = ?,
+        agerestriction  = ?
+        ";
+    my $sth = $dbh->prepare($query);
+    $sth->execute(
+        $biblioitem->{'biblioitemnumber'},
+        $biblioitem->{'biblionumber'},     $biblioitem->{'volume'},           $biblioitem->{'number'},                $biblioitem->{'itemtype'},
+        $biblioitem->{'isbn'},             $biblioitem->{'issn'},             $biblioitem->{'publicationyear'},       $biblioitem->{'publishercode'},
+        $biblioitem->{'volumedate'},       $biblioitem->{'volumedesc'},       $biblioitem->{'collectiontitle'},       $biblioitem->{'collectionissn'},
+        $biblioitem->{'collectionvolume'}, $biblioitem->{'editionstatement'}, $biblioitem->{'editionresponsibility'}, $biblioitem->{'illus'},
+        $biblioitem->{'pages'},            $biblioitem->{'bnotes'},           $biblioitem->{'size'},                  $biblioitem->{'place'},
+        $biblioitem->{'lccn'},             $biblioitem->{'url'},                   $biblioitem->{'biblioitems.cn_source'},
+        $biblioitem->{'cn_class'},         $biblioitem->{'cn_item'},          $biblioitem->{'cn_suffix'},             $cn_sort,
+        $biblioitem->{'totalissues'},      $biblioitem->{'ean'},              $biblioitem->{'agerestriction'}
+    );
+    my $bibitemnum = $dbh->{'mysql_insertid'};
+
+    if ( $dbh->errstr ) {
+        $error .= "ERROR in _koha_add_biblioitem $query" . $dbh->errstr;
+        warn $error;
+    }
+    $sth->finish();
+    return ( $bibitemnum, $error );
 }
 
 return 1;
