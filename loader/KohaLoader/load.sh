@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cpanm --installdeps .
+
 OP=$1              #Which operation to conduct?
 DATA_SOURCE_DIR=$2 #Where the importable files are?
 WORKING_DIR=$3     #Where to put all the conversion tables and generated logs?
@@ -54,8 +56,14 @@ function migrateBulkScripts {
         --bnConversionTable $WORKING_DIR/biblionumberConversionTable \
         &> $WORKING_DIR/bulkBibImport.log
 
+    ./bulkMFHDImport.pl --file $DATA_SOURCE_DIR/mfhd.xml \
+        --bnConversionTable $WORKING_DIR/biblionumberConversionTable \
+        --hiConversionTable $WORKING_DIR/holding_idConversionTable \
+        &> $WORKING_DIR/bulkMFHDImport.log
+
     ./bulkItemImport.pl --file $DATA_SOURCE_DIR/Item.migrateme \
         --bnConversionTable $WORKING_DIR/biblionumberConversionTable --inConversionTable $WORKING_DIR/itemnumberConversionTable \
+        --hiConversionTable $WORKING_DIR/holding_idConversionTable \
         &> $WORKING_DIR/bulkItemImport.log
 
     #./bulkItemImport.pl --file $DATA_SOURCE_DIR/Hankinta.migrateme --bnConversionTable $WORKING_DIR/biblionumberConversionTable &> $WORKING_DIR/bulkAcquisitionImport.log

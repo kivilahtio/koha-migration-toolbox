@@ -13,15 +13,17 @@ use C4::RotatingCollections;
 use Bulk::Util;
 use Bulk::ConversionTable::ItemnumberConversionTable;
 use Bulk::ConversionTable::BiblionumberConversionTable;
+use Bulk::ConversionTable::SubscriptionConversionTable;
 
-my ($itemsFile, $biblionumberConversionTable, $itemnumberConversionTable,  $populateStatistics) =
-   (undef,      'biblionumberConversionTable','itemnumberConversionTable', 0);
+my ($itemsFile, $biblionumberConversionTable, $itemnumberConversionTable,  $holding_idConversionTable,  $populateStatistics) =
+   (undef,      'biblionumberConversionTable','itemnumberConversionTable', 'holding_idConversionTable', 0);
 our $verbosity = 3;
 
 GetOptions(
     'file:s'                   => \$itemsFile,
     's|statistics'             => \$populateStatistics,
     'b|bnConversionTable:s'    => \$biblionumberConversionTable,
+    'h|hiConversionTable:s'    => \$holding_idConversionTable,
     'i|inConversionTable:s'    => \$itemnumberConversionTable,
     'v|verbosity'              => \$verbosity,
 );
@@ -68,6 +70,9 @@ DESCRIPTION
 
           Defaults to 'biblionumberConversionTable'
 
+    --hiConversionTable filepath
+          Defaults to '$holding_idConversionTable'
+
     --inConversionTable filepath
           To which file to write the itemnumber to barcode conversion. Items are best referenced
           by their barcodes, because the itemnumbers can overlap with existing Items.
@@ -91,6 +96,8 @@ DEBUG "Today is $today";
 
 INFO "Opening BiblionumberConversionTable '$biblionumberConversionTable' for reading";
 $biblionumberConversionTable = Bulk::ConversionTable::BiblionumberConversionTable->new( $biblionumberConversionTable, 'read' );
+INFO "Opening Holding_idConversionTable '$holding_idConversionTable' for reading";
+$holding_idConversionTable = Bulk::ConversionTable::SubscriptionConversionTable->new( $holding_idConversionTable, 'read' );
 INFO "Opening ItemnumberConversionTable '$itemnumberConversionTable' for writing";
 $itemnumberConversionTable = Bulk::ConversionTable::ItemnumberConversionTable->new( $itemnumberConversionTable, 'write' );
 my $rotatingCollections = {}; #Collect the references to already created rotating collections here.
@@ -117,9 +124,15 @@ sub processRow {
         ERROR "Failed to get biblionumber for Item ".$item->{barcode}."\n";
         return;
     }
+    my $newHolding_id = $holding_idConversionTable->fetch($item->{holding_id} // 0);
+    if (not($newHolding_id) && $item->{holding_id}) {
+        ERROR "Failed to get a converted holding_id for Item ".$item->{barcode}."\n";
+        return;
+    }
 
     $item->{biblionumber} = $newBiblionumber;
     $item->{biblioitemnumber} = $newBiblionumber;
+    $item->{holding_id} = $newHolding_id;
 
     C4::Items::_set_defaults_for_add($item);
     C4::Items::_set_derived_columns_for_add($item);

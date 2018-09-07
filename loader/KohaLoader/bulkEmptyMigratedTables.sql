@@ -105,6 +105,8 @@ TRUNCATE discharges;
 --TRUNCATE fieldmapping;
 TRUNCATE floating_matrix;
 TRUNCATE hold_fill_targets;
+TRUNCATE holdings;
+TRUNCATE holdings_metadata;
 --TRUNCATE housebound_profile;
 --TRUNCATE housebound_role;
 --TRUNCATE housebound_visit;

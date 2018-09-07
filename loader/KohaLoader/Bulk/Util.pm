@@ -55,4 +55,16 @@ sub newFromUnblessedMigratemeRow($row) {
     return $o;
 }
 
+#
+# Koha doesn't work nicely with the thread-model, but it is not too dastardly.
+#
+sub invokeThreadCompatibilityMagic() {
+    #Koha::Cache cannot be shared across threads due to Sereal. Hack around it.
+    Koha::Caches::flush_L1_caches();
+    Koha::Caches::flush();
+    $ENV{CACHING_SYSTEM} = 'disable';
+    $Koha::Cache::L1_encoder = Sereal::Encoder->new;
+    $Koha::Cache::L1_decoder = Sereal::Decoder->new;
+}
+
 return 1;
