@@ -87,7 +87,7 @@ sub build($self, $o, $b) {
   #  \$self->setLost
   #   \$self->setDebarred
   #    \$self->setDebarredcomment
-  $self->setSex                              ($o, $b);
+  #$self->setSex                              ($o, $b); #Sex is uninteresting for academic libraries
   $self->set(patron_pin => 'password',        $o, $b);
   $self->setUserid                           ($o, $b);
   $self->setSort1                            ($o, $b);
