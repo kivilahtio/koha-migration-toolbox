@@ -67,7 +67,7 @@ import conflicts with require feature.
 =cut
 
 sub doImport($s) {
-  my $i = $s->_getMFHDFileIterator();
+  my $i = Bulk::Util::getMarcFileIterator($s);
 
   my @threads;
   push @threads, threads->create(\&worker, $s)
@@ -86,6 +86,10 @@ sub doImport($s) {
     $mfhdQueue->enqueue($mfhd);
 
     INFO "Queued $. MFHDs" if ($. % 1000 == 0);
+
+    while (my $hid = $hnConversionQueue->dequeue_nb()) {
+      $s->{holding_idConversionTable}->writeRow($hid->{old}, $hid->{new});
+    }
   }
 
   # Signal to threads that there is no more work.
@@ -98,8 +102,8 @@ sub doImport($s) {
   }
 
   #Write the holdings_idConversionTable
-  while (my $hnPtr = $hnConversionQueue->dequeue()) {
-
+  while (my $hid = $hnConversionQueue->dequeue_nb()) {
+    $s->{holding_idConversionTable}->writeRow($hid->{old}, $hid->{new});
   }
 
   return undef;
@@ -141,7 +145,8 @@ sub worker($s) {
       next;
     }
 
-    $s->{holding_idConversionTable}->writeRow($holding_idOld, $holding_id);
+    my %hid :shared = (old => $holding_idOld, new => $holding_id);
+    $hnConversionQueue->enqueue(\%hid);
   }
 
   DEBUG "Thread $tid - Finished";
@@ -149,30 +154,6 @@ sub worker($s) {
   if ($@) {
     warn "Thread ".($tid//'undefined')." - died:\n$@\n";
   }
-}
-
-sub _getMFHDFileIterator($s) {
-  local $INPUT_RECORD_SEPARATOR = '</record>'; #Let perl split MARCXML for us
-  open(my $FH, '<:encoding(UTF-8)', $s->p('inputMarcFile')) or die("Opening the MARC file '".$s->p('inputMarcFile')."' for slurping failed: $!"); # Make sure we have the proper encoding set before handing these to the MARC-modules
-
-  return sub {
-    local $INPUT_RECORD_SEPARATOR = '</record>'; #Let perl split MARCXML for us
-    my $xml = <$FH>;
-
-    $xml =~ s/(?:^\s+)|(?:\s+$)//gsm if $xml; #Trim leading and trailing whitespace
-    #Trim colection information or other whitespace fluff
-    $xml =~ s!^.+?<record!<record!sm;
-    $xml =~ s!</record>.+$!</record>!sm;
-
-    unless ($xml) {
-      DEBUG "No more MARC XMLs";
-      return undef;
-    }
-    unless ($xml =~ /(<record.+?<\/record>)/sm) {
-      die "Broken MARCXML:\n$xml";
-    }
-    return \$xml;
-  };
 }
 
 # OVERLOAD the C4::Holdings::AddHolding()

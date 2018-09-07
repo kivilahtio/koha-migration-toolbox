@@ -38,6 +38,7 @@ use Bulk::ConversionTable::BiblionumberConversionTable;
 
 # Distribute jobs to workers via this structure since a shared file handle can no longer be reliably accessed from threads even when using locks
 my $recordQueue = Thread::Queue->new();
+my $bnConversionQueue = Thread::Queue->new();
 
 ## Overload C4::Biblio::ModZebra to prevent indexing during record migration.
 package C4::Biblio {
@@ -77,7 +78,7 @@ sub bimp($s) {
   push @threads, threads->create(\&worker, $s)
     for 1..$s->p('workers');
 
-  my $next = $s->getMarcFileIterator();
+  my $next = Bulk::Util::getMarcFileIterator($s);
   #Enqueue MFHDs to the job queue. This way we avoid strange race conditions in the file handle
   while (not($SIG_TERMINATE_RECEIVED) && defined(my $record = $next->())) {
     if ($recordQueue->pending() > $jobBufferMaxSize) { # This is a type of buffering to avoid loading too much into memory. Wait for a while, if the job queue is getting large.
@@ -91,6 +92,10 @@ sub bimp($s) {
     $recordQueue->enqueue($record);
 
     INFO "Queued $. Records" if ($. % 1000 == 0);
+
+    while (my $bid = $bnConversionQueue->dequeue_nb()) {
+      $s->{biblionumberConversionTable}->writeRow($bid->{old}, $bid->{new}, $bid->{op}, $bid->{status});
+    }
   }
 
   # Signal to threads that there is no more work.
@@ -100,6 +105,10 @@ sub bimp($s) {
   for (@threads) {
     $_->join();
     INFO "Thread ".$_->tid()." - Joined";
+  }
+
+  while (my $bid = $bnConversionQueue->dequeue_nb()) {
+    $s->{biblionumberConversionTable}->writeRow($bid->{old}, $bid->{new}, $bid->{op}, $bid->{status});
   }
 
   my $timeneeded = gettimeofday - $starttime;
@@ -156,50 +165,14 @@ sub worker($s) {
     my ($operation, $statusOfOperation, $newBiblionumber);
     ($operation, $statusOfOperation)                   = $s->mergeRecords($record, $recordXmlPtr, $matchedBiblionumber) if     ($matchedBiblionumber);
     ($operation, $statusOfOperation, $newBiblionumber) = $s->addRecord   ($record, $recordXmlPtr, $legacyBiblionumber)  unless ($matchedBiblionumber);
-    $s->{biblionumberConversionTable}->writeRow($legacyBiblionumber, $matchedBiblionumber // $newBiblionumber // 0, $operation, $statusOfOperation);
+
+    my %bid :shared = (old => $legacyBiblionumber, new => $matchedBiblionumber // $newBiblionumber // 0, op => $operation, status => $statusOfOperation);
+    $bnConversionQueue->enqueue(\%bid);
   }
   };
   if ($@) {
     warn "Thread ".($tid//'undefined')." - died:\n$@\n";
   }
-}
-
-
-=head2 getMarcFileIterator
-
-  my $i = $s->getMarcFileIterator();
-  my ($marcRecord, $marcXmlPointer) = $i->();
-
-Pick an marcxml collection iteration strategy.
-The built-in way Koha uses is way too slow.
-Trying different strategies to speed it up while maintaining optimal memory footprint.
-
- @returns Subroutine, call this to get XML as a reference to String
-
-=cut
-
-sub getMarcFileIterator($s) {
-  local $INPUT_RECORD_SEPARATOR = '</record>'; #Let perl split MARCXML for us
-  open(my $FH, '<:encoding(UTF-8)', $s->p('inputMarcFile')) or die("Opening the MARC file '".$s->p('inputMarcFile')."' for slurping failed: $!"); # Make sure we have the proper encoding set before handing these to the MARC-modules
-
-  return sub {
-    local $INPUT_RECORD_SEPARATOR = '</record>'; #Let perl split MARCXML for us
-    my $xml = <$FH>;
-
-    $xml =~ s/(?:^\s+)|(?:\s+$)//gsm if $xml; #Trim leading and trailing whitespace
-    #Trim colection information or other whitespace fluff
-    $xml =~ s!^.+?<record!<record!sm;
-    $xml =~ s!</record>.+$!</record>!sm;
-
-    unless ($xml) {
-      DEBUG "No more MARC XMLs";
-      return undef;
-    }
-    unless ($xml =~ /<record.+?<\/record>/sm) {
-      die "Broken MARCXML:\n$xml";
-    }
-    return \$xml;
-  };
 }
 
 =head2 disableUnnecessarySystemSettings
