@@ -63,7 +63,7 @@ TRUNCATE borrowers;
 --TRUNCATE branchcategories;
 --TRUNCATE branches;
 --TRUNCATE branchrelations;
---TRUNCATE branchtransfers;
+TRUNCATE branchtransfers;
 TRUNCATE browser;
 --TRUNCATE categories;
 --TRUNCATE categories_branches;

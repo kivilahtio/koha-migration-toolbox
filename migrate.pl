@@ -188,6 +188,21 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
   },
 
 
+  '--branchtransfers' => {
+    help => 'Transform scattered data from Voyager extracts to Koha branchtransfers',
+    callback => sub {
+      my MMT::Builder $builder = MMT::Builder->new({
+        type => 'Branchtransfer',
+        inputFile => '03-transfers.csv',
+        translationTables => [
+          {name => 'LocationId'},
+        ],
+      });
+      $builder->build();
+    },
+  },
+
+
   '--load' => {
     help => "Runs the load-phase using the script configured in 'importPipelineScript'",
     callback => sub {MMT::Loader::load()},
