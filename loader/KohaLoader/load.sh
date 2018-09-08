@@ -51,6 +51,8 @@ function checkUser {
 }
 
 function migrateBulkScripts {
+    export PERL5LIB="$PERL5LIB:." #New Perl versions no longer implicitly include modules from .
+
     #Migrate MARC and Items
     ./bulkBibImport.pl --file $DATA_SOURCE_DIR/biblios.marcxml \
         --bnConversionTable $WORKING_DIR/biblionumberConversionTable \

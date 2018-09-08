@@ -13,7 +13,7 @@ use C4::RotatingCollections;
 use Bulk::Util;
 use Bulk::ConversionTable::ItemnumberConversionTable;
 use Bulk::ConversionTable::BiblionumberConversionTable;
-use Bulk::ConversionTable::SubscriptionConversionTable;
+use Bulk::ConversionTable::SubscriptionidConversionTable;
 
 my ($itemsFile, $biblionumberConversionTable, $itemnumberConversionTable,  $holding_idConversionTable,  $populateStatistics) =
    (undef,      'biblionumberConversionTable','itemnumberConversionTable', 'holding_idConversionTable', 0);
@@ -97,7 +97,7 @@ DEBUG "Today is $today";
 INFO "Opening BiblionumberConversionTable '$biblionumberConversionTable' for reading";
 $biblionumberConversionTable = Bulk::ConversionTable::BiblionumberConversionTable->new( $biblionumberConversionTable, 'read' );
 INFO "Opening Holding_idConversionTable '$holding_idConversionTable' for reading";
-$holding_idConversionTable = Bulk::ConversionTable::SubscriptionConversionTable->new( $holding_idConversionTable, 'read' );
+$holding_idConversionTable = Bulk::ConversionTable::SubscriptionidConversionTable->new( $holding_idConversionTable, 'read' );
 INFO "Opening ItemnumberConversionTable '$itemnumberConversionTable' for writing";
 $itemnumberConversionTable = Bulk::ConversionTable::ItemnumberConversionTable->new( $itemnumberConversionTable, 'write' );
 my $rotatingCollections = {}; #Collect the references to already created rotating collections here.
