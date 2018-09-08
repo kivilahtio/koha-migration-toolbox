@@ -31,6 +31,7 @@ GetOptions(
     'b|bnConversionTable:s'    => \$args{borrowernumberConversionTableFile},
     'v|verbosity:i'            => \$verbosity,
     'messagingPreferencesOnly' => \$args{messagingPreferencesOnly},
+    'uploadSSNKeysOnly:s'      => \$args{uploadSSNKeysOnly},
     'profile'                  => \$args{profile},
 );
 
@@ -77,6 +78,9 @@ DESCRIPTION
           Reads the borrowernumber conversion table for the added Patrons that need
           to have their messaging preferences set.
 
+    --uploadSSNKeysOnly filepath
+          Upload SSN keys from Hetula to Koha.borrower_attributes
+
     --profile
           Profile different aspects of Patron migration.
           Currently profiles different levels of Bcrypt hashing strength to speed up password migration
@@ -92,6 +96,10 @@ if ($args{profile}) {
 }
 if ($args{messagingPreferencesOnly}) {
     $patronImporter->setDefaultMessagingPreferences();
+    exit 0;
+}
+if ($args{uploadSSNKeysOnly}) {
+    $patronImporter->uploadSSNKeys($args{uploadSSNKeysOnly});
     exit 0;
 }
 
@@ -205,9 +213,11 @@ sub processNewFromRow($patron) {
         }
     }
 
-    #Adding the SSN
+    #Adding the SSN directly
     if ($ssn) {
-        $patronImporter->addBorrowerAttribute($patron, 'SSN', $patron->{ssn});
+        if ($ssn ne 'via Hetula') {
+            $patronImporter->addBorrowerAttribute($patron, 'SSN', $ssn);
+        }
     }
     else {
         WARN "Patron '".$patron->{cardnumber}."' doesn't have a ssn?";

@@ -21,6 +21,8 @@ MMT::Koha::Patron - Transforms a bunch of Voyager data into a Koha borrower
 
 =cut
 
+my $SSN_EXPORT_FH;
+
 =head2 new
 
 Create the bare reference. Reference is needed to be returned to the builder, so we can do better post-mortem analysis for each die'd Patron.
@@ -43,6 +45,12 @@ Flesh out the Koha-borrower -object out of the given
 =cut
 
 sub build($self, $o, $b) {
+  unless ($SSN_EXPORT_FH) {
+    my $file = MMT::Config::kohaImportDir.'/'.$b->{type};
+    open($SSN_EXPORT_FH, ">:encoding(UTF-8)", $file.'.ssn.csv') or die("Couldn't open the ssn export file '$file' for writing: $!");
+    $SSN_EXPORT_FH->autoflush(1);
+  }
+
   $self->setBorrowernumber                   ($o, $b);
   $self->setCardnumber                       ($o, $b);
   $self->setBorrowernotes                    ($o, $b); #Set notes up here, so we can start appending notes regarding validation failures.
@@ -374,15 +382,15 @@ sub setPhones($s, $o, $b) {
 my $re_ssnToDob = qr/^(\d\d)(\d\d)(\d\d)([-+A])/;
 sub setDateofbirth($s, $o, $b) {
   $s->{dateofbirth} = $o->{birth_date};
-  if (not($s->{dateofbirth}) && $s->{ssn}) { #Try to get dob from ssn
-    unless ($s->{ssn} =~ $re_ssnToDob) {
-      $log->error($s->logId()." making the date of birth from ssn failed, because the ssn '".$s->{ssn}."' is unparseable");
+  if (not($s->{dateofbirth}) && $o->{institution_id}) { #Try to get dob from ssn
+    if ($o->{institution_id} && not($o->{institution_id} =~ $re_ssnToDob)) {
+      $log->error($s->logId()." making the date of birth from ssn failed, because the ssn '".$o->{institution_id}."' is unparseable");
       return undef;
     }
     my $year = ($4 eq 'A') ? "20$3" : "19$3";
     $s->{dateofbirth} = "$year-$2-$1";
   }
-  if (not($s->{dateofbirth}) && $s->{ssn}) {
+  if (not($s->{dateofbirth}) && $o->{institution_id}) {
     $log->warn("Patron '".$s->logId()."' has no dateofbirth and it couldn't be salvaged from the ssn.");
   }
 }
@@ -414,14 +422,19 @@ sub setSsn($s, $o, $b) {
   $s->{ssn} = $o->{institution_id}; #For some reason ssn is here
   if ($s->{ssn}) {
     unless (MMT::Validator::checkIsValidFinnishSSN($s->{ssn})) {
+      #HAMK-3339 - Leave non-valid ssns in Koha.
       my $notification = "SSN is not a valid Finnish SSN";
-      $log->warn("Patron '".$s->logId()."' $notification");
+      $log->warn($s->logId()." - $notification");
 
       $s->concatenate($notification => 'borrowernotes');
     }
+    else {
+      $s->_exportSsn($s->{borrowernumber}, $s->{ssn});
+      $s->{ssn} = 'via Hetula'; #This ssn is valid, and is transported to Hetula.
+    }
   }
   else {
-    $log->info("Patron '".$s->logId()."' has no ssn");
+    $log->info($s->logId()."' has no ssn");
   }
 }
 sub setSex($s, $o, $b) {
@@ -515,6 +528,16 @@ sub _getActiveOrLatestBarcodeRow($s, $patronGroupsBarcodes) {
     }
   }
   return $patronGroupsBarcodes->[0]; #Extractor should ORDER BY so the newest entry is first.
+}
+
+=head2 _exportSsn
+
+Writes the given ssn and patron_id to the export file
+
+=cut
+
+sub _exportSsn($s, $patronId, $ssn) {
+  print $SSN_EXPORT_FH "$patronId,$ssn\n";
 }
 
 return 1;

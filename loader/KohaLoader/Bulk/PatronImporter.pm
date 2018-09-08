@@ -255,6 +255,38 @@ sub setDefaultMessagingPreferences($s) {
   }
 }
 
+=head2 uploadSSNKeys
+
+Upload ssn keys to koha.borrower_attributes
+
+=cut
+
+sub uploadSSNKeys($s, $filepath) {
+  INFO "Opening BorrowernumberConversionTable '".$s->p('borrowernumberConversionTableFile')."' for reading";
+  my $borrowernumberConversionTable = Bulk::ConversionTable::BorrowernumberConversionTable->new($s->p('borrowernumberConversionTableFile'), 'read');
+
+  open (my $SSN_FH, '<:encoding(UTF-8)', $filepath) or die("Opening SSN file '$filepath' failed: $!");
+  while (my $kv = <$SSN_FH>) {
+    my ($borrowernumberOld, $ssnId) = split(',', $kv);
+    my $ssnKey;
+
+    unless ($ssnId =~ m/^INVALID/i) {
+      $ssnKey = substr('ssn0000000000', 0, -1*length($ssnId)) . $ssnId;
+    }
+    else {
+      $ssnKey = $ssnId;
+    }
+
+    my $borrowernumberNew = $borrowernumberConversionTable->fetch($borrowernumberOld);
+    unless ($borrowernumberNew) {
+      ERROR "Old borrowernumber '$borrowernumberOld' couldn't be converted to a new borrowernumber. Skipping ssnKey '$ssnKey'";
+      next;
+    }
+
+    $s->addBorrowerAttribute({borrowernumber => $borrowernumberNew}, 'SSN', $ssnKey);
+  }
+}
+
 =head2 duplicateOthernamesHandler
 
 Checks from Koha if the given borrowers.othernames is unique.
