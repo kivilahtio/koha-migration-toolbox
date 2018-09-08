@@ -23,6 +23,7 @@ use utf8;
 
 #External modules
 use Carp;
+use POSIX;
 
 =head2 NAME
 
@@ -99,7 +100,13 @@ sub __firstName($) {
   return 'Tuisku';
 }
 sub __ssn($) {
-  $_[0] =~ s/\d/1/gsm;
+  if (my $ssn = createSsnIfSsn($_[0])) {
+    $_[0] = $ssn;
+  }
+  else {
+    $_[0] =~ s/\d/1/gsm;
+  }
+
   return $_[0];
 }
 sub __date($) {
@@ -121,5 +128,38 @@ sub __phone($) {
   }
   return $newPhone;
 }
+
+sub checkIsValidFinnishSSN {
+  my ($value) = @_;
+  return undef unless ($value =~ /^(\d\d)(\d\d)(\d\d)([+-A])(\d{3})([A-Z0-9])$/);
+  return undef unless (1 <= $1 && $1 <= 31);
+  return undef unless (1 <= $2 && $2 <= 12); # This is not DateTime but this is fast and good enough.
+  return undef unless (0 <= $3 && $3 <= 99);
+  return undef unless $6 eq _getSsnChecksum($1, $2, $3, $5);
+  return ($1, $2, $3, $4, $5, $6);
+}
+# This is needed to to make the anonymized ssns pass validators and not throw so much warnings later on in the toolchain.
+sub createSsnIfSsn {
+  my ($d, $m, $y, $p4, $p5, $chk) = checkIsValidFinnishSSN($_[0]);
+  if ($d) { #Is valid ssn, so anonymize it by randomizing it but still making sure it is valid
+    $d =  sprintf("%02d", POSIX::floor(rand(30)+1.5));
+    $m =  sprintf("%02d", POSIX::floor(rand(11)+1.5));
+    $y =  sprintf("%02d", POSIX::floor(rand(98)+1.5));
+    $p5 = sprintf("%03d", POSIX::floor(rand(889)+1.5));
+    my $chk = _getSsnChecksum($d, $m, $y, $p5);
+    return $d.$m.$y.$p4.$p5.$chk;
+  }
+  return undef;
+}
+# From Hetula
+my @ssnValidCheckKeys = (0..9,'A'..'Y');
+sub _getSsnChecksum {
+  my ($day, $month, $year, $checkNumber) = @_;
+
+  my $checkNumberSum = sprintf("%02d%02d%02d%03d", $day, $month, $year, $checkNumber);
+  my $checkNumberIndex = $checkNumberSum % 31;
+  return $ssnValidCheckKeys[$checkNumberIndex];
+}
+
 
 return 1;
