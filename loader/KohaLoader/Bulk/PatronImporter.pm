@@ -12,6 +12,7 @@ use Carp;
 # External modules
 use Time::HiRes;
 use Log::Log4perl qw(:easy);
+use Hetula::Client;
 
 # Koha modules used
 use C4::Context;
@@ -261,20 +262,32 @@ Upload ssn keys to koha.borrower_attributes
 
 =cut
 
-sub uploadSSNKeys($s, $filepath) {
+sub uploadSSNKeys($s) {
   INFO "Opening BorrowernumberConversionTable '".$s->p('borrowernumberConversionTableFile')."' for reading";
   my $borrowernumberConversionTable = Bulk::ConversionTable::BorrowernumberConversionTable->new($s->p('borrowernumberConversionTableFile'), 'read');
 
-  open (my $SSN_FH, '<:encoding(UTF-8)', $filepath) or die("Opening SSN file '$filepath' failed: $!");
-  while (my $kv = <$SSN_FH>) {
-    my ($borrowernumberOld, $ssnId) = split(',', $kv);
-    my $ssnKey;
+  INFO "Adding SSNs to Hetula, this will take a while";
+  my $hc = Hetula::Client->new({credentials => $s->p('uploadSSNKeysHetulaCredentialsFile')});
+  $hc->login();
+  $hc->ssnsBatchAddFromFile($s->p('uploadSSNKeysFile'), $s->p('uploadSSNKeysFile').'.hetula', 500);
 
-    unless ($ssnId =~ m/^INVALID/i) {
+  INFO "SSNs added. Importing ssn keys to Koha.";
+  $s->{dbh} = C4::Context->dbh(); #DBH times out while waiting for Hetula most certainly
+  open(my $SSN_FH, '<:encoding(UTF-8)', $s->p('uploadSSNKeysFile').'.hetula') or die("Opening Hetula ssn reports file '".$s->p('uploadSSNKeysFile').".hetula' failed: $!");
+  while (my $ssnReportCsvRow = <$SSN_FH>) {
+    chomp($ssnReportCsvRow);
+    my ($ssnId, $ssn, $error, $borrowernumberOld) = split(',', $ssnReportCsvRow);
+
+    my $ssnKey;
+    if ($ssnId) {
       $ssnKey = substr('ssn0000000000', 0, -1*length($ssnId)) . $ssnId;
     }
+    elsif ($error =~ /^Hetula::Exception::Ssn::Invalid/) {
+      $ssnKey = 'INVALID'.$ssn;
+      print "$ssnKey\n";
+    }
     else {
-      $ssnKey = $ssnId;
+      $ssnKey = "$error. Original ssn '$ssn'.";
     }
 
     my $borrowernumberNew = $borrowernumberConversionTable->fetch($borrowernumberOld);
