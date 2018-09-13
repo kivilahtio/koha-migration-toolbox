@@ -27,6 +27,7 @@ sub new($class) {
 
 sub isWaitingForFulfilment($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tableParams, $transParams) {
   $kohaObject->{found} = undef;
+  $kohaObject->{itemnumber} = undef if ($voyagerObject->{request_level} eq 'T'); #Title-level holds which are not caught, shouldn't have a specific item attached to it.
   return $kohaObject->{found}; #return value is arbitrary, but logged, so might as well return something useful to log
 }
 sub isWaitingForPickup($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tableParams, $transParams) {
@@ -38,10 +39,15 @@ sub isWaitingForPickup($s, $kohaObject, $voyagerObject, $builder, $originalValue
     $log->warn($kohaObject->logId()." is waiting for pickup but hold priority 'voyager('".$voyagerObject->{queue_position}."')->koha(".$kohaObject->{priority}.")' is not 0?");
   }
 
+  MMT::Exception::Delete->throw($kohaObject->logId()." has no item even if it is waiting for pickup?!") unless ($kohaObject->{itemnumber});
+
   return $kohaObject->{found};
 }
 sub isInTransitForPickup($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tableParams, $transParams) {
   $kohaObject->{found} = 'T';
+
+  MMT::Exception::Delete->throw($kohaObject->logId()." has no item even if it is in transit for pickup?!") unless ($kohaObject->{itemnumber});
+
   return $kohaObject->{found};
 }
 sub warning($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tableParams, $transParams) {

@@ -344,19 +344,73 @@ my %queries = (
   },
   "29-requests.csv" => {
     encoding => "iso-8859-1",
-    #Multiple holds with the same primary key? This is a parallel hold which is fulfillable by any of the reserved items.
-    #TODO: This feature is something that needs to be implemented in Koha first. For the time being, let the extractor complain about it so we wont forget.
-    #TODO: Apparently Voyager implements parallel hold queus via this mechanism, where the hold is targeted to items available via one of the parallel hold queues.
+    # Multiple holds with the same primary key? This is a parallel hold which is fulfillable by any of the reserved items.
+    # TODO: This feature is something that needs to be implemented in Koha first. For the time being, let the extractor complain about it so we wont forget.
+    # TODO: Apparently Voyager implements parallel hold queus via this mechanism, where the hold is targeted to items available via one of the parallel hold queues.
     uniqueKey => 0,
     sql =>
-      "SELECT    hold_recall.hold_recall_id,
-                 hold_recall.bib_id, hold_recall.patron_id, hold_recall_items.item_id, hold_recall.request_level, hold_recall_items.queue_position,
-                 hold_recall_status.hr_status_desc, hold_recall_items.hold_recall_status, hold_recall_items.hold_recall_status_date,
-                 hold_recall.create_date, hold_recall.expire_date, hold_recall.pickup_location
-       FROM      hold_recall
-       JOIN      hold_recall_items  on (hold_recall_items.hold_recall_id = hold_recall.hold_recall_id)
-       JOIN      hold_recall_status on (hold_recall_status.hr_status_type = hold_recall_items.hold_recall_status)
-       ORDER BY  hold_recall_items.item_id, hold_recall_items.queue_position",
+      # SELECT Item-level holds.
+      # hold_recall.hold_recall_type can be either 'H' = Hold or 'R' = Recall. This is further validated in the transformer. Currently these have no impact as their exact behaviour is unknown.
+      #
+      "SELECT * FROM                                                                                                                        \n".
+      "(                                                                                                                                    \n".
+      "  SELECT    hold_recall.hold_recall_id,                                                                                              \n".
+      "            hold_recall.bib_id, hold_recall.patron_id, hold_recall_items.item_id,                                                    \n".
+      "            hold_recall.request_level, hold_recall_items.queue_position,                                                             \n".
+      "            hold_recall_status.hr_status_desc, hold_recall_items.hold_recall_status, hold_recall.hold_recall_type,                   \n".
+      "            hold_recall.create_date, hold_recall.expire_date, hold_recall.pickup_location                                            \n".
+      "  FROM      hold_recall                                                                                                              \n".
+      "  LEFT JOIN hold_recall_items  on (hold_recall_items.hold_recall_id = hold_recall.hold_recall_id)                                    \n".
+      "  LEFT JOIN hold_recall_status on (hold_recall_status.hr_status_type = hold_recall_items.hold_recall_status)                         \n".
+      "  WHERE     hold_recall.request_level = 'C'                                                                                          \n". # C stands for "Cunning stunts"
+#      "  ORDER BY  hold_recall.hold_recall_id, hold_recall_items.item_id, hold_recall_items.queue_position                                  \n".
+#      "",
+#    sql =>
+      "  UNION ALL                                                                                                                          \n".
+      "                                                                                                                                     \n".
+      # SELECT (T)itle-level holds. They have multiple hold_recall_item-rows, each pointing to all items that can be used to satisfy the hold.
+      # For some reason, individual hold_recall_item-rows within a Title-level hold can have inconsistent queue_positions.
+      # These are converted to Koha as bibliographic level holds, satisfiable by any item.
+      #
+      # Apparently it is possible to have holds for biblios which have no available items. This is checked in the transformation phase with proper validation errors.
+      #
+      # When a Title-level hold is caught and waiting for pickup, the status is 'Pending' and all the other hold_recall_items-rows aside the Item in the shelf are removed.
+      # So caught Title-level holds have only one hold_recall_item-row.
+      #
+      "  SELECT    hold_recall.hold_recall_id,                                                                                              \n".
+      "            hold_recall.bib_id, hold_recall.patron_id, hold_recall_items.item_id,                                                    \n".
+      "            hold_recall.request_level, hold_recall_items.queue_position,                                                             \n".
+      "            hold_recall_status.hr_status_desc, hold_recall_items.hold_recall_status, hold_recall.hold_recall_type,                   \n".
+      "            hold_recall.create_date, hold_recall.expire_date, hold_recall.pickup_location                                            \n".
+      "  FROM      hold_recall                                                                                                              \n".
+      "  LEFT JOIN ( SELECT   hold_recall_items.hold_recall_id, hold_recall_items.item_id,                                                  \n". #In MariaDB/MySQL one would simply GROUP BY queue_position instead of 7 rows of SQL, but now there are less unintended side-effects. Give and take.
+      "                       hold_recall_items.queue_position, hold_recall_items.hold_recall_status                                        \n".
+      "              FROM     hold_recall_items                                                                                             \n".
+      "              WHERE    hold_recall_items.queue_position = ( SELECT MIN(hri.queue_position)                                           \n".
+      "                                                            FROM   hold_recall_items hri                                             \n".
+      "                                                            WHERE  hri.hold_recall_id = hold_recall_items.hold_recall_id             \n".
+      "                                                          )                                                                          \n".
+      #"                   AND ROWNUM = 1                                                                                                    \n". #TODO: How to make Orcaleen perkele return only 1 row from a subquery, eg "LIMIT 1". The deduplication mechanism takes care of this later, but this causes bad noise in the logs and hides real problems.
+      #"              GROUP BY hold_recall_items.hold_recall_id, hold_recall_items.item_id, hold_recall_items.queue_position, hold_recall_items.hold_recall_status        \n".
+      #"              FETCH FIRST 1 ROW ONLY                                                                                                 \n".
+      "            ) hold_recall_items ON (hold_recall_items.hold_recall_id = hold_recall.hold_recall_id)                                   \n".
+      "  LEFT JOIN hold_recall_status on (hold_recall_status.hr_status_type = hold_recall_items.hold_recall_status)                         \n".
+      "  WHERE     hold_recall.request_level = 'T'                                                                                          \n". # T stands for Title-level hold
+#      "  ORDER BY  hold_recall.hold_recall_id, hold_recall_items.queue_position                                                             \n".
+      ")                                                                                                                                    \n".
+      "ORDER BY  hold_recall_id, queue_position, item_id                                                                                    \n".
+      "",
+    sql_get_all_holds_rows => #Legacy SQL, just for reference to help debug future issues
+      "SELECT    hold_recall.hold_recall_id,                                                                                                \n".
+      "          hold_recall.bib_id, hold_recall.patron_id, hold_recall_items.item_id as item_id,                                           \n".
+      "          hold_recall.request_level, hold_recall_items.queue_position,                                                               \n".
+      "          hold_recall_status.hr_status_desc, hold_recall_items.hold_recall_status, hold_recall.hold_recall_type,                     \n".
+      "          hold_recall.create_date, hold_recall.expire_date, hold_recall.pickup_location                                              \n".
+      "FROM      hold_recall                                                                                                                \n".
+      "LEFT JOIN hold_recall_items  on (hold_recall_items.hold_recall_id = hold_recall.hold_recall_id)                                      \n".
+      "LEFT JOIN hold_recall_status on (hold_recall_status.hr_status_type = hold_recall_items.hold_recall_status)                           \n".
+      "ORDER BY  hold_recall.hold_recall_id, hold_recall_items.item_id, hold_recall_items.queue_position                                    \n".
+      "",
   },
 );
 
@@ -434,6 +488,26 @@ sub getColumnEncodings($) {
   return \@encodings;
 }
 
+sub pickCorrectSubquery($$) {
+  my ($statement, $queryName) = @_;
+
+  my @selectStatements = $statement =~ /SELECT\s*(.+?)\s*FROM/gsm;
+
+  my $mainSelectStatement; #There could be multiple subselects, so look for the best match
+  my $cols;
+  print "Found '".(scalar(@selectStatements)-1)."' subqueries. Finding the best match.\n" if (@selectStatements > 1);
+  for my $stmt (@selectStatements) {
+    if ($cols = extractQuerySelectColumns($stmt)) {
+      $mainSelectStatement = $stmt;
+      last;
+    }
+  }
+  unless ($mainSelectStatement && ref($cols) eq 'ARRAY') {
+    print "Couldn't parse a SELECT statement for query '$queryName'\n";
+  }
+  return ($mainSelectStatement, $cols);
+}
+
 =head2 extractQuerySelectColumns
 
  @returns ARRAYRef, The 'table.column' -entries in the SELECT-clause.
@@ -443,14 +517,12 @@ sub getColumnEncodings($) {
 sub extractQuerySelectColumns($) {
   my ($query) = @_;
   my $header_row = $query;
-  while ( $header_row =~ s/(select\s|,\s*)\s*convert\(([a-z0-9_]+),.*\)/$1$2/si ) {}
   $header_row =~ s/\s+/\t/g;
-  $header_row =~ s/^\s*select\s+//i;
-  $header_row =~ s/\tfrom\t.*//i;
   $header_row =~ s/,\t/,/g;
   $header_row =~ tr/A-Z/a-z/;
   $header_row =~ s/\w+\((.+?)\)/$1/;          #Trim column functions such as max()
   $header_row =~ s/\.\w+\s+as\s+(\w+)/\.$1/g; #Simplify column aliasing... renew_transactions.renew_date as last_renew_date -> renew_transactions.last_renew_date
+  return undef if $header_row eq '*';
   my @cols = split(',', $header_row);
   return \@cols;
 }
@@ -541,13 +613,13 @@ sub extract($) {
       next;
     }
 
-    my $sth=$dbh->prepare($query) || die("Preparing query '$query' failed: ".$dbh->errstr);
-    $sth->execute() || die("Executing query '$query' failed: ".$dbh->errstr);
+    my $sth=$dbh->prepare($query) || die("Preparing query '$filename' failed: ".$dbh->errstr);
+    $sth->execute() || die("Executing query '$filename' failed: ".$dbh->errstr);
 
     my $i=0;
     open(my $out, ">:encoding(UTF-8)", Exp::Config::exportPath($filename)) or die("Can't open output file '".Exp::Config::exportPath($filename)."': $!");
 
-    my $colNames = extractQuerySelectColumns($query);
+    my ($subquery, $colNames) = pickCorrectSubquery($query, $filename);
     my $columnEncodings = getColumnEncodings($colNames); #Columns come from multiple tables via JOINs and can have distinct encodings.
     my %columnToIndexLookup; while(my ($i, $v) = each(@$colNames)) {$v =~ s/^.+\.//; $columnToIndexLookup{$v} = $i}
     #Lookup has the column names only, table names are trimmed
