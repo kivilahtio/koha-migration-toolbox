@@ -99,17 +99,25 @@ sub setStatuses($s, $o, $b) {
   $s->sourceKeyExists($o, 'queue_position');
   $s->sourceKeyExists($o, 'request_level');
   $s->sourceKeyExists($o, 'hold_recall_type');
+  $s->sourceKeyExists($o, 'hold_recall_status_date');
+  $s->sourceKeyExists($o, 'linked_hold_recall_id');
 
-  $b->{HoldStatuses}->translate(@_, $o->{hr_status_desc});
+  if ($o->{hold_recall_type} ne 'CS') {
+    $b->{HoldStatuses}->translate(@_, $o->{hr_status_desc});
+  }
+  else {
+    $b->{CallSlipStatuses}->translate(@_, $o->{hr_status_desc});
+  }
 
-  $log->warn($s->logId()." has an unknown 'hold_recall_type'='".($o->{hold_recall_type}//'undef')."'") unless ($o->{hold_recall_type} && ($o->{hold_recall_type} eq 'H' || $o->{hold_recall_type} eq 'R'));
+  $log->warn($s->logId()." has an unknown 'hold_recall_type'='".($o->{hold_recall_type}//'undef')."'") unless ($o->{hold_recall_type} && ($o->{hold_recall_type} eq 'H' || $o->{hold_recall_type} eq 'R' || $o->{hold_recall_type} eq 'CS'));
 }
 sub setExpirationdate($s, $o, $b) {
   $s->{expirationdate} = $o->{expire_date};
 
-  unless ($s->{expirationdate}) {
-    $log->warn($s->logId()."' has no expire_date/expirationdate.");
+  if ($o->{hold_recall_type} ne 'CS' && not($s->{expirationdate})) {
+    $log->warn($s->logId()."' is not a call slip request and has no expire_date/expirationdate?");
   }
+  $s->{expirationdate} = undef unless ($s->{expirationdate}); #Make sure this is undef and not just falsy.
 }
 sub setLowestPriority($s, $o, $b) {
   $s->{lowestPriority} = 0;

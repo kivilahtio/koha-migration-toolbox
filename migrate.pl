@@ -149,6 +149,7 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
         ],
         translationTables => [
           {name => 'HoldStatuses'},
+          {name => 'CallSlipStatuses'},
           {name => 'LocationId'},
         ],
       });

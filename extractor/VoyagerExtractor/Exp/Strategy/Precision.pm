@@ -358,7 +358,8 @@ my %queries = (
       "            hold_recall.bib_id, hold_recall.patron_id, hold_recall_items.item_id,                                                    \n".
       "            hold_recall.request_level, hold_recall_items.queue_position,                                                             \n".
       "            hold_recall_status.hr_status_desc, hold_recall_items.hold_recall_status, hold_recall.hold_recall_type,                   \n".
-      "            hold_recall.create_date, hold_recall.expire_date, hold_recall.pickup_location                                            \n".
+      "            hold_recall.create_date, hold_recall.expire_date, hold_recall.pickup_location,                                           \n".
+      "            hold_recall_items.hold_recall_status_date, NULL AS linked_hold_recall_id                                                 \n".
       "  FROM      hold_recall                                                                                                              \n".
       "  LEFT JOIN hold_recall_items  on (hold_recall_items.hold_recall_id = hold_recall.hold_recall_id)                                    \n".
       "  LEFT JOIN hold_recall_status on (hold_recall_status.hr_status_type = hold_recall_items.hold_recall_status)                         \n".
@@ -381,22 +382,43 @@ my %queries = (
       "            hold_recall.bib_id, hold_recall.patron_id, hold_recall_items.item_id,                                                    \n".
       "            hold_recall.request_level, hold_recall_items.queue_position,                                                             \n".
       "            hold_recall_status.hr_status_desc, hold_recall_items.hold_recall_status, hold_recall.hold_recall_type,                   \n".
-      "            hold_recall.create_date, hold_recall.expire_date, hold_recall.pickup_location                                            \n".
+      "            hold_recall.create_date, hold_recall.expire_date, hold_recall.pickup_location,                                           \n".
+      "            hold_recall_items.hold_recall_status_date, NULL AS linked_hold_recall_id                                                 \n".
       "  FROM      hold_recall                                                                                                              \n".
-      "  LEFT JOIN ( SELECT   hold_recall_items.hold_recall_id, hold_recall_items.item_id,                                                  \n". #In MariaDB/MySQL one would simply GROUP BY queue_position instead of 7 rows of SQL, but now there are less unintended side-effects. Give and take.
-      "                       hold_recall_items.queue_position, hold_recall_items.hold_recall_status                                        \n".
+      "  LEFT JOIN ( SELECT   hold_recall_items.hold_recall_id, MIN(hold_recall_items.item_id) AS item_id,                                  \n". #In MariaDB/MySQL one would simply GROUP BY queue_position instead of 7 rows of SQL, but now there are less unintended side-effects. Give and take.
+      "                       hold_recall_items.queue_position, hold_recall_items.hold_recall_status,                                       \n".
+      "                       hold_recall_items.hold_recall_status_date                                                                     \n".
       "              FROM     hold_recall_items                                                                                             \n".
       "              WHERE    hold_recall_items.queue_position = ( SELECT MIN(hri.queue_position)                                           \n".
       "                                                            FROM   hold_recall_items hri                                             \n".
       "                                                            WHERE  hri.hold_recall_id = hold_recall_items.hold_recall_id             \n".
       "                                                          )                                                                          \n".
-      #"                   AND ROWNUM = 1                                                                                                    \n". #TODO: How to make Orcaleen perkele return only 1 row from a subquery, eg "LIMIT 1". The deduplication mechanism takes care of this later, but this causes bad noise in the logs and hides real problems.
-      #"              GROUP BY hold_recall_items.hold_recall_id, hold_recall_items.item_id, hold_recall_items.queue_position, hold_recall_items.hold_recall_status        \n".
-      #"              FETCH FIRST 1 ROW ONLY                                                                                                 \n".
+      "              GROUP BY hold_recall_items.hold_recall_id, hold_recall_items.queue_position, hold_recall_items.hold_recall_status,     \n".
+      "                       hold_recall_items.hold_recall_status_date                                                                     \n".
       "            ) hold_recall_items ON (hold_recall_items.hold_recall_id = hold_recall.hold_recall_id)                                   \n".
       "  LEFT JOIN hold_recall_status on (hold_recall_status.hr_status_type = hold_recall_items.hold_recall_status)                         \n".
       "  WHERE     hold_recall.request_level = 'T'                                                                                          \n". # T stands for Title-level hold
 #      "  ORDER BY  hold_recall.hold_recall_id, hold_recall_items.queue_position                                                             \n".
+#      "",
+#    sql =>
+      "  UNION ALL                                                                                                                          \n".
+      "                                                                                                                                     \n".
+      # Turn call_slip -requests into compatible hold_recall-entries
+      #
+      # When the call_slip -requests becomes Fulfilled, a hold_recall-row is generated.
+      # When the specific Item is checked out to the specific Patron, the Fulfilled-status remains, but the hold_recall is closed.
+      #
+      "  SELECT    call_slip.call_slip_id,                                                                                                  \n". #call_slip_id might collide with hold_recall_id. If this is the case, add 1000000 here.
+      "            call_slip.bib_id, call_slip.patron_id, call_slip.item_id,                                                                \n".
+      "            'C' AS request_level, 1 AS queue_position,                                                                               \n".
+      "            call_slip_status_type.status_desc AS hr_status_desc, call_slip.status AS hold_recall_status, 'CS' AS hold_recall_type,   \n".
+      "            call_slip.date_requested AS create_date, NULL AS expire_date, call_slip.pickup_location_id AS pickup_location,           \n".
+      "            call_slip.status_date AS hold_recall_status_date, hold_recall.hold_recall_id AS linked_hold_recall_id                    \n". #linked_hold_recall_id tells the call_slip -hold if there is an attached hold already, so we don't create duplicate holds. But only in special circumstances :) naturally...
+      "  FROM      call_slip                                                                                                                \n".
+      "  LEFT JOIN call_slip_status_type ON (call_slip.status       = call_slip_status_type.status_type)                                    \n".
+      "  LEFT JOIN hold_recall           ON (call_slip.call_slip_id = hold_recall.call_slip_id)                                             \n".
+#      "  ORDER BY  call_slip.call_slip_id, call_slip.item_id                                                                                \n".
+#      "",
       ")                                                                                                                                    \n".
       "ORDER BY  hold_recall_id, queue_position, item_id                                                                                    \n".
       "",
@@ -406,6 +428,7 @@ my %queries = (
       "          hold_recall.request_level, hold_recall_items.queue_position,                                                               \n".
       "          hold_recall_status.hr_status_desc, hold_recall_items.hold_recall_status, hold_recall.hold_recall_type,                     \n".
       "          hold_recall.create_date, hold_recall.expire_date, hold_recall.pickup_location                                              \n".
+      "          hold_recall_items.hold_recall_status_date                                                                                \n".
       "FROM      hold_recall                                                                                                                \n".
       "LEFT JOIN hold_recall_items  on (hold_recall_items.hold_recall_id = hold_recall.hold_recall_id)                                      \n".
       "LEFT JOIN hold_recall_status on (hold_recall_status.hr_status_type = hold_recall_items.hold_recall_status)                           \n".
@@ -521,7 +544,8 @@ sub extractQuerySelectColumns($) {
   $header_row =~ s/,\t/,/g;
   $header_row =~ tr/A-Z/a-z/;
   $header_row =~ s/\w+\((.+?)\)/$1/;          #Trim column functions such as max()
-  $header_row =~ s/\.\w+\s+as\s+(\w+)/\.$1/g; #Simplify column aliasing... renew_transactions.renew_date as last_renew_date -> renew_transactions.last_renew_date
+  $header_row =~ s/\.\w+\s+AS\s+(\w+)/\.$1/gi; #Simplify column aliasing... renew_transactions.renew_date AS last_renew_date -> renew_transactions.last_renew_date
+  $header_row =~ s/^(\w+)\s+AS\s+(\w+)$/$1\.$2/i; #Simplify column aliasing... null AS last_renew_date -> null.last_renew_date
   return undef if $header_row eq '*';
   my @cols = split(',', $header_row);
   return \@cols;
