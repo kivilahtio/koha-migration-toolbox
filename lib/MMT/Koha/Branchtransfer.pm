@@ -55,7 +55,7 @@ sub setDatesent($s, $o, $b) {
   }
   $s->{datesent} = $o->{item_status_date}; #The transfer was initiated when the status was set
 
-  unless (substr($o->{item_status_date}, 0, 12) eq substr($o->{discharge_date}, 0, 12)) {
+  if (not($o->{call_slip_id}) && substr($o->{item_status_date}, 0, 12) ne substr($o->{discharge_date}, 0, 12)) {
     my $warning = "The date of checkin '".(defined($o->{discharge_date}) ? $o->{discharge_date} : 'undef')."' is different from the date '".$o->{item_status_date}."' when the transfer was initiated. Why?";
     $log->warn($s->logId().' '.$warning);
     $s->concatenate($warning => 'comments');

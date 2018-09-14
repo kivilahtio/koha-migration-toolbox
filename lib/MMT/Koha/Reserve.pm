@@ -100,7 +100,7 @@ sub setStatuses($s, $o, $b) {
   $s->sourceKeyExists($o, 'request_level');
   $s->sourceKeyExists($o, 'hold_recall_type');
   $s->sourceKeyExists($o, 'hold_recall_status_date');
-  $s->sourceKeyExists($o, 'linked_hold_recall_id');
+  $s->sourceKeyExists($o, 'linked_hold_or_circ');
 
   if ($o->{hold_recall_type} ne 'CS') {
     $b->{HoldStatuses}->translate(@_, $o->{hr_status_desc});

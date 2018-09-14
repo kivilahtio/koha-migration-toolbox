@@ -12,30 +12,29 @@
 #STATUS_DESC   action          #STATUS_TYPE
                                       # Personally speculating that the statuses here are in the order they typically flow through.
 Accepted:   isWaitingForFulfilment()  #"1"   # Request accepted and can be fulfilled. Possibly in queue to the call slip printer?
+                                             # on ’tulostusjonossa’ käsittelyä varten
                                              ## The requested item is not checked out, not on hold
 
 Printed:    isWaitingForFulfilment()  #"2"   # Request received and printed as a slip. Waiting for a librarian to pick up the slip and get to work.
-                                             ## No example found to analyze
+                                             # call slip-tilaus on printattu jonosta virkailijan noutotoimia varten – on siis noudossa
 
-Reassigned: whatDoWeDo()              #"3"   # ??
-                                             ## No example found to analyze
+Reassigned: isWaitingForFulfilment()  #"3"   # virkailija siirtänyt toiseen call slip ’tulostusjonoon’ (printing queue on alkutermi)
 
-Filled:     isWaitingForPickup()      #"4"   # Call request fulfilled. If the item is checked in to the patron, call_request-row is satisfied, otherwise should have a matching call_request-row
+Filled:     isPickableOrInTransit()   #"4"   # Call request fulfilled. If the item is checked in to the patron, call_request-row is satisfied, otherwise should have a matching call_request-row
+                                             # virkailija on noutanut tavaran, ja todennut sen löytyneen ja olevan luovutuskelpoista -> virkailja ’prosessoi’ tilauksen ja kuittaa noudon onnistuneen
                                              ## The requested item might be checked out or on hold
 
-Not Filled: isWaitingForFulfilment()  #"5"   # Being processed somewhere, but not abandoned?
+Not Filled: $DELETE                    #"5"  # Being processed somewhere, but not abandoned?
+                                             # pyyntöä ei ole voitu toteuttaa. Tähän sisältyy valikko syistä, miksi ei ole voitu. Asiakas saa näistä tiedon.
                                              ## The requested item is not checked out, not on hold
 
 Expired:    $DELETE                   #"6"   # Expired is no longer relevant
-                                             ## No example found to analyze
 
 Cancelled:  $DELETE                   #"7"   # Cancelled don't generate hold-requests.
                                              ## Examples inconsistent
 
 Error:      $DELETE                   #"8"   # Error doesn't generate hold-requests either
-                                             ## No example found to analyze
 
-Promoted:   whatDoWeDo()              #"9"   # ??
-                                             ## No example found to analyze
+Promoted:   $DELETE                   #"9"   # ??
 
 _DEFAULT_:  whatDoWeDo()
