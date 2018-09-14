@@ -196,21 +196,31 @@ sub processNewFromRow($patron) {
     }
     #If not, then just add a borrower
     #Extra columns need to be cleaned away, otherwise DBIx cant handle the data.
-    my $debarments = $patron->{debarments};              delete $patron->{debarments};
+    my $debarments = $patron->{debarments};                             delete $patron->{debarments};
     my $extendedPatronAttributes = $patron->{ExtendedPatronAttributes}; delete $patron->{ExtendedPatronAttributes};
     my $ssn = $patron->{ssn};                                           delete $patron->{ssn};
     unless ($old_borrowernumber) {
         eval { $patron->{borrowernumber} = $patronImporter->AddMember($patron) };
         if ($@) {
             if ($@ =~ /Duplicate entry '.*?' for key 'cardnumber'/) {
+                WARN "Patron cn:'$patron->{cardnumber}' has a duplicate cardnumber|userid. Prepending 'TUPLA_' and retrying.";
                 # Duplicate cardnumber? Mark the cardnumber as duplicate and retry.
+                $patron->{userid} .= '_TUPLA' if $patron->{userid} eq $patron->{cardnumber};
                 $patron->{cardnumber} .= '_TUPLA';
                 $patron->{opacnote} = '' unless $patron->{opacnote};
                 $patron->{opacnote} .= 'Järjestelmävaihdoksen yhteydessä havaittu tuplakirjastokortti. Ota yhteyttä kirjastoosi asian korjaamiseksi.';
-                $patron->{borrowernumber} = $patronImporter->AddMember($patron);
+
+                eval {
+                  $patron->{borrowernumber} = $patronImporter->AddMember($patron);
+                };
+                if ($@) {
+                    ERROR "Patron cn:'$patron->{cardnumber}' has a duplicate cardnumber|userid. Couldn't save it:\n$@"; #Then let it slide
+                    return undef;
+                }
             }
             else {
-                die $@;
+                ERROR "Patron cn:'$patron->{cardnumber}' couldn't be added to Koha:\n$@";
+                return undef;
             }
         }
     }
