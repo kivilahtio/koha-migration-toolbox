@@ -10,6 +10,7 @@ use Carp;
 use English;
 use threads;
 use threads::shared;
+use Thread::Semaphore;
 #$|=1; #Are hot filehandles necessary?
 
 ## Thank you https://stackoverflow.com/questions/12696375/perl-share-filehandle-with-threads
@@ -19,6 +20,9 @@ $SIG{INT} = $SIG{TERM} = sub {
   print("\n>>> Terminating <<<\n\n");
   $SIG_TERMINATE_RECEIVED = 1;
 };
+
+my $preventJoiningBeforeAllWorkIsDone;
+
 my $jobBufferMaxSize = 500;
 
 # External modules
@@ -74,6 +78,8 @@ Does the actual MARC::Record migration
 sub bimp($s) {
   my $starttime = gettimeofday;
 
+  $preventJoiningBeforeAllWorkIsDone = Thread::Semaphore->new( -1*$s->p('workers') +1 ); #Semaphore blocks until all threads have released it.
+
   my @threads;
   push @threads, threads->create(\&worker, $s)
     for 1..$s->p('workers');
@@ -101,18 +107,25 @@ sub bimp($s) {
   # Signal to threads that there is no more work.
   $recordQueue->end();
 
-  # Wait for all the threads to finish.
-  for (@threads) {
-    $_->join();
-    INFO "Thread ".$_->tid()." - Joined";
-  }
+  #This script crashes when threads are being joined, so wait for them to stop working first.
+  #It is very hacky, but so far there seems to be no side-effects for it.
+  #It is easier to do this, than employ some file-splitting and forking.
+  $preventJoiningBeforeAllWorkIsDone->down();
 
+  INFO "Writing remaining '".$bnConversionQueue->pending()."' biblionumber conversions";
   while (my $bid = $bnConversionQueue->dequeue_nb()) {
     $s->{biblionumberConversionTable}->writeRow($bid->{old}, $bid->{new}, $bid->{op}, $bid->{status});
   }
 
   my $timeneeded = gettimeofday - $starttime;
-  print "\n$. MARC records done in $timeneeded seconds\n";
+  INFO "\n$. MARC records done in $timeneeded seconds\n";
+
+  # ((((: Wait for all the threads to finish. :DDDDDDD
+  for (@threads) {
+    $_->join();
+    INFO "Thread ".$_->tid()." - Joined";
+  }
+  # :XXXX
 
   return undef;
 }
@@ -126,8 +139,8 @@ sub worker($s) {
 
   my $oplibMatcher;
   if ($s->p('matchLog')) {
-    die ("Bulk::OplibMatcher is TODO for ElasticSearch");
-    $oplibMatcher = Bulk::OplibMatcher->new($s->p('matchLog'), $s->p('verbose'));
+    WARN "Bulk::OplibMatcher is TODO for ElasticSearch";
+    #$oplibMatcher = Bulk::OplibMatcher->new($s->p('matchLog'));
   }
 
   while (not($SIG_TERMINATE_RECEIVED) && defined(my $recordXmlPtr = $recordQueue->dequeue())) {
@@ -173,6 +186,8 @@ sub worker($s) {
   if ($@) {
     warn "Thread ".($tid//'undefined')." - died:\n$@\n";
   }
+
+  $preventJoiningBeforeAllWorkIsDone->up(); #This worker has finished working
 }
 
 =head2 disableUnnecessarySystemSettings

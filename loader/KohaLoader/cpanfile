@@ -1,2 +1,3 @@
 requires "Thread::Queue";
+requires "Thread::Semaphore";
 requires "Hetula::Client";
