@@ -7,35 +7,37 @@ binmode(STDIN, ":encoding(UTF-8)");
 
 use Getopt::Long;
 use Log::Log4perl qw(:easy);
+use Time::HiRes qw(gettimeofday);
 
 use C4::Items;
 use C4::RotatingCollections;
-use Bulk::Util;
 use Bulk::ConversionTable::ItemnumberConversionTable;
 use Bulk::ConversionTable::BiblionumberConversionTable;
 use Bulk::ConversionTable::SubscriptionidConversionTable;
 
-my ($itemsFile, $biblionumberConversionTable, $itemnumberConversionTable,  $holding_idConversionTable,  $populateStatistics) =
-   (undef,      'biblionumberConversionTable','itemnumberConversionTable', 'holding_idConversionTable', 0);
 our $verbosity = 3;
+my %args = (itemsFile =>                          ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Item.migrateme',
+            biblionumberConversionTable =>        ($ENV{MMT_WORKING_DIR}//'.').'/biblionumberConversionTable',
+            itemnumberConversionTable =>          ($ENV{MMT_WORKING_DIR}//'.').'/itemnumberConversionTable',
+            holding_idConversionTable =>          ($ENV{MMT_WORKING_DIR}//'.').'/holding_idConversionTable',
+            populateStatistics =>           0);
 
 GetOptions(
-    'file:s'                   => \$itemsFile,
-    's|statistics'             => \$populateStatistics,
-    'b|bnConversionTable:s'    => \$biblionumberConversionTable,
-    'h|hiConversionTable:s'    => \$holding_idConversionTable,
-    'i|inConversionTable:s'    => \$itemnumberConversionTable,
+    'file:s'                   => \$args{itemsFile},
+    's|statistics'             => \$args{populateStatistics},
+    'b|bnConversionTable:s'    => \$args{biblionumberConversionTable},
+    'h|hiConversionTable:s'    => \$args{holding_idConversionTable},
+    'i|inConversionTable:s'    => \$args{itemnumberConversionTable},
     'v|verbosity'              => \$verbosity,
-);
-
-my $help = <<HELP;
+    'h|help'              => sub {
+    print <<HELP;
 
 NAME
   $0 - Import Items en masse
 
 SYNOPSIS
   perl ./bulkItemsImport.pl --file /home/koha/pielinen/items.migrateme -v $verbosity \
-      --bnConversionTable 'bulkmarcimport.log'
+      --bnConversionTable '$args{biblionumberConversionTable}'
 
 DESCRIPTION
   -Migrates the Perl-serialized MMT-processed Items to Koha.
@@ -47,6 +49,7 @@ DESCRIPTION
 
     --file filepath
           The perl-serialized HASH of Items.
+          Defaults to '$args{itemsFile}'
 
     -s --statistics
           Populate the koha.statistics-table with dummy rows for each old
@@ -68,38 +71,41 @@ DESCRIPTION
               685012;685012;insert;ok
               ...
 
-          Defaults to 'biblionumberConversionTable'
+          Defaults to '$args{biblionumberConversionTable}'
 
     --hiConversionTable filepath
-          Defaults to '$holding_idConversionTable'
+          Defaults to '$args{holding_idConversionTable}'
 
     --inConversionTable filepath
           To which file to write the itemnumber to barcode conversion. Items are best referenced
           by their barcodes, because the itemnumbers can overlap with existing Items.
-          Defaults to 'itemnumberConversionTable'
+          Defaults to '$args{itemnumberConversionTable}'
 
     -v level
           Verbose output to the STDOUT,
           Defaults to $verbosity, 6 is max verbosity, 0 is fatal only.
 
 HELP
+    exit 0;
+},
+);
 
 require Bulk::Util; #Init logging && verbosity
 
-unless ($itemsFile) {
-    die "$help\n\n--file is mandatory";
+unless ($args{itemsFile}) {
+    die "\n--file is mandatory";
 }
 
 use DateTime;
 my $today = DateTime->now()->iso8601();
 DEBUG "Today is $today";
 
-INFO "Opening BiblionumberConversionTable '$biblionumberConversionTable' for reading";
-$biblionumberConversionTable = Bulk::ConversionTable::BiblionumberConversionTable->new( $biblionumberConversionTable, 'read' );
-INFO "Opening Holding_idConversionTable '$holding_idConversionTable' for reading";
-$holding_idConversionTable = Bulk::ConversionTable::SubscriptionidConversionTable->new( $holding_idConversionTable, 'read' );
-INFO "Opening ItemnumberConversionTable '$itemnumberConversionTable' for writing";
-$itemnumberConversionTable = Bulk::ConversionTable::ItemnumberConversionTable->new( $itemnumberConversionTable, 'write' );
+INFO "Opening BiblionumberConversionTable '$args{biblionumberConversionTable}' for reading";
+$args{biblionumberConversionTable} = Bulk::ConversionTable::BiblionumberConversionTable->new( $args{biblionumberConversionTable}, 'read' );
+INFO "Opening Holding_idConversionTable '$args{holding_idConversionTable}' for reading";
+$args{holding_idConversionTable} = Bulk::ConversionTable::SubscriptionidConversionTable->new( $args{holding_idConversionTable}, 'read' );
+INFO "Opening ItemnumberConversionTable '$args{itemnumberConversionTable}' for writing";
+$args{itemnumberConversionTable} = Bulk::ConversionTable::ItemnumberConversionTable->new( $args{itemnumberConversionTable}, 'write' );
 my $rotatingCollections = {}; #Collect the references to already created rotating collections here.
 
 sub processRow {
@@ -119,12 +125,12 @@ sub processRow {
         $item->{barcode} .= '_TUPLA';
         INFO "\n".'DUPLICATE BARCODE "'.$item->{barcode}.'" FOUND'."\n";
     }
-    my $newBiblionumber = $biblionumberConversionTable->fetch($item->{biblionumber});
+    my $newBiblionumber = $args{biblionumberConversionTable}->fetch($item->{biblionumber});
     if (not($newBiblionumber)) {
         ERROR "Failed to get biblionumber for Item ".$item->{barcode}."\n";
         return;
     }
-    my $newHolding_id = $holding_idConversionTable->fetch($item->{holding_id} // 0);
+    my $newHolding_id = $args{holding_idConversionTable}->fetch($item->{holding_id} // 0);
     if (not($newHolding_id) && $item->{holding_id}) {
         ERROR "Failed to get a converted holding_id for Item ".$item->{barcode}."\n";
         return;
@@ -136,7 +142,14 @@ sub processRow {
 
     C4::Items::_set_defaults_for_add($item);
     C4::Items::_set_derived_columns_for_add($item);
-    my ($newItemnumber, $error) = C4::Items::_koha_new_item( $item, $item->{barcode} ) if $newBiblionumber;
+    my ($newItemnumber, $error);
+    eval {
+        ($newItemnumber, $error) = C4::Items::_koha_new_item( $item, $item->{barcode} ) if $newBiblionumber;
+    };
+    if ($@) {
+        warn $@;
+        return undef;
+    }
 
     $error = "Failed to get itemnumber" if (not($newItemnumber));
     if ($error) {
@@ -144,7 +157,7 @@ sub processRow {
         return;
     }
 
-    $itemnumberConversionTable->writeRow($item->{itemnumber}, $newItemnumber, $item->{barcode});
+    $args{itemnumberConversionTable}->writeRow($item->{itemnumber}, $newItemnumber, $item->{barcode});
     $item->{itemnumber} = $newItemnumber;
 
     createCheckoutStatistics($item);
@@ -156,8 +169,10 @@ sub processRow {
     }
 }
 
+my $starttime = gettimeofday;
+
 my $i = 0;
-my $fh = Bulk::Util::openFile($itemsFile, $i);
+my $fh = Bulk::Util::openFile($args{itemsFile}, $i);
 while (<$fh>) {
     $i++;
     INFO "Processed $i Items" if ($i % 1000 == 0);
@@ -165,8 +180,9 @@ while (<$fh>) {
 }
 createCheckoutStatistics( undef, 'lastrun' );
 
+my $timeneeded = gettimeofday - $starttime;
+INFO "\n$. Items done in $timeneeded seconds\n";
 close $fh;
-
 
 =head2 createCheckoutStatistics
 
@@ -182,7 +198,7 @@ close $fh;
 
 my $createCheckoutStatistics_sth;
 sub createCheckoutStatistics {
-    return if $populateStatistics;
+    return if $args{populateStatistics};
     my ( $item, $lastrun ) = @_;
 
     my $dbh = C4::Context->dbh;
@@ -265,7 +281,7 @@ sub tryToCaptureMangledUtf8InDB {
             my $mangled = $item->{itemnotes}." ".$item->{itemcallnumber};
             WARN "Item ".$item->{itemnumber}." mangled like this:\n$mangled\n";
             WARN "Reopen and rewind the filehandle to position '".($i-1)."'.";
-            $fh = openItemsFile($itemsFile, $i-1);
+            $fh = openItemsFile($args{itemsFile}, $i-1);
             return 1;
         }
     }

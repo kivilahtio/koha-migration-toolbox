@@ -67,10 +67,7 @@ function migrateBulkScripts {
         --hiConversionTable $WORKING_DIR/holding_idConversionTable \
         &> $WORKING_DIR/bulkMFHDImport.log
 
-    ./bulkItemImport.pl --file $DATA_SOURCE_DIR/Item.migrateme \
-        --bnConversionTable $WORKING_DIR/biblionumberConversionTable --inConversionTable $WORKING_DIR/itemnumberConversionTable \
-        --hiConversionTable $WORKING_DIR/holding_idConversionTable \
-        &> $WORKING_DIR/bulkItemImport.log
+    ./bulkItemImport.pl &> $WORKING_DIR/bulkItemImport.log
 
     #./bulkItemImport.pl --file $DATA_SOURCE_DIR/Hankinta.migrateme --bnConversionTable $WORKING_DIR/biblionumberConversionTable &> $WORKING_DIR/bulkAcquisitionImport.log
 
