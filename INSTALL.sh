@@ -4,8 +4,8 @@
 # Install MMT Voyager without needing sudo-privileges.
 #
 
-IS_PERLBREW_INSTALLED=`which perlbrew`
-test $IS_PERLBREW_INSTALLED || ( echo "perlbrew is not installed, install it with 'apt install perlbrew'" && exit 1)
+IS_CPANM_INSTALLED=`which cpanm`
+test $IS_CPANM_INSTALLED || ( echo "cpanm is not installed, install it with 'apt install cpanminus'" && exit 1)
 
 if [ -z "$MMT_HOME" ]; then
   MMT_HOME="$HOME/MMT-Voyager" #Put configuration files here and preconfigure paths
@@ -23,15 +23,16 @@ KOHA_IMPORT_DIR="$MMT_HOME/KohaImports"
 LOG_DIR="$MMT_HOME/logs"
 TEST_DIR="$MMT_HOME/tests"
 EXTRACTOR_DIR="$MMT_CODE/extractor"
+EXTRACTOR_PIPELINE_SCRIPT="voyagerToTransformer_fetchDataViaSSHJumpHost.sh"
 LOADER_DIR="$MMT_CODE/loader"
+LOADER_PIPELINE_SCRIPT="transformerToKoha_loadDataViaSSHJumpHosts.sh"
+PIPELINE_SCRIPTS="$MMT_HOME/secret"
 
 cd $MMT_CODE #Make sure we are in the source directory
 test $? != 0 && echo "Couldn't cd to app source code directory '$MMT_CODE', failed with error code '$?'" && exit 7
 
 
 echo "Installing Perl dependencies to the program dir '$MMT_CODE'"
-perlbrew install-cpanm
-test $? != 0 && echo "Couldn't install cpanminus via perlbrew, failed with error code '$?'" && exit 8
 cpanm -L extlib --installdeps .
 test $? != 0 && echo "Perl dependencies install failed with error code '$?'" && exit 9
 
@@ -42,12 +43,17 @@ mkdir -p $VOYAGER_EXPORT_DIR || exit 11
 mkdir -p $KOHA_IMPORT_DIR    || exit 11
 mkdir -p $LOG_DIR            || exit 11
 mkdir -p $TEST_DIR           || exit 11
+mkdir -p $PIPELINE_SCRIPTS   || exit 11
 cp -r config $MMT_HOME/      || exit 11
 cp -r tests $MMT_HOME/       || exit 11
-sed -i 's/^voyagerExportDir.+$/voyagerExportDir: "$VOYAGER_EXPORT_DIR"/' $CONFIG_MAIN
-test $? != 0 && echo "Configuring file '$CONFIG_MAIN' with param 'voyagerExportDir' failed with error code '$?'" && exit 10
-sed -i 's/^kohaImportDir.+$/kohaImportDir: "$KOHA_IMPORT_DIR"/' $CONFIG_MAIN
-test $? != 0 && echo "Configuring file '$CONFIG_MAIN' with param 'kohaImportDir' failed with error code '$?'" && exit 11
+cp config/seed.gitignore $MMT_HOME/.gitignore || exit 11
+cp $EXTRACTOR_DIR/$EXTRACTOR_PIPELINE_SCRIPT $PIPELINE_SCRIPTS/ || exit 12
+cp $LOADER_DIR/$LOADER_PIPELINE_SCRIPT $PIPELINE_SCRIPTS/ || exit 12
+perl -pi -e "s|^exportPipelineScript.+$|exportPipelineScript: '$PIPELINE_SCRIPTS/$EXTRACTOR_PIPELINE_SCRIPT'|" $CONFIG_MAIN
+perl -pi -e "s|^importPipelineScript.+$|importPipelineScript: '$PIPELINE_SCRIPTS/$LOADER_PIPELINE_SCRIPT'|"    $CONFIG_MAIN
+perl -pi -e "s|^voyagerExportDir.+$|voyagerExportDir: '$VOYAGER_EXPORT_DIR'|" $CONFIG_MAIN
+perl -pi -e "s|^kohaImportDir.+$|kohaImportDir: '$KOHA_IMPORT_DIR'|" $CONFIG_MAIN
+
 
 echo "Persisting environment variables"
 function setConf {
@@ -103,6 +109,7 @@ Now you need to do some manual steps.
     $CONFIG_MAIN -> exportPipelineScript
   to point into the extract-phase triggering script.
 
+  A default script is placed for you into a default position.
 
 3)
   Then the Koha load scripts need to be deployed.
@@ -120,6 +127,13 @@ Now you need to do some manual steps.
   Set
     $CONFIG_MAIN -> importPipelineScript
   to point into the load-phase triggering script.
+
+  A default script is placed for you into a default position.
+
+
+5)
+  You probably want to version control your MMT configuration at '$MMT_HOME'
+  A default .gitignore has been provided.
 
 
 STEPS
