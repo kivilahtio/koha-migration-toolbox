@@ -120,6 +120,8 @@ $Data::Dumper::Indent = 0;
 $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Useqq = 1;
 $Data::Dumper::Purity = 1;
+$Data::Dumper::Useperl = 1;
+$Data::Dumper::Terse = 1;
 sub serialize($s) {
   my $dump = Data::Dumper::Dumper($s);
   $dump =~ s/\n/\\n/g;
@@ -160,7 +162,7 @@ sub sourceKeyExists($s, $o, $key) {
 }
 
 sub concatenate($s, $what, $where, $separator=' | ') {
-  unless (defined $s->{$where}) {
+  unless ($s->{$where}) {
     $s->{$where} = $what;
   }
   else {

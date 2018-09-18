@@ -3,6 +3,7 @@ requires "YAML::XS";
 requires "Email::Valid";
 requires "Getopt::OO";
 requires "Carp::Always::Color";
+requires "Data::Printer";
 requires "File::Basename";
 requires "Text::CSV";
 requires "Try::Tiny";

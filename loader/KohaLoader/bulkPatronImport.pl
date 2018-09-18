@@ -21,8 +21,10 @@ use Bulk::PatronImporter;
 
 binmode( STDOUT, ":encoding(UTF-8)" );
 our $verbosity = 3;
-my %args;
-$args{borrowernumberConversionTableFile} = 'borrowernumberConversionTable';
+my %args = (importFile =>                         ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Patron.migrateme',
+            uploadSSNKeysFile =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Patron.ssn.csv',
+            uploadSSNKeysHetulaCredentialsFile => ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Hetula.credentials',
+            borrowernumberConversionTableFile =>  ($ENV{MMT_WORKING_DIR}//'.').'/borrowernumberConversionTable');
 
 GetOptions(
     'file:s'                   => \$args{importFile},
@@ -31,6 +33,9 @@ GetOptions(
     'b|bnConversionTable:s'    => \$args{borrowernumberConversionTableFile},
     'v|verbosity:i'            => \$verbosity,
     'messagingPreferencesOnly' => \$args{messagingPreferencesOnly},
+    'uploadSSNKeysOnly'        => \$args{uploadSSNKeysOnly},
+    'uploadSSNKeysFile:s'      => \$args{uploadSSNKeysFile},
+    'uploadSSNKeysHetulaCredentialsFile:s' => \$args{uploadSSNKeysHetulaCredentialsFile},
     'profile'                  => \$args{profile},
 );
 
@@ -40,26 +45,32 @@ NAME
   $0 - Import patrons en masse
 
 SYNOPSIS
-  perl bulkPatronImport.pl --file /home/koha/pielinen/patrons.migrateme --deduplicate --defaultadmin \
-      --bnConversionTable borrowernumberConversionTable
+  perl bulkPatronImport.pl --file $args{importFile} --deduplicate --defaultadmin \
+      --bnConversionTable $args{borrowernumberConversionTableFile}
 
   then
 
-  perl bulkPatronImport.pl --messagingPreferencesOnly --bnConversionTable borrowernumberConversionTable
+  perl bulkPatronImport.pl --messagingPreferencesOnly --bnConversionTable $args{borrowernumberConversionTableFile}
+  perl bulkPatronImport.pl --uploadSSNKeysOnly --uploadSSNKeysFile $args{uploadSSNKeysFile} \
+                           --uploadSSNKeysHetulaCredentialsFile $args{uploadSSNKeysHetulaCredentialsFile} \
+                           --bnConversionTable $args{borrowernumberConversionTableFile}
 
 DESCRIPTION
   Migrates the Perl-serialized MMT-processed patrons-files to Koha.
+
   Some very slow, but not dependency-inducing for later migration, steps have been delegated to post
   migration steps, such as:
     --messagingPreferencesOnly
+    --uploadSSNKeysOnly
   Those can be ran parallel to the rest of the migration scripts.
 
     --file filepath
           The perl-serialized HASH of Patrons.
+          Defaults to '$args{importFile}'.
 
     --bnConversionTable filepath
           From which file to read the converted borrowernumber?
-          Defaults to 'borrowernumberConversionTable'
+          Defaults to '$args{borrowernumberConversionTableFile}'
 
     --deduplicate
           Should we deduplicate the Patrons? Case-insensitively checks for same
@@ -70,12 +81,24 @@ DESCRIPTION
 
     -v level
           Verbose output to the STDOUT,
-          Defaults to 3, 6 is max verbosity, 0 is fatal only.
+          Defaults to $verbosity, 6 is max verbosity, 0 is fatal only.
 
     --messagingPreferencesOnly
           Only set the default messaging preferences for the borrower category.
           Reads the borrowernumber conversion table for the added Patrons that need
           to have their messaging preferences set.
+
+    --uploadSSNKeysOnly
+          Upload SSN keys to Hetula using Hetula::Client and then to Koha.borrower_attributes.
+          --uploadSSNKeysFile can be set if this is selected.
+
+    --uploadSSNKeysFile filepath
+          Upload SSN keys to Hetula using Hetula::Client and then to Koha.borrower_attributes.
+          Defaults to '$args{uploadSSNKeysFile}'.
+
+    --uploadSSNKeysHetulaCredentialsFile filepath
+          Where to find the Hetula credentials to use for the import?
+          Defaults to '$args{uploadSSNKeysHetulaCredentialsFile}'.
 
     --profile
           Profile different aspects of Patron migration.
@@ -94,10 +117,11 @@ if ($args{messagingPreferencesOnly}) {
     $patronImporter->setDefaultMessagingPreferences();
     exit 0;
 }
-
-unless ($args{importFile}) {
-    die "$help\n\n--file is mandatory";
+if ($args{uploadSSNKeysOnly}) {
+    $patronImporter->uploadSSNKeys();
+    exit 0;
 }
+
 
 INFO "Opening BorrowernumberConversionTable '$args{borrowernumberConversionTableFile}' for writing";
 my $borrowernumberConversionTable = Bulk::ConversionTable::BorrowernumberConversionTable->new($args{borrowernumberConversionTableFile}, 'write');
@@ -172,21 +196,31 @@ sub processNewFromRow($patron) {
     }
     #If not, then just add a borrower
     #Extra columns need to be cleaned away, otherwise DBIx cant handle the data.
-    my $debarments = $patron->{debarments};              delete $patron->{debarments};
+    my $debarments = $patron->{debarments};                             delete $patron->{debarments};
     my $extendedPatronAttributes = $patron->{ExtendedPatronAttributes}; delete $patron->{ExtendedPatronAttributes};
     my $ssn = $patron->{ssn};                                           delete $patron->{ssn};
     unless ($old_borrowernumber) {
         eval { $patron->{borrowernumber} = $patronImporter->AddMember($patron) };
         if ($@) {
             if ($@ =~ /Duplicate entry '.*?' for key 'cardnumber'/) {
+                WARN "Patron cn:'$patron->{cardnumber}' has a duplicate cardnumber|userid. Prepending 'TUPLA_' and retrying.";
                 # Duplicate cardnumber? Mark the cardnumber as duplicate and retry.
+                $patron->{userid} .= '_TUPLA' if $patron->{userid} eq $patron->{cardnumber};
                 $patron->{cardnumber} .= '_TUPLA';
                 $patron->{opacnote} = '' unless $patron->{opacnote};
                 $patron->{opacnote} .= 'Järjestelmävaihdoksen yhteydessä havaittu tuplakirjastokortti. Ota yhteyttä kirjastoosi asian korjaamiseksi.';
-                $patron->{borrowernumber} = $patronImporter->AddMember($patron);
+
+                eval {
+                  $patron->{borrowernumber} = $patronImporter->AddMember($patron);
+                };
+                if ($@) {
+                    ERROR "Patron cn:'$patron->{cardnumber}' has a duplicate cardnumber|userid. Couldn't save it:\n$@"; #Then let it slide
+                    return undef;
+                }
             }
             else {
-                die $@;
+                ERROR "Patron cn:'$patron->{cardnumber}' couldn't be added to Koha:\n$@";
+                return undef;
             }
         }
     }
@@ -205,9 +239,11 @@ sub processNewFromRow($patron) {
         }
     }
 
-    #Adding the SSN
+    #Adding the SSN directly
     if ($ssn) {
-        $patronImporter->addBorrowerAttribute($patron, 'SSN', $patron->{ssn});
+        if ($ssn ne 'via Hetula') {
+            $patronImporter->addBorrowerAttribute($patron, 'SSN', $ssn);
+        }
     }
     else {
         WARN "Patron '".$patron->{cardnumber}."' doesn't have a ssn?";

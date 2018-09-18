@@ -136,7 +136,7 @@ sub _translateLocationId($s, $o, $b) {
   my $locationId;
 
   if (not($subscriptionLocations)) {
-    $log->warn($log->logId()." has no location?");
+    $log->warn($s->logId()." has no location?");
     $locationId = '_DEFAULT_';
   }
   #In theory, there could be multiple locations for one subscription/component, but the extract-phase unique key deduplication should take care of that.

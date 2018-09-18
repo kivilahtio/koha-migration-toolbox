@@ -19,11 +19,12 @@ use C4::Context;
 
 use Koha::Libraries;
 
-my $importFile;
 our $verbosity = 3;
-my $borrowernumberConversionTable = 'borrowernumberConversionTable';
-my $biblionumberConversionTable = 'biblionumberConversionTable';
-my $itemnumberConversionTable = 'itemnumberConversionTable';
+
+my %args = (importFile =>                     ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Reserve.migrateme',
+            borrowernumberConversionTable =>  ($ENV{MMT_WORKING_DIR}//'.').'/borrowernumberConversionTable',
+            biblionumberConversionTable =>    ($ENV{MMT_WORKING_DIR}//'.').'/biblionumberConversionTable',
+            itemnumberConversionTable =>      ($ENV{MMT_WORKING_DIR}//'.').'/itemnumberConversionTable');
 
 my $help = <<HELP;
 
@@ -32,9 +33,9 @@ NAME
 
 SYNOPSIS
   perl bulkHoldsImport.pl --file /home/koha/pielinen/holds.migrateme -v 6 \
-      -b $biblionumberConversionTable \
-      -i $itemnumberConversionTable \
-      -o $borrowernumberConversionTable
+      -b $args{biblionumberConversionTable} \
+      -i $args{itemnumberConversionTable} \
+      -o $args{borrowernumberConversionTable}
 
 DESCRIPTION
   Migrates the Perl-serialized MMT-processed holds-files to Koha.
@@ -43,13 +44,13 @@ DESCRIPTION
           The perl-serialized HASH of reserves.
 
     -b --bnConversionTable filepath
-          Defaults to '$biblionumberConversionTable'.
+          Defaults to '$args{biblionumberConversionTable}'.
 
     -i --inConversionTable filepath
-          Defaults to '$itemnumberConversionTable'.
+          Defaults to '$args{itemnumberConversionTable}'.
 
     -o --bornumConversionTable filepath
-          Defaults to '$borrowernumberConversionTable'.
+          Defaults to '$args{borrowernumberConversionTable}'.
 
     -v level
           Verbose output to the STDOUT,
@@ -58,29 +59,29 @@ DESCRIPTION
 HELP
 
 GetOptions(
-    'file:s'                               => \$importFile,
-    'o|bornumConversionTable:s'            => \$borrowernumberConversionTable,
-    'i|inConversionTable:s'                => \$itemnumberConversionTable,
-    'b|bnConversionTable:s'                => \$biblionumberConversionTable,
+    'file:s'                               => \$args{importFile},
+    'o|bornumConversionTable:s'            => \$args{borrowernumberConversionTable},
+    'i|inConversionTable:s'                => \$args{itemnumberConversionTable},
+    'b|bnConversionTable:s'                => \$args{biblionumberConversionTable},
     'v|verbosity:i'                        => \$verbosity,
 );
 
 require Bulk::Util; #Init logging && verbosity
 
-unless ($importFile) {
+unless ($args{importFile}) {
     die "$help\n\n--file is mandatory";
 }
 
-INFO "Opening BorrowernumberConversionTable '$borrowernumberConversionTable' for reading";
-$borrowernumberConversionTable = Bulk::ConversionTable::BorrowernumberConversionTable->new( $borrowernumberConversionTable, 'read' );
-INFO "Opening ItemnumberConversionTable '$itemnumberConversionTable' for reading";
-$itemnumberConversionTable     = Bulk::ConversionTable::ItemnumberConversionTable->new(     $itemnumberConversionTable,     'read' );
-INFO "Opening BiblionumberConversionTable '$biblionumberConversionTable' for reading";
-$biblionumberConversionTable   = Bulk::ConversionTable::BiblionumberConversionTable->new(   $biblionumberConversionTable ,  'read' );
+INFO "Opening BorrowernumberConversionTable '$args{borrowernumberConversionTable}' for reading";
+$args{borrowernumberConversionTable} = Bulk::ConversionTable::BorrowernumberConversionTable->new( $args{borrowernumberConversionTable}, 'read' );
+INFO "Opening ItemnumberConversionTable '$args{itemnumberConversionTable}' for reading";
+$args{itemnumberConversionTable}     = Bulk::ConversionTable::ItemnumberConversionTable->new(     $args{itemnumberConversionTable},     'read' );
+INFO "Opening BiblionumberConversionTable '$args{biblionumberConversionTable}' for reading";
+$args{biblionumberConversionTable}   = Bulk::ConversionTable::BiblionumberConversionTable->new(   $args{biblionumberConversionTable} ,  'read' );
 
 my $dbh=C4::Context->dbh;
 
-my $fh = Bulk::Util::openFile($importFile);
+my $fh = Bulk::Util::openFile($args{importFile});
 my $i = 0;
 while (<$fh>) {
     $i++;
@@ -104,7 +105,7 @@ sub addHold($hold) {
     }
     $sth_addHold->execute(
         $hold->{borrowernumber}, $hold->{biblionumber}, $hold->{reservedate},          $hold->{branchcode},
-        $hold->{priority},     $hold->{reservenotes},         $hold->{itemnumber},
+        $hold->{priority},       $hold->{reservenotes}, $hold->{itemnumber},
         $hold->{found},          $hold->{waitingdate},	$hold->{expirationdate}
     ) or die("Adding a new reserve failed: ".$sth_addHold->errstr());
     $hold->{reserve_id} = $dbh->last_insert_id(undef, undef, 'reserves', 'reserve_id') or die("Fetching last insert if failed: ".$dbh->errstr());
@@ -124,7 +125,7 @@ sub convertKeys {
 
     my ($biblionumber, $itemnumber, $borrowernumber);
 
-    $itemnumber = $itemnumberConversionTable->fetch(  $hold->{itemnumber}  ) if $hold->{itemnumber};
+    $itemnumber = $args{itemnumberConversionTable}->fetch(  $hold->{itemnumber}  ) if $hold->{itemnumber};
     if (not($itemnumber) && $hold->{itemnumber}) {
         WARN holdId($hold)." has no Item in conversion table, even if the Hold initially targets a specific Item!";
         return undef;
@@ -136,13 +137,13 @@ sub convertKeys {
         return undef;
     }
 
-    $borrowernumber = $borrowernumberConversionTable->fetch(  $hold->{borrowernumber}  );
+    $borrowernumber = $args{borrowernumberConversionTable}->fetch(  $hold->{borrowernumber}  );
     unless ($borrowernumber) {
         WARN holdId($hold)." has no Borrower in conversion table!";
         return undef;
     }
 
-    $biblionumber = $biblionumberConversionTable->fetch(  $hold->{biblionumber}  );
+    $biblionumber = $args{biblionumberConversionTable}->fetch(  $hold->{biblionumber}  );
     unless ($biblionumber) {
         WARN holdId($hold)." has no Biblio in conversion table!";
         return undef;

@@ -57,7 +57,7 @@ sub build($self, $o, $b) {
 
   #$self->set(? => datereceived, $o, $b);
   #$self->set(? => booksellerid, $o, $b);
-  #$self->set(? => replacementprice, $o, $b);
+  $self->set(price                => 'replacementprice',   $o, $b);
   #$self->set(? => replacementpricedate, $o, $b);
   #$self->set(? => datelastseen, $o, $b);
   #$self->set(? => stack, $o, $b);
@@ -108,6 +108,9 @@ sub setDateaccessioned($s, $o, $b) {
 sub setPrice($s, $o, $b) {
   $s->{price} = (defined($o->{price})) ? MMT::Validator::voyagerMoneyToKohaMoney($o->{price}) : undef;
   #$log->warn($s->logId()."' has no price.") unless $s->{price}; #Too much complaining about the missing price. Hides all other issues.
+}
+sub setReplacementprice($s, $o, $b) {
+  $s->{replacementprice} = $s->{price};
 }
 sub setDatelastborrowed($s, $o, $b) {
   my $lastBorrowDates = $b->{LastBorrowDate}->get($o);

@@ -119,7 +119,8 @@ my %queries = (
       SELECT item.item_id, item_status.item_status,
              item_status.item_status_date, circ_trans_archive.discharge_date,
              circ_trans_archive.discharge_location,
-             hold_recall.pickup_location as to_location
+             hold_recall.pickup_location as to_location,
+             NULL AS call_slip_id
       FROM   item
       LEFT JOIN item_status       ON item_status.item_id        = item.item_id
       LEFT JOIN circ_trans_archive ON circ_trans_archive.item_id = item.item_id
@@ -141,7 +142,8 @@ my %queries = (
       SELECT item.item_id, item_status.item_status,
              item_status.item_status_date, circ_trans_archive.discharge_date,
              circ_trans_archive.discharge_location,
-             item.perm_location as to_location
+             item.perm_location as to_location,
+             NULL AS call_slip_id
       FROM   item
       LEFT JOIN item_status        ON item_status.item_id        = item.item_id
       LEFT JOIN circ_trans_archive ON circ_trans_archive.item_id = item.item_id
@@ -160,7 +162,8 @@ my %queries = (
       SELECT item.item_id, item_status.item_status,
              item_status.item_status_date, circ_trans_archive.discharge_date,
              circ_trans_archive.discharge_location,
-             item.perm_location as to_location
+             item.perm_location as to_location,
+             NULL AS call_slip_id
       FROM   item
       LEFT JOIN item_status       ON item_status.item_id        = item.item_id
       LEFT JOIN circ_trans_archive ON circ_trans_archive.item_id = item.item_id
@@ -170,7 +173,45 @@ my %queries = (
                circ_trans_archive.circ_transaction_id = (SELECT MAX(circ_transaction_id) FROM circ_trans_archive WHERE item_id = item.item_id)
                OR
                circ_trans_archive.circ_transaction_id IS NULL
-             )",
+             )
+
+      UNION
+      ".
+    #sql =>
+      # Call slips in transfer
+      "                                                                                                                  \n".
+      "SELECT    item.item_id, item_status.item_status,                                                                  \n".
+      "          item_status.item_status_date, circ_trans_archive.discharge_date,                                        \n".
+      "          circ_trans_archive.discharge_location,                                                                  \n". # call_slip.location_id might be a good substitute for this.
+      "          call_slip.pickup_location_id as to_location,                                                            \n".
+      "          call_slip.call_slip_id                                                                                  \n". # This is a call_slip request related transfer
+      "FROM      call_slip                                                                                               \n".
+      "LEFT JOIN call_slip_status_type ON (call_slip.status       = call_slip_status_type.status_type)                   \n".
+      "LEFT JOIN hold_recall           ON (call_slip.call_slip_id = hold_recall.call_slip_id)                            \n".
+      "LEFT JOIN circ_transactions     ON (call_slip.patron_id          = circ_transactions.patron_id AND                \n". # There is no direct link between a hold_recall|call_slip, but we can be pretty certain that a combination of
+      "                                    call_slip.item_id            = circ_transactions.item_id AND                  \n". # having the same patron, item and checkout day
+      "                                    TRUNC(call_slip.status_date) = TRUNC(circ_transactions.charge_date)           \n". # is a pretty strong quarantee that the attached circ_transaction satisifed the hold_recall.
+      "                                   )                                                                              \n".
+      "LEFT JOIN item                  ON (item.item_id               = call_slip.item_id)                               \n".
+      "LEFT JOIN item_status           ON (item_status.item_id        = item.item_id)                                    \n".
+      "LEFT JOIN item_status_type      ON (item_status.item_status    = item_status_type.item_status_type)               \n".
+      "LEFT JOIN circ_trans_archive    ON (circ_trans_archive.item_id = item.item_id)                                    \n".
+      "WHERE     ( TRUNC(circ_trans_archive.discharge_date) = TRUNC(item_status.item_status_date)                        \n". # Finding the last location where this Item has been checked in to.
+      "            OR                                                                                                    \n".
+      "            circ_trans_archive.circ_transaction_id = ( SELECT MAX(circ_transaction_id)                            \n".
+      "                                                       FROM   circ_trans_archive                                  \n".
+      "                                                       WHERE item_id = item.item_id                               \n".
+      "                                                     )                                                            \n".
+      "            OR                                                                                                    \n".
+      "            circ_trans_archive.circ_transaction_id IS NULL                                                        \n".
+      "          )                                                                                                       \n".
+      "     AND  item_status.item_status = (SELECT MIN(item_status) FROM item_status WHERE item_id = item.item_id)       \n". # Simply flatten possible multiple item status rows. Item status is not important for call slip requested items that might be in transfer.
+      "     AND  call_slip_status_type.status_desc = 'Filled'                                                            \n". # Only call slips that don't have an attached hold_recall yet
+      "     AND  hold_recall.hold_recall_id IS NULL                                                                      \n". # and the requested item has not been checked out by the requestor
+      "     AND  circ_transactions.circ_transaction_id IS NULL                                                           \n". # are in transfer.
+      "                                                                                                                  \n".
+      "ORDER BY  item_id                                                                                                 \n".
+      "",
   },
   "05-patron_addresses.csv" => {
     encoding => "iso-8859-1",
@@ -350,19 +391,105 @@ my %queries = (
   },
   "29-requests.csv" => {
     encoding => "iso-8859-1",
-    #Multiple holds with the same primary key? This is a parallel hold which is fulfillable by any of the reserved items.
-    #TODO: This feature is something that needs to be implemented in Koha first. For the time being, let the extractor complain about it so we wont forget.
-    #TODO: Apparently Voyager implements parallel hold queus via this mechanism, where the hold is targeted to items available via one of the parallel hold queues.
+    # Multiple holds with the same primary key? This is a parallel hold which is fulfillable by any of the reserved items.
+    # TODO: This feature is something that needs to be implemented in Koha first. For the time being, let the extractor complain about it so we wont forget.
+    # TODO: Apparently Voyager implements parallel hold queus via this mechanism, where the hold is targeted to items available via one of the parallel hold queues.
     uniqueKey => 0,
     sql =>
-      "SELECT    hold_recall.hold_recall_id,
-                 hold_recall.bib_id, hold_recall.patron_id, hold_recall_items.item_id, hold_recall.request_level, hold_recall_items.queue_position,
-                 hold_recall_status.hr_status_desc, hold_recall_items.hold_recall_status, hold_recall_items.hold_recall_status_date,
-                 hold_recall.create_date, hold_recall.expire_date, hold_recall.pickup_location
-       FROM      hold_recall
-       JOIN      hold_recall_items  on (hold_recall_items.hold_recall_id = hold_recall.hold_recall_id)
-       JOIN      hold_recall_status on (hold_recall_status.hr_status_type = hold_recall_items.hold_recall_status)
-       ORDER BY  hold_recall_items.item_id, hold_recall_items.queue_position",
+      # SELECT Item-level holds.
+      # hold_recall.hold_recall_type can be either 'H' = Hold or 'R' = Recall. This is further validated in the transformer. Currently these have no impact as their exact behaviour is unknown.
+      #
+      "SELECT * FROM                                                                                                                        \n".
+      "(                                                                                                                                    \n".
+      "  SELECT    hold_recall.hold_recall_id,                                                                                              \n".
+      "            hold_recall.bib_id, hold_recall.patron_id, hold_recall_items.item_id,                                                    \n".
+      "            hold_recall.request_level, hold_recall_items.queue_position,                                                             \n".
+      "            hold_recall_status.hr_status_desc, hold_recall_items.hold_recall_status, hold_recall.hold_recall_type,                   \n".
+      "            hold_recall.create_date, hold_recall.expire_date, hold_recall.pickup_location,                                           \n".
+      "            hold_recall_items.hold_recall_status_date, NULL AS linked_hold_or_circ                                                   \n".
+      "  FROM      hold_recall                                                                                                              \n".
+      "  LEFT JOIN hold_recall_items  on (hold_recall_items.hold_recall_id = hold_recall.hold_recall_id)                                    \n".
+      "  LEFT JOIN hold_recall_status on (hold_recall_status.hr_status_type = hold_recall_items.hold_recall_status)                         \n".
+      "  WHERE     hold_recall.request_level = 'C'                                                                                          \n". # C stands for "Cunning stunts"
+#      "  ORDER BY  hold_recall.hold_recall_id, hold_recall_items.item_id, hold_recall_items.queue_position                                  \n".
+#      "",
+#    sql =>
+      "  UNION ALL                                                                                                                          \n".
+      "                                                                                                                                     \n".
+      # SELECT (T)itle-level holds. They have multiple hold_recall_item-rows, each pointing to all items that can be used to satisfy the hold.
+      # For some reason, individual hold_recall_item-rows within a Title-level hold can have inconsistent queue_positions.
+      # These are converted to Koha as bibliographic level holds, satisfiable by any item.
+      #
+      # Apparently it is possible to have holds for biblios which have no available items. This is checked in the transformation phase with proper validation errors.
+      #
+      # When a Title-level hold is caught and waiting for pickup, the status is 'Pending' and all the other hold_recall_items-rows aside the Item in the shelf are removed.
+      # So caught Title-level holds have only one hold_recall_item-row.
+      #
+      "  SELECT    hold_recall.hold_recall_id,                                                                                              \n".
+      "            hold_recall.bib_id, hold_recall.patron_id, hold_recall_items.item_id,                                                    \n".
+      "            hold_recall.request_level, hold_recall_items.queue_position,                                                             \n".
+      "            hold_recall_status.hr_status_desc, hold_recall_items.hold_recall_status, hold_recall.hold_recall_type,                   \n".
+      "            hold_recall.create_date, hold_recall.expire_date, hold_recall.pickup_location,                                           \n".
+      "            hold_recall_items.hold_recall_status_date, NULL AS linked_hold_or_circ                                                   \n".
+      "  FROM      hold_recall                                                                                                              \n".
+      "  LEFT JOIN ( SELECT   hold_recall_items.hold_recall_id, MIN(hold_recall_items.item_id) AS item_id,                                  \n". #In MariaDB/MySQL one would simply GROUP BY queue_position instead of 7 rows of SQL, but now there are less unintended side-effects. Give and take.
+      "                       hold_recall_items.queue_position, hold_recall_items.hold_recall_status,                                       \n".
+      "                       hold_recall_items.hold_recall_status_date                                                                     \n".
+      "              FROM     hold_recall_items                                                                                             \n".
+      "              WHERE    hold_recall_items.queue_position = ( SELECT MIN(hri.queue_position)                                           \n".
+      "                                                            FROM   hold_recall_items hri                                             \n".
+      "                                                            WHERE  hri.hold_recall_id = hold_recall_items.hold_recall_id             \n".
+      "                                                          )                                                                          \n".
+      "              GROUP BY hold_recall_items.hold_recall_id, hold_recall_items.queue_position, hold_recall_items.hold_recall_status,     \n".
+      "                       hold_recall_items.hold_recall_status_date                                                                     \n".
+      "            ) hold_recall_items ON (hold_recall_items.hold_recall_id = hold_recall.hold_recall_id)                                   \n".
+      "  LEFT JOIN hold_recall_status on (hold_recall_status.hr_status_type = hold_recall_items.hold_recall_status)                         \n".
+      "  WHERE     hold_recall.request_level = 'T'                                                                                          \n". # T stands for Title-level hold
+#      "  ORDER BY  hold_recall.hold_recall_id, hold_recall_items.queue_position                                                             \n".
+#      "",
+#    sql =>
+      "  UNION ALL                                                                                                                          \n".
+      "                                                                                                                                     \n".
+      # Turn call_slip -requests into compatible hold_recall-entries
+      #
+      # When the call_slip -requests becomes Fulfilled, a hold_recall-row is generated.
+      # When the specific Item is checked out to the specific Patron, the Fulfilled-status remains, but the hold_recall is closed.
+      #
+      "  SELECT    call_slip.call_slip_id,                                                                                                  \n". #call_slip_id might collide with hold_recall_id. If this is the case, add 1000000 here.
+      "            call_slip.bib_id, call_slip.patron_id, call_slip.item_id,                                                                \n".
+      "            'C' AS request_level, 1 AS queue_position,                                                                               \n".
+      "            call_slip_status_type.status_desc AS hr_status_desc, call_slip.status AS hold_recall_status, 'CS' AS hold_recall_type,   \n".
+      "            call_slip.date_requested AS create_date, NULL AS expire_date, call_slip.pickup_location_id AS pickup_location,           \n".
+      "            call_slip.status_date AS hold_recall_status_date,                                                                        \n".
+      "            CASE                                                                                                                     \n".
+      "              WHEN hold_recall.hold_recall_id IS NOT NULL            THEN 'Hold:'||hold_recall.hold_recall_id                        \n". # linked_hold_or_circ tells the call_slip -hold if there is an attached hold already, so we don't create duplicate holds.
+      "              WHEN circ_transactions.circ_transaction_id IS NOT NULL THEN 'Circ:'||circ_transactions.circ_transaction_id             \n". #   if there are circulations, but no hold, then this call slip has resolved it's hold-related functionality
+      "              ELSE NULL                                                                                                              \n".
+      "            END AS linked_hold_or_circ                                                                                               \n".
+      "  FROM      call_slip                                                                                                                \n".
+      "  LEFT JOIN call_slip_status_type ON (call_slip.status       = call_slip_status_type.status_type)                                    \n".
+      "  LEFT JOIN hold_recall           ON (call_slip.call_slip_id = hold_recall.call_slip_id)                                             \n".
+      "  LEFT JOIN circ_transactions     ON (call_slip.patron_id = circ_transactions.patron_id AND                                          \n". # There is no direct link between a hold_recall|call_slip, but we can be pretty certain that a combination of
+      "                                      call_slip.item_id = circ_transactions.item_id AND                                              \n". # having the same patron, item and checkout day
+      "                                      TRUNC(call_slip.status_date) = TRUNC(circ_transactions.charge_date)                            \n". # is a pretty strong quarantee that the attached circ_transaction satisifed the hold_recall.
+      "                                     )                                                                                               \n".
+#      "  ORDER BY  call_slip.call_slip_id, call_slip.item_id                                                                                \n".
+#      "",
+      ")                                                                                                                                    \n".
+      "ORDER BY  hold_recall_id, queue_position, item_id                                                                                    \n".
+      "",
+    sql_get_all_holds_rows => #Legacy SQL, just for reference to help debug future issues
+      "SELECT    hold_recall.hold_recall_id,                                                                                                \n".
+      "          hold_recall.bib_id, hold_recall.patron_id, hold_recall_items.item_id as item_id,                                           \n".
+      "          hold_recall.request_level, hold_recall_items.queue_position,                                                               \n".
+      "          hold_recall_status.hr_status_desc, hold_recall_items.hold_recall_status, hold_recall.hold_recall_type,                     \n".
+      "          hold_recall.create_date, hold_recall.expire_date, hold_recall.pickup_location                                              \n".
+      "          hold_recall_items.hold_recall_status_date                                                                                  \n".
+      "FROM      hold_recall                                                                                                                \n".
+      "LEFT JOIN hold_recall_items  on (hold_recall_items.hold_recall_id = hold_recall.hold_recall_id)                                      \n".
+      "LEFT JOIN hold_recall_status on (hold_recall_status.hr_status_type = hold_recall_items.hold_recall_status)                           \n".
+      "ORDER BY  hold_recall.hold_recall_id, hold_recall_items.item_id, hold_recall_items.queue_position                                    \n".
+      "",
   },
   "30-bib_item.csv" => {
     encoding => "iso-8859-1",
@@ -585,6 +712,26 @@ sub getColumnEncodings($) {
   return \@encodings;
 }
 
+sub pickCorrectSubquery($$) {
+  my ($statement, $queryName) = @_;
+
+  my @selectStatements = $statement =~ /SELECT\s*(.+?)\s*FROM/gsm;
+
+  my $mainSelectStatement; #There could be multiple subselects, so look for the best match
+  my $cols;
+  print "Found '".(scalar(@selectStatements)-1)."' subqueries. Finding the best match.\n" if (@selectStatements > 1);
+  for my $stmt (@selectStatements) {
+    if ($cols = extractQuerySelectColumns($stmt)) {
+      $mainSelectStatement = $stmt;
+      last;
+    }
+  }
+  unless ($mainSelectStatement && ref($cols) eq 'ARRAY') {
+    print "Couldn't parse a SELECT statement for query '$queryName'\n";
+  }
+  return ($mainSelectStatement, $cols);
+}
+
 =head2 extractQuerySelectColumns
 
  @returns ARRAYRef, The 'table.column' -entries in the SELECT-clause.
@@ -594,14 +741,13 @@ sub getColumnEncodings($) {
 sub extractQuerySelectColumns($) {
   my ($query) = @_;
   my $header_row = $query;
-  while ( $header_row =~ s/(select\s|,\s*)\s*convert\(([a-z0-9_]+),.*\)/$1$2/si ) {}
   $header_row =~ s/\s+/\t/g;
-  $header_row =~ s/^\s*select\s+//i;
-  $header_row =~ s/\tfrom\t.*//i;
   $header_row =~ s/,\t/,/g;
   $header_row =~ tr/A-Z/a-z/;
   $header_row =~ s/\w+\((.+?)\)/$1/;          #Trim column functions such as max()
-  $header_row =~ s/\.\w+\s+as\s+(\w+)/\.$1/g; #Simplify column aliasing... renew_transactions.renew_date as last_renew_date -> renew_transactions.last_renew_date
+  $header_row =~ s/\.\w+\s+AS\s+(\w+)/\.$1/gi; #Simplify column aliasing... renew_transactions.renew_date AS last_renew_date -> renew_transactions.last_renew_date
+  $header_row =~ s/(\w+)\s+AS\s+(\w+)/$1\.$2/i; #Simplify column aliasing... null AS last_renew_date -> null.last_renew_date
+  return undef if $header_row eq '*';
   my @cols = split(',', $header_row);
   return \@cols;
 }
@@ -692,13 +838,13 @@ sub extract($) {
       next;
     }
 
-    my $sth=$dbh->prepare($query) || die("Preparing query '$query' failed: ".$dbh->errstr);
-    $sth->execute() || die("Executing query '$query' failed: ".$dbh->errstr);
+    my $sth=$dbh->prepare($query) || die("Preparing query '$filename' failed: ".$dbh->errstr);
+    $sth->execute() || die("Executing query '$filename' failed: ".$dbh->errstr);
 
     my $i=0;
     open(my $out, ">:encoding(UTF-8)", Exp::Config::exportPath($filename)) or die("Can't open output file '".Exp::Config::exportPath($filename)."': $!");
 
-    my $colNames = extractQuerySelectColumns($query);
+    my ($subquery, $colNames) = pickCorrectSubquery($query, $filename);
     my $columnEncodings = getColumnEncodings($colNames); #Columns come from multiple tables via JOINs and can have distinct encodings.
     my %columnToIndexLookup; while(my ($i, $v) = each(@$colNames)) {$v =~ s/^.+\.//; $columnToIndexLookup{$v} = $i}
     #Lookup has the column names only, table names are trimmed

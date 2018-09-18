@@ -54,8 +54,8 @@ Load the translation instructions from the configuration file
 =cut
 
 sub _loadMappings($s) {
-  $s->{_mappings} = YAML::XS::LoadFile($s->{_params}->{file});
-  $log->trace(ref($s)." loaded mappings:".MMT::Validator::dumpObject($s->{_mappings}));
+  $s->{_mappings} = YAML::XS::LoadFile($s->{_params}->{file}) or die("Failed to load '".$s->{_params}->{file}."'. $!");
+  $log->debug(ref($s)." loaded mappings: ".MMT::Validator::dumpObject($s->{_mappings})." from file '".$s->{_params}->{file}."'");
 }
 
 =head2 translate
@@ -75,14 +75,14 @@ rules.
 
 my $re_isSubroutineCall = qr{(.+)\(\s*(.*)\s*\)$};
 sub translate($s, $kohaObject, $voyagerObject, $builder, $val, @otherArgs) {
-  my $kohaVal = $s->{_mappings}->{$val};
+  my $kohaVal = $s->{_mappings}->{$val} if defined($val);
   #Check if using the fallback catch-all -value
   if (not(defined($kohaVal)) ||
       ($val eq '' && not(defined($kohaVal)))) {
     $kohaVal = $s->{_mappings}->{'_DEFAULT_'};
   }
   if (not(defined($kohaVal))) {
-    $log->error(ref($s)." is trying to translate value '$val', but no translation rule exists");
+    $log->error(ref($s)." is trying to translate value '".($val ? $val : 'undef')."', but no translation rule exists");
     return undef;
   }
 

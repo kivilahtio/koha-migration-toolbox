@@ -4,6 +4,7 @@ use MMT::Pragmas;
 
 #External modules
 use File::Basename;
+use Data::Printer colored => 1;
 
 #Local modules
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
@@ -68,7 +69,12 @@ sub checkIsValidFinnishPhoneNumber($value) {
   return $value =~ m/^((90[0-9]{3})?0|\+358\s?)(?!(100|20(0|2(0|[2-3])|9[8-9])|300|600|700|708|75(00[0-3]|(1|2)\d{2}|30[0-2]|32[0-2]|75[0-2]|98[0-2])))(4|50|10[1-9]|20(1|2(1|[4-9])|[3-9])|29|30[1-9]|71|73|75(00[3-9]|30[3-9]|32[3-9]|53[3-9]|83[3-9])|2|3|5|6|8|9|1[3-9])\s?(\d\s?){4,19}\d$/;
 }
 sub checkIsValidFinnishSSN($value) {
-  return $value =~ /^\d{6}[+-A]\d{3}[A-Z0-9]$/;
+  return undef unless ($value =~ /^(\d\d)(\d\d)(\d\d)([+-A])(\d{3})([A-Z0-9])$/);
+  return undef unless (1 <= $1 && $1 <= 31);
+  return undef unless (1 <= $2 && $2 <= 12); # This is not DateTime but this is fast and good enough.
+  return undef unless (0 <= $3 && $3 <= 99);
+  return undef unless $6 eq _getSsnChecksum($1, $2, $3, $5);
+  return 1;
 }
 
 sub probablyAYear($value) {
@@ -104,12 +110,8 @@ sub delimiterAllowed($delim, $fileToDelimit) {
   }
 }
 
-$Data::Dumper::Indent = 0;
-$Data::Dumper::Terse = 1;
-$Data::Dumper::Maxdepth = 2;
-$Data::Dumper::Sortkeys = 1;
 sub dumpObject($o) {
-  return Data::Dumper::Dumper($o);
+  return Data::Printer::np($o);
 }
 
 =head2 filetype
@@ -140,6 +142,16 @@ sub _parameterValidationFailed($message, $variable, $opts) {
 
 sub _getEffectiveUsername {
   return $ENV{LOGNAME} || $ENV{USER} || getpwuid($<);
+}
+
+# From Hetula
+my @ssnValidCheckKeys = (0..9,'A'..'Y');
+sub _getSsnChecksum {
+  my ($day, $month, $year, $checkNumber) = @_;
+
+  my $checkNumberSum = sprintf("%02d%02d%02d%03d", $day, $month, $year, $checkNumber);
+  my $checkNumberIndex = $checkNumberSum % 31;
+  return $ssnValidCheckKeys[$checkNumberIndex];
 }
 
 return 1;

@@ -18,11 +18,13 @@ use Bulk::BibImporter;
 use Bulk::OplibMatcher;
 
 our $verbosity = 3;
-my %args;
-$args{inputMarcFile} = '';
-($args{matchLog}, $args{mergeStrategy}, $args{migrateStrategy}) = ('', 'defer', 'chunk');
-$args{legacyIdFieldDef} = '001';
-$args{biblionumberConversionTable} = 'biblionumberConversionTable';
+my %args = (inputMarcFile =>                      ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/biblios.marcxml',
+            biblionumberConversionTable =>        ($ENV{MMT_WORKING_DIR}//'.').'/biblionumberConversionTable',
+            matchLog =>                           ($ENV{MMT_WORKING_DIR}//'.').'/matchVerifications.log',
+            mergeStrategy =>    'defer',
+            migrateStrategy =>  'chunk',
+            legacyIdFieldDef => '001',
+            workers =>           4);
 
 Getopt::Long::GetOptions(
   'file:s'              => \$args{inputMarcFile},
@@ -30,7 +32,8 @@ Getopt::Long::GetOptions(
   'mergeStrategy:s'     => \$args{mergeStrategy},
   'migrateStrategy:s'   => \$args{migrateStrategy},
   'bnConversionTable:s' => \$args{biblionumberConversionTable},
-  'v:i'                 => \$args{verbose},
+  'workers:i'           => \$args{workers},
+  'v:i'                 => \$verbosity,
   'legacyIdField:s'     => \$args{legacyIdFieldDef},
   'version'             => sub { Getopt::Long::VersionMessage() },
   'h|help'              => sub {
@@ -111,6 +114,10 @@ DESCRIPTION
               ...
 
           Defaults to '$args{biblionumberConversionTable}'
+
+    --workers count
+          Into how many workers the migration is parallellized to.
+          Defaults to '$args{workers}'
 
     -v level
           Verbose output to the STDOUT,

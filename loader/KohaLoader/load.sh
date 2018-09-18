@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/bin/bash -x
+
+cpanm --installdeps .
 
 OP=$1              #Which operation to conduct?
 DATA_SOURCE_DIR=$2 #Where the importable files are?
@@ -39,6 +41,10 @@ test -z $WORKING_DIR &&       echo -e "\$WORKING_DIR is undefined\n" &&         
 test ! -r $DATA_SOURCE_DIR && echo -e "\$DATA_SOURCE_DIR=$DATA_SOURCE_DIR is not readable?" && exit 8
 test ! -w $WORKING_DIR &&     echo -e "\$WORKING_DIR=$WORKING_DIR is not writable?"         && exit 9
 
+# Make environment known for bulk*.pl -scripts, so they can infer defaults automatically.
+export MMT_DATA_SOURCE_DIR=$DATA_SOURCE_DIR
+export MMT_WORKING_DIR=$WORKING_DIR
+
 function checkUser {
     user=$1
     if [ $(whoami) != "$user" ]
@@ -49,24 +55,28 @@ function checkUser {
 }
 
 function migrateBulkScripts {
+    export PERL5LIB="$PERL5LIB:." #New Perl versions no longer implicitly include modules from .
+
     #Migrate MARC and Items
     ./bulkBibImport.pl --file $DATA_SOURCE_DIR/biblios.marcxml \
         --bnConversionTable $WORKING_DIR/biblionumberConversionTable \
         &> $WORKING_DIR/bulkBibImport.log
 
+    ./bulkMFHDImport.pl --file $DATA_SOURCE_DIR/mfhd.xml \
+        --bnConversionTable $WORKING_DIR/biblionumberConversionTable \
+        --hiConversionTable $WORKING_DIR/holding_idConversionTable \
+        &> $WORKING_DIR/bulkMFHDImport.log
+
     ./bulkItemImport.pl --file $DATA_SOURCE_DIR/Item.migrateme \
         --bnConversionTable $WORKING_DIR/biblionumberConversionTable --inConversionTable $WORKING_DIR/itemnumberConversionTable \
+        --hiConversionTable $WORKING_DIR/holding_idConversionTable \
         &> $WORKING_DIR/bulkItemImport.log
 
     #./bulkItemImport.pl --file $DATA_SOURCE_DIR/Hankinta.migrateme --bnConversionTable $WORKING_DIR/biblionumberConversionTable &> $WORKING_DIR/bulkAcquisitionImport.log
 
-    ./bulkPatronImport.pl --defaultadmin --file $DATA_SOURCE_DIR/Patron.migrateme \
-        --bnConversionTable $WORKING_DIR/borrowernumberConversionTable \
-        &> $WORKING_DIR/bulkPatronImport.log
-
-    ./bulkPatronImport.pl --messagingPreferencesOnly \
-        --bnConversionTable $WORKING_DIR/borrowernumberConversionTable \
-        &> $WORKING_DIR/bulkPatronImportMessagingDefaults.log & #This is forked on the background
+    ./bulkPatronImport.pl --defaultadmin &> $WORKING_DIR/bulkPatronImport.log
+    ./bulkPatronImport.pl --messagingPreferencesOnly &> $WORKING_DIR/bulkPatronImportMessagingDefaults.log & #This is forked on the background
+    ./bulkPatronImport.pl --uploadSSNKeysOnly &> $WORKING_DIR/bulkPatronImportSSNKeys.log & #This is forked on the background
 
     ./bulkCheckoutImport.pl -file $DATA_SOURCE_DIR/Issue.migrateme \
         --inConversionTable $WORKING_DIR/itemnumberConversionTable \

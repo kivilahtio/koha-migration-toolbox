@@ -6,6 +6,8 @@ binmode(STDIN, ":encoding(UTF-8)");
 
 package Bulk::Util;
 
+use English;
+
 use Log::Log4perl qw(:easy);
 
 print 'Verbosity='.$main::verbosity."\n";
@@ -53,6 +55,59 @@ sub newFromUnblessedMigratemeRow($row) {
     use strict 'vars';
     warn $@ if $@;
     return $o;
+}
+
+#
+# Koha doesn't work nicely with the thread-model, but it is not too dastardly.
+#
+sub invokeThreadCompatibilityMagic() {
+    #Koha::Cache cannot be shared across threads due to Sereal. Hack around it.
+    Koha::Caches::flush_L1_caches();
+    Koha::Caches::flush();
+    $ENV{CACHING_SYSTEM} = 'disable';
+    $Koha::Cache::L1_encoder = Sereal::Encoder->new;
+    $Koha::Cache::L1_decoder = Sereal::Decoder->new;
+}
+
+=head2 getMarcFileIterator
+
+  my $i = $s->getMarcFileIterator();
+  my ($marcRecord, $marcXmlPointer) = $i->();
+
+Pick an marcxml collection iteration strategy.
+The built-in way Koha uses is way too slow.
+Trying different strategies to speed it up while maintaining optimal memory footprint.
+
+ @returns Subroutine, call this to get XML as a reference to String
+
+=cut
+
+sub getMarcFileIterator($s) {
+  local $INPUT_RECORD_SEPARATOR = '</record>'; #Let perl split MARCXML for us
+  open(my $FH, '<:encoding(UTF-8)', $s->p('inputMarcFile')) or die("Opening the MARC file '".$s->p('inputMarcFile')."' for slurping failed: $!"); # Make sure we have the proper encoding set before handing these to the MARC-modules
+
+  sub _i {
+    my ($recursionDepth) = @_;
+    local $INPUT_RECORD_SEPARATOR = '</record>'; #Let perl split MARCXML for us
+    my $xml = <$FH>;
+
+    $xml =~ s/(?:^\s+)|(?:\s+$)//gsm if $xml; #Trim leading and trailing whitespace
+    #Trim colection information or other whitespace fluff
+    $xml =~ s!^.+?<record!<record!sm if $xml;
+    $xml =~ s!</record>.+$!</record>!sm if $xml;
+
+    unless ($xml) {
+      DEBUG "No more MARC XMLs";
+      return undef;
+    }
+    unless ($xml =~ /<record.+?<\/record>/sm) {
+      FATAL "Broken MARCXML:\n$xml";
+      return _i(($recursionDepth ? $recursionDepth+1 : 1)) if (not($recursionDepth) || $recursionDepth < 5);
+      die "Broken MARCXML. Too deep recursion '$recursionDepth' to recover.:\n$xml";
+    }
+    return \$xml;
+  };
+  return \&_i;
 }
 
 return 1;

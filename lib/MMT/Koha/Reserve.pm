@@ -30,8 +30,9 @@ Flesh out the Koha-borrower -object out of the given
 
 sub build($self, $o, $b) {
   #$self->setReserve_id                  ($o, $b); #AUTO_INCREMENT
-  $self->setKeys($o, $b, [['patron_id' => 'borrowernumber'], ['bib_id' => 'biblionumber'], ['item_id' => 'itemnumber']]);
+  $self->setKeys($o, $b, [['patron_id' => 'borrowernumber'], ['bib_id' => 'biblionumber']]);
 
+  $self->setItemnumber(                           $o, $b);
   $self->set(create_date     => 'reservedate',    $o, $b);
   $self->set(pickup_location => 'branchcode',     $o, $b);
   $self->set(queue_position  => 'priority',       $o, $b);
@@ -53,13 +54,22 @@ sub build($self, $o, $b) {
 }
 
 sub id {
-  return 'p:'.$_[0]->{borrowernumber}.'-i:'.$_[0]->{itemnumber};
+  return 'p:'.$_[0]->{borrowernumber}.
+         (defined($_[0]->{itemnumber})   ? '-i:'.$_[0]->{itemnumber} : '').
+         (defined($_[0]->{biblionumber}) ? '-b:'.$_[0]->{biblionumber} : '');
 }
 
 sub logId($s) {
   return 'Reserve: '.$s->id();
 }
 
+sub setItemnumber($s, $o, $b) {
+  $s->sourceKeyExists($o, 'item_id');
+  $s->sourceKeyExists($o, 'request_level');
+  $s->{itemnumber} = $o->{item_id};
+  MMT::Exception::Delete->throw($s->logId()."' has no item_id|itemnumber even if it is an Item-level hold!") if (not($s->{itemnumber}) && $o->{request_level} eq 'C');
+  MMT::Exception::Delete->throw($s->logId()."' - Title-level -hold target biblio has no (suitable?) items! Should we migrate or remove them?") if (not($s->{itemnumber}));
+}
 sub setReservedate($s, $o, $b) {
   $s->{reservedate} = $o->{create_date};
 
@@ -87,15 +97,27 @@ sub setPriority($s, $o, $b) {
 sub setStatuses($s, $o, $b) {
   $s->sourceKeyExists($o, 'hr_status_desc');
   $s->sourceKeyExists($o, 'queue_position');
+  $s->sourceKeyExists($o, 'request_level');
+  $s->sourceKeyExists($o, 'hold_recall_type');
   $s->sourceKeyExists($o, 'hold_recall_status_date');
-  $b->{HoldStatuses}->translate(@_, $o->{hr_status_desc});
+  $s->sourceKeyExists($o, 'linked_hold_or_circ');
+
+  if ($o->{hold_recall_type} ne 'CS') {
+    $b->{HoldStatuses}->translate(@_, $o->{hr_status_desc});
+  }
+  else {
+    $b->{CallSlipStatuses}->translate(@_, $o->{hr_status_desc});
+  }
+
+  $log->warn($s->logId()." has an unknown 'hold_recall_type'='".($o->{hold_recall_type}//'undef')."'") unless ($o->{hold_recall_type} && ($o->{hold_recall_type} eq 'H' || $o->{hold_recall_type} eq 'R' || $o->{hold_recall_type} eq 'CS'));
 }
 sub setExpirationdate($s, $o, $b) {
   $s->{expirationdate} = $o->{expire_date};
 
-  unless ($s->{expirationdate}) {
-    $log->warn($s->logId()."' has no expire_date/expirationdate.");
+  if ($o->{hold_recall_type} ne 'CS' && not($s->{expirationdate})) {
+    $log->warn($s->logId()."' is not a call slip request and has no expire_date/expirationdate?");
   }
+  $s->{expirationdate} = undef unless ($s->{expirationdate}); #Make sure this is undef and not just falsy.
 }
 sub setLowestPriority($s, $o, $b) {
   $s->{lowestPriority} = 0;

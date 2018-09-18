@@ -1,8 +1,7 @@
-extlib
+secret
+.bak
 ~$
 .vstags
 *.komodoproject
 .vscode
 *.swp
-usemarcon/rules-hamk/error.txt
-

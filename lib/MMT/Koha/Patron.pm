@@ -21,6 +21,8 @@ MMT::Koha::Patron - Transforms a bunch of Voyager data into a Koha borrower
 
 =cut
 
+my $SSN_EXPORT_FH;
+
 =head2 new
 
 Create the bare reference. Reference is needed to be returned to the builder, so we can do better post-mortem analysis for each die'd Patron.
@@ -43,6 +45,12 @@ Flesh out the Koha-borrower -object out of the given
 =cut
 
 sub build($self, $o, $b) {
+  unless ($SSN_EXPORT_FH) {
+    my $file = MMT::Config::kohaImportDir.'/'.$b->{type};
+    open($SSN_EXPORT_FH, ">:encoding(UTF-8)", $file.'.ssn.csv') or die("Couldn't open the ssn export file '$file' for writing: $!");
+    $SSN_EXPORT_FH->autoflush(1);
+  }
+
   $self->setBorrowernumber                   ($o, $b);
   $self->setCardnumber                       ($o, $b);
   $self->setBorrowernotes                    ($o, $b); #Set notes up here, so we can start appending notes regarding validation failures.
@@ -87,7 +95,7 @@ sub build($self, $o, $b) {
   #  \$self->setLost
   #   \$self->setDebarred
   #    \$self->setDebarredcomment
-  $self->setSex                              ($o, $b);
+  #$self->setSex                              ($o, $b); #Sex is uninteresting for academic libraries
   $self->set(patron_pin => 'password',        $o, $b);
   $self->setUserid                           ($o, $b);
   $self->setSort1                            ($o, $b);
@@ -183,7 +191,7 @@ sub setBorrowernotes($s, $o, $b) {
       push(@sb, $patronNote->{note});
     }
   }
-  $s->{borrowernotes} = join('', @sb);
+  $s->concatenate(join('', @sb) => 'borrowernotes');
 }
 sub setSort1($s, $o, $b) {
   $s->{sort1} = $o->{patron_id};
@@ -224,7 +232,7 @@ sub setDateexpiry($s, $o, $b) {
   unless ($s->{dateexpiry}) {
     my $notification = "Missing expiration date, expiring now";
     $log->warn($s->logId()." - $notification");
-    $s->{borrowernotes} = ($s->{borrowernotes}) ? $s->{borrowernotes}.' | '.$notification : $notification;
+    $s->concatenate($notification => 'borrowernotes');
   }
 }
 sub setAddresses($s, $o, $b) {
@@ -247,7 +255,7 @@ sub setAddresses($s, $o, $b) {
         $s->{zipcode} = $match->{zip_postal};
         $s->{country} = $match->{country};
       }
-      elsif ($match->{address_desc} == 'Temporary') {
+      elsif ($match->{address_desc} eq 'Temporary') {
         if ($match->{address_line3} ne ''
           || $match->{address_line4} ne ''
           || $match->{address_line5} ne '') {
@@ -291,7 +299,7 @@ sub setEmail($s, $o, $b) {
         }
         else {
           my $msg = "Kirjastojärjestelmävaihdon yhteydessä havaittu epäselvä sähköpostiosoite '$emailCandidate' poistettu asiakastiedoistanne. Olkaa yhteydessä kirjastoonne.";
-          $s->{opacnote} = ($s->{opacnote}) ? $s->{opacnote}.' | '.$msg : $msg;
+          $s->concatenate($msg => 'opacnote');
           $log->warn($s->logId()." has a bad email address '$emailCandidate'.");
         }
         last;
@@ -330,26 +338,39 @@ sub setCategorycode($s, $o, $b) {
 sub setPhones($s, $o, $b) {
   my $patron_phones = $b->{phones}->get($s->{borrowernumber});
   if ($patron_phones) {
-    foreach my $match(@$patron_phones) {
-      unless (MMT::Validator::checkIsValidFinnishPhoneNumber($match->{phone_number})) {
-        my $notification = "Finnish phone number validation failed for number '".$match->{phone_number}."'";
+    foreach my $match (@$patron_phones) {
+
+      #Drop any non-numberal characters first
+      #https://tiketti.koha-suomi.fi:83/issues/3301
+      my $number = $match->{phone_number};
+      $number =~ s/[^+0-9]//gsm;
+      my $strippedCharactersCount = length($match->{phone_number}) - length($number);
+      if ($strippedCharactersCount >= 3) { #Dont complain about every small mistake. Expect large differences to have some special type of information embedded which the librarians might want to manually verify.
+        my $msg = "Messy phone number '".$match->{phone_number}."' trimmed as '$number'.";
+        $s->concatenate($msg => 'borrowernotes');
+        $log->warn($s->logId().' - '.$msg);
+      }
+
+      unless (MMT::Validator::checkIsValidFinnishPhoneNumber($number)) {
+        my $notification = "Finnish phone number validation failed for number '$number'. opacnote generated.";
         $log->warn($s->logId()." - $notification");
-        $s->{borrowernotes} = ($s->{borrowernotes}) ? $s->{borrowernotes}.' | '.$notification : $notification;
+        $s->concatenate($notification => 'borrowernotes');
+        $s->concatenate("Kirjastojärjestelmävaihdon yhteydessä havaittu, että puhelinnumero '$number' ei ole Suomen viestintäministeriön asettaman mallin mukainen. Ota yhteyttä kirjastoosi asian korjaamiseksi." => 'opacnote');
         return undef;
       }
       given ($match->{phone_desc}) {
         when ('Primary') {
-          $s->{phone} = $match->{phone_number};
+          $s->{phone} = $number;
         }
         when ('Other') {
-          $s->{phonepro} = $match->{phone_number};
+          $s->{phonepro} = $number;
         }
         when ('Fax') {
-          $s->{fax} = $match->{phone_number};
+          $s->{fax} = $number;
         }
         when ('Mobile') {
-          $s->{mobile} = $match->{phone_number};
-          $s->{smsalertnumber} = $match->{phone_number};
+          $s->{mobile} = $number;
+          $s->{smsalertnumber} = $number;
         }
       }
     }
@@ -361,15 +382,15 @@ sub setPhones($s, $o, $b) {
 my $re_ssnToDob = qr/^(\d\d)(\d\d)(\d\d)([-+A])/;
 sub setDateofbirth($s, $o, $b) {
   $s->{dateofbirth} = $o->{birth_date};
-  if (not($s->{dateofbirth}) && $s->{ssn}) { #Try to get dob from ssn
-    unless ($s->{ssn} =~ $re_ssnToDob) {
-      $log->error($s->logId()." making the date of birth from ssn failed, because the ssn '".$s->{ssn}."' is unparseable");
+  if (not($s->{dateofbirth}) && $o->{institution_id}) { #Try to get dob from ssn
+    if ($o->{institution_id} && not($o->{institution_id} =~ $re_ssnToDob)) {
+      $log->error($s->logId()." making the date of birth from ssn failed, because the ssn '".$o->{institution_id}."' is unparseable");
       return undef;
     }
     my $year = ($4 eq 'A') ? "20$3" : "19$3";
     $s->{dateofbirth} = "$year-$2-$1";
   }
-  if (not($s->{dateofbirth}) && $s->{ssn}) {
+  if (not($s->{dateofbirth}) && $o->{institution_id}) {
     $log->warn("Patron '".$s->logId()."' has no dateofbirth and it couldn't be salvaged from the ssn.");
   }
 }
@@ -394,21 +415,26 @@ sub setPassword($s, $o, $b) {
   unless ($s->{password}) {
     $log->debug($s->logId()."' has no password. Account will be active in Koha, but cannot login.");
     my $msg = "Kirjastojärjestelmävaihdoksessa havaittu että tililtänne puuttuu salasana. Tilinne on vielä aktiivinen, mutta mitään tunnistautumista vaativa ei voi tehdä.";
-    $s->{opacnote} = ($s->{opacnote}) ? $s->{opacnote}.' | '.$msg : $msg;
+    $s->concatenate($msg => 'opacnote');
   }
 }
 sub setSsn($s, $o, $b) {
   $s->{ssn} = $o->{institution_id}; #For some reason ssn is here
   if ($s->{ssn}) {
     unless (MMT::Validator::checkIsValidFinnishSSN($s->{ssn})) {
+      #HAMK-3339 - Leave non-valid ssns in Koha.
       my $notification = "SSN is not a valid Finnish SSN";
-      $log->warn("Patron '".$s->logId()."' $notification");
+      $log->warn($s->logId()." - $notification");
 
-      $s->{borrowernotes} = ($s->{borrowernotes}) ? $s->{borrowernotes}.' | '.$notification : $notification;
+      $s->concatenate($notification => 'borrowernotes');
+    }
+    else {
+      $s->_exportSsn($s->{borrowernumber}, $s->{ssn});
+      $s->{ssn} = 'via Hetula'; #This ssn is valid, and is transported to Hetula.
     }
   }
   else {
-    $log->info("Patron '".$s->logId()."' has no ssn");
+    $log->info($s->logId()."' has no ssn");
   }
 }
 sub setSex($s, $o, $b) {
@@ -502,6 +528,16 @@ sub _getActiveOrLatestBarcodeRow($s, $patronGroupsBarcodes) {
     }
   }
   return $patronGroupsBarcodes->[0]; #Extractor should ORDER BY so the newest entry is first.
+}
+
+=head2 _exportSsn
+
+Writes the given ssn and patron_id to the export file
+
+=cut
+
+sub _exportSsn($s, $patronId, $ssn) {
+  print $SSN_EXPORT_FH "$patronId,$ssn\n";
 }
 
 return 1;
