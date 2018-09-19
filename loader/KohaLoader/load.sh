@@ -62,10 +62,7 @@ function migrateBulkScripts {
         --bnConversionTable $WORKING_DIR/biblionumberConversionTable \
         &> $WORKING_DIR/bulkBibImport.log
 
-    ./bulkMFHDImport.pl --file $DATA_SOURCE_DIR/mfhd.xml \
-        --bnConversionTable $WORKING_DIR/biblionumberConversionTable \
-        --hiConversionTable $WORKING_DIR/holding_idConversionTable \
-        &> $WORKING_DIR/bulkMFHDImport.log
+    ./bulkMFHDImport.pl &> $WORKING_DIR/bulkMFHDImport.log
 
     ./bulkItemImport.pl &> $WORKING_DIR/bulkItemImport.log
 
