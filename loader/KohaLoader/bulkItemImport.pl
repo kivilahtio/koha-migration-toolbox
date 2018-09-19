@@ -116,8 +116,7 @@ sub processRow {
     ##If you have trouble with that you can try these snippets to pin-point the issue
     ##It is most likely due to the statistics writing module trying to send too many INSERTs
     ##  at once and crashing repeatedly. MariaDB can't take everything I guess.
-    my $next = tryToCaptureMangledUtf8InDB($item);
-    return if $next;
+    #return if tryToCaptureMangledUtf8InDB($item);
 
 
     my $existingBarcodeItem = C4::Items::GetItem(undef, $item->{barcode});
