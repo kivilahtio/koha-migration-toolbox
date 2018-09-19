@@ -24,6 +24,7 @@ our $verbosity = 3;
 my %args = (importFile =>                         ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Patron.migrateme',
             uploadSSNKeysFile =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Patron.ssn.csv',
             uploadSSNKeysHetulaCredentialsFile => ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Hetula.credentials',
+            preserveIds =>                        $ENV{MMT_PRESERVE_IDS} // 0,
             borrowernumberConversionTableFile =>  ($ENV{MMT_WORKING_DIR}//'.').'/borrowernumberConversionTable');
 
 GetOptions(
@@ -32,6 +33,7 @@ GetOptions(
     'defaultadmin'             => \$args{defaultAdmin},
     'b|bnConversionTable:s'    => \$args{borrowernumberConversionTableFile},
     'v|verbosity:i'            => \$verbosity,
+    'preserveIds'              => \$args{preserveIds},
     'messagingPreferencesOnly' => \$args{messagingPreferencesOnly},
     'uploadSSNKeysOnly'        => \$args{uploadSSNKeysOnly},
     'uploadSSNKeysFile:s'      => \$args{uploadSSNKeysFile},
@@ -78,6 +80,10 @@ DESCRIPTION
 
     --defaultadmin
           Should we populate the default test admin 1234?
+
+    --preserveIds
+          Should the source system database IDs be preserved or should they be overridden by defaults from Koha?
+          Defaults to off, new IDs are generated
 
     -v level
           Verbose output to the STDOUT,

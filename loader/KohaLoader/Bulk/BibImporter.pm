@@ -310,6 +310,7 @@ sub addRecordFast($s, $record, $recordXmlPtr, $legacyBiblionumber) {
 
   my $frameworkcode = '';
   my $olddata = C4::Biblio::TransformMarcToKoha($record, $frameworkcode);
+  $olddata->{biblionumber} = $legacyBiblionumber if $s->p('preserveIds');
   my ($newBiblionumber, $error1)     = _koha_add_biblio($dbh, $olddata, $frameworkcode);
   if ($error1) {
     ERROR "Error1=$error1";
@@ -339,6 +340,12 @@ sub addRecordFast($s, $record, $recordXmlPtr, $legacyBiblionumber) {
 
   return ("insert", "OK", $newBiblionumber);
 }
+
+=head2 OVERLOADS C4::Biblio::_koha_add_biblio
+
+Make sure the logic hasn't changed in your Koha-version
+
+=cut
 
 sub _koha_add_biblio {
     my ( $dbh, $biblio, $frameworkcode ) = @_;
@@ -381,6 +388,14 @@ sub _koha_add_biblio {
     #warn "LEAVING _koha_add_biblio: ".$biblionumber."\n";
     return ( $biblionumber, $error );
 }
+
+=head2 OVERLOADS C4::Biblio::_koha_add_biblioitem
+
+Forces the primary key if available.
+
+Make sure the logic hasn't changed in your Koha-version
+
+=cut
 
 sub _koha_add_biblioitem {
     my ( $dbh, $biblioitem ) = @_;

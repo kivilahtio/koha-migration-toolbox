@@ -6,6 +6,7 @@ OP=$1              #Which operation to conduct?
 DATA_SOURCE_DIR=$2 #Where the importable files are?
 WORKING_DIR=$3     #Where to put all the conversion tables and generated logs?
 CONFIRM=$4         #Automatically confirm that you want to cause all kinds of bad side effects on yourself.
+PRESERVE_IDS=$5    #Preserve the original database IDs in Koha for some types of data, such as bibs and patrons.
 
 test ! -e "$KOHA_CONF" && echo "\$KOHA_CONF=$KOHA_CONF doesn't exist. Aborting!" exit 2
 KOHA_DB=$(xmllint --xpath "yazgfs/config/database/text()" $KOHA_CONF)
@@ -41,9 +42,13 @@ test -z $WORKING_DIR &&       echo -e "\$WORKING_DIR is undefined\n" &&         
 test ! -r $DATA_SOURCE_DIR && echo -e "\$DATA_SOURCE_DIR=$DATA_SOURCE_DIR is not readable?" && exit 8
 test ! -w $WORKING_DIR &&     echo -e "\$WORKING_DIR=$WORKING_DIR is not writable?"         && exit 9
 
+test -z $PRESERVE_IDS &&      echo -e "\$PRESERVE_IDS not set. Letting Koha generate new primary keys for everything"
+test $PRESERVE_IDS &&         echo -e "\$PRESERVE_IDS set. Preserving legacy database IDs"
+
 # Make environment known for bulk*.pl -scripts, so they can infer defaults automatically.
 export MMT_DATA_SOURCE_DIR=$DATA_SOURCE_DIR
 export MMT_WORKING_DIR=$WORKING_DIR
+export MMT_PRESERVE_IDS=$PRESERVE_IDS
 
 function checkUser {
     user=$1

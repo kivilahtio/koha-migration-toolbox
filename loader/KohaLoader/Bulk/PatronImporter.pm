@@ -47,7 +47,7 @@ Trimmed down copy of C4::Members::AddMember
 sub AddMember($s, $data, $useDBIx=0) {
   # generate a proper login if none provided
   $data->{'userid'} = C4::Members::Generate_Userid($data->{'borrowernumber'}, $data->{'firstname'}, $data->{'surname'}) unless $data->{'userid'};
-  delete $data->{'borrowernumber'};
+  delete $data->{'borrowernumber'} unless ($s->p('preserveIds'));
 
   # add expiration date if it isn't already there
   unless ( $data->{'dateexpiry'} ) {
@@ -76,6 +76,7 @@ sub AddMember($s, $data, $useDBIx=0) {
   if ($useDBIx) { #DBIx migrated 8800 Patrons in 8 minutes
     my $patron=Koha::Patron->new($data);
     $patron->store;
+    checkPreserveId($data->{'borrowernumber'}, $patron->borrowernumber);
     $data->{'borrowernumber'}=$patron->borrowernumber;
   }
   else {          #DBD::MySQL migrated 10500 Patrons in 11 minutes
@@ -115,10 +116,13 @@ sub addBorrowerDBI($s, $patron) {
 
   my @params = map {$patron->{$_}} @{$s->{borrowerColumns}};
   $s->{sth_addBorrower}->execute(@params) or die("Adding borrower failed: ".$s->{sth_addBorrower}->errstr());
-  $patron->{borrowernumber} = $s->{dbh}->last_insert_id(undef, undef, 'borrowers', undef);
-  unless ($patron->{borrowernumber}) {
+
+  my $borrowernumber = $s->{dbh}->last_insert_id(undef, undef, 'borrowers', undef);
+  unless ($borrowernumber) {
     die "last_insert_id() not available after adding a borrower?: ".$s->{dbh}->errstr();
   }
+
+  checkPreserveId($patron->{borrowernumber}, $borrowernumber);
 }
 
 =head2 addBorrowerAttribute
@@ -387,6 +391,14 @@ sub _profileDigestBcrypt($s, $iterations, $pass, $cost) {
   }
   my $runtime = Time::HiRes::gettimeofday() - $start;
   INFO "Profiled  $testName in $runtime";
+}
+
+sub checkPreserveId($s, $legId, $newId) {
+  if ($s->p('preserveIds') && $legId ne $newId) {
+    WARN "Trying to preserve IDs: Legacy borrowernumber '$legId' is not the same as the new borrowernumber '$newId'.";
+    return 0;
+  }
+  return 1;
 }
 
 return 1;
