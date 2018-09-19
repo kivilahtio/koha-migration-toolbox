@@ -67,6 +67,7 @@ sub invokeThreadCompatibilityMagic() {
     $ENV{CACHING_SYSTEM} = 'disable';
     $Koha::Cache::L1_encoder = Sereal::Encoder->new;
     $Koha::Cache::L1_decoder = Sereal::Decoder->new;
+    C4::Context->dbh({new => 1}); #Force a new database connection for new threads, so each thread gets it's own DB handle to avoid race conditions with mysql last_insert_id
 }
 
 =head2 getMarcFileIterator
