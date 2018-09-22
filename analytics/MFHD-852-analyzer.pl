@@ -55,7 +55,7 @@ for my $db (@db) {
 
   for my $f852 (@m) {
 
-    my @m2 = $f852 =~ m!<subfield code="(.)">(.+?)</subfield>!gsm;
+    my @m2 = $f852 =~ m!<subfield code="(.)">(.*?)</subfield>!gsm;
     p(@m2) if $ENV{DEBUG};
 
     for (my $i=0 ; $i<@m2 ; $i+=2) {
@@ -71,7 +71,7 @@ for my $db (@db) {
     }
   }
 
-  print { $FH{'852DIST'} } map { sprintf("%-10s %-70s\n", $dist{sf}{$_}, $_) } keys %{$dist{sf}};
+  print { $FH{'852DIST'} } map { sprintf("%-10s %-70s\n", $dist{sf}{$_}, $_) } sort keys %{$dist{sf}};
 
 =head #FYI: A famous Perl one-liner could be made here, but for sake of any readability such a challenge is skipped here.
   for my $code (keys %{$dist{data}}) {
@@ -85,5 +85,5 @@ for my $db (@db) {
 
   print { $FH{"852$_.dist"} } map {
       sprintf("%-10s %-70s\n", $_->[1], $_->[0])
-    } pairs %{$dist{data}{$_}} for (keys %{$dist{data}});
+    } sort {$a->[0] cmp $b->[0]} pairs %{$dist{data}{$_}} for (sort keys %{$dist{data}});
 }
