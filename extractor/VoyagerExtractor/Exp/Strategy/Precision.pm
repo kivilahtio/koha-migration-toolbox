@@ -51,7 +51,6 @@ warn "Not anonymizing!\n" unless $anonymize;
 
 my %queries = (
   "02-items.csv" => {
-    encoding => "iso-8859-1",
     uniqueKey => 0,
     sql =>
       "SELECT    item.item_id,
@@ -65,7 +64,6 @@ my %queries = (
        JOIN      bib_item           ON (item_vw.item_id = bib_item.item_id)", #some items can have multiple bib_item-rows (multiple parent biblios). This is not cool.
   },
   "02-items_last_borrow_date.csv" => { #This needs to be separate from the 02-items.csv, because otherwise Oracle drops Item-rows with last_borrow_date == NULL, even if charge_date is NULL in both the comparator and the comparatee.
-    encoding => "iso-8859-1",
     uniqueKey => 0,
     sql =>
       "SELECT    circ_trans_archive.item_id, max(circ_trans_archive.charge_date) as last_borrow_date \n".
@@ -77,7 +75,6 @@ my %queries = (
       "ORDER BY  circ_trans_archive.item_id ASC \n",
   },
   "02a-item_notes.csv" => {
-    encoding => "iso-8859-1",
     uniqueKey => -1, #One Item can have multiple item_notes and there is no unique key in the item_notes table
     anonymize => {"item_note" => "scramble"},
     sql =>
@@ -86,7 +83,6 @@ my %queries = (
        LEFT JOIN item_note_type ON (item_note_type.note_type = item_note.item_note_type)",
   },
   "02-item_status.csv" => {
-    encoding => "iso-8859-1",
     uniqueKey => -1, #Each Item can have multiple afflictions
     sql =>
       "SELECT    item_status.item_id, item_status.item_status, item_status_type.item_status_desc, \n".
@@ -96,7 +92,6 @@ my %queries = (
       "ORDER BY  item_status.item_id ASC ",
   },
   "02b-item_stats.csv" => { #Statistical item tags
-    encoding => "iso-8859-1",
     uniqueKey => -1, #One Item can have many statistical categories
     sql =>
       "SELECT    item_stats.item_id, item_stats.item_stat_id, item_stat_code.item_stat_code
@@ -105,7 +100,6 @@ my %queries = (
        ORDER BY  item_stats.date_applied ASC", #Sort order is important so we can know which row is the newest one
   },
   "03-transfers.csv" => {
-    encoding => "iso-8859-1",
     uniqueKey => 0,
     sql =>
       # (In Transit On Hold) - Transfers for reserve fulfillment
@@ -208,7 +202,6 @@ my %queries = (
       "",
   },
   "05-patron_addresses.csv" => {
-    encoding => "iso-8859-1",
     uniqueKey => 0,
     anonymize => {address_line1 => "scramble", address_line2 => "scramble",
                   address_line3 => "scramble", address_line4 => "scramble",
@@ -224,7 +217,6 @@ my %queries = (
       "ORDER BY  patron_address.patron_id, patron_address.address_type \n",
   },
   "06-patron_barcode_groups.csv" => {
-    encoding => "iso-8859-1",
     uniqueKey => 0,
     sql =>
       "SELECT    patron_barcode.patron_barcode_id,
@@ -236,7 +228,6 @@ my %queries = (
        ORDER BY  patron_barcode.patron_id, patron_barcode.barcode_status_date DESC", #It is important to have the newest status first, so we always use the latest status && barcode for the Patron
   },
   "07-patron_names_dates.csv" => {
-    encoding => "iso-8859-1",
     uniqueKey => 0,
     anonymize => {last_name => "surname",    first_name => "firstName",
                   middle_name => "scramble", institution_id => "ssn",
@@ -252,7 +243,6 @@ my %queries = (
        ORDER BY  patron.patron_id",
   },
   "09-patron_notes.csv" => {
-    encoding => "iso-8859-1",
     uniqueKey => 0,
     anonymize => {note => 'scramble'},
     sql =>
@@ -262,7 +252,6 @@ my %queries = (
        ORDER BY  patron_notes.patron_id,patron_notes.modify_date",
   },
   "10-patron_phones.csv" => {
-    encoding => "iso-8859-1",
     uniqueKey => 0,
     anonymize => {phone_number => 'phone'},
     sql =>
@@ -273,7 +262,6 @@ my %queries = (
        JOIN      phone_type ON (patron_phone.phone_type=phone_type.phone_type)",
   },
   "11-patron_stat_codes.csv" => {
-    encoding => "iso-8859-1",
     uniqueKey => -1, #One patron can have many afflictions
     sql =>
       "SELECT    patron_stats.patron_id, patron_stats.patron_stat_id, patron_stat_code.patron_stat_code, patron_stats.date_applied
@@ -281,7 +269,6 @@ my %queries = (
        LEFT JOIN patron_stat_code ON (patron_stat_code.patron_stat_id = patron_stats.patron_stat_id)",
   },
   "12-current_circ.csv" => {
-    encoding => "iso-8859-1",
     uniqueKey => 0,
     sql =>
       "SELECT    circ_transactions.circ_transaction_id, \n".
@@ -295,7 +282,6 @@ my %queries = (
       "LEFT JOIN item_barcode       ON (circ_transactions.item_id=item_barcode.item_id) \n",
   },
   "12a-current_circ_last_renew_date.csv" => { #Same as 02-items_last_borrow_date.csv
-    encoding => "iso-8859-1",
     uniqueKey => 0,
     sql =>
       "SELECT    renew_transactions.circ_transaction_id, max(renew_transactions.renew_date) as last_renew_date \n".
@@ -305,7 +291,6 @@ my %queries = (
       "ORDER BY  renew_transactions.circ_transaction_id ASC \n",
   },
   "14-fines.csv" => {
-    encoding => "iso-8859-1",
     uniqueKey => 0,
     sql =>
       "SELECT    fine_fee.fine_fee_id, \n".
@@ -325,7 +310,6 @@ my %queries = (
   #issues_received has location_id. That is the only place with any location information.
   #ByWater scripts extract location from MFHD $852b but that doesn't reliably exist here?
   "20-subscriptions.csv" => {
-    encoding => "iso-8859-1",
     uniqueKey => [0, 1], #Whenever a subscription order has been continued, a new component with the same component_id is added.
     sql =>
       "SELECT    component.component_id, component_pattern.end_date,
@@ -344,7 +328,6 @@ my %queries = (
        ORDER BY  component.component_id ASC",
   },
   "20a-subscription_locations.csv" => {
-    encoding => "iso-8859-1",
     uniqueKey => [0, 1], #Check later that each component has only one location for received items.
     sql =>
       "SELECT    issues_received.component_id, issues_received.location_id
@@ -357,7 +340,6 @@ my %queries = (
   #Only received serials have location-information.
   #Currently ignore predictions, because migrating predictions most certainly will be very slow/tedious vs benefits.
   "21-ser_issues.csv" => {
-    encoding => "iso-8859-1",
     uniqueKey => [0, 1],
     sql =>
       "SELECT    serial_issues.issue_id, serial_issues.component_id,
@@ -384,7 +366,6 @@ my %queries = (
       "SELECT 1", #Special processing for this one
   },
   "29-requests.csv" => {
-    encoding => "iso-8859-1",
     # Multiple holds with the same primary key? This is a parallel hold which is fulfillable by any of the reserved items.
     # TODO: This feature is something that needs to be implemented in Koha first. For the time being, let the extractor complain about it so we wont forget.
     # TODO: Apparently Voyager implements parallel hold queus via this mechanism, where the hold is targeted to items available via one of the parallel hold queues.
@@ -677,7 +658,6 @@ sub extract($) {
     print "Extracting '$filename' with precision!\n";
 
     my $query          = $queries{$filename}{sql};
-    my $inputEncoding  = $queries{$filename}{encoding};
     my $anonRules      = $queries{$filename}{anonymize};
     my $uniqueKeyIndex = $queries{$filename}{uniqueKey};
     %uniqueColumnVerifier = (); #Reset for every query
