@@ -50,6 +50,29 @@ my $anonymize = (defined $ENV{ANONYMIZE} && $ENV{ANONYMIZE} == 0) ? 0 : 1; #Defa
 warn "Not anonymizing!\n" unless $anonymize;
 
 my %queries = (
+  "00-suppress_in_opac_map.csv" => {
+    encoding => "iso-8859-1",
+    uniqueKey => -1,
+    sql =>
+      "SELECT    bib_heading.bib_id, NULL as mfhd_id, NULL as location_id, \n".
+      "          bib_heading.suppress_in_opac                              \n".
+      "FROM      bib_heading                                               \n".
+      "WHERE     suppress_in_opac = 'Y'                                    \n".
+      "                                                                    \n".
+      "UNION                                                               \n".
+      "                                                                    \n".
+      "SELECT    NULL as bib_id, mfhd_master.mfhd_id, NULL as location_id, \n".
+      "          mfhd_master.suppress_in_opac                              \n".
+      "FROM      mfhd_master                                               \n".
+      "WHERE     suppress_in_opac = 'Y'                                    \n".
+      "                                                                    \n".
+      "UNION                                                               \n".
+      "                                                                    \n".
+      "SELECT    NULL as bib_id, NULL as mfhd_id, location.location_id,    \n".
+      "          location.suppress_in_opac                                 \n".
+      "FROM      location                                                  \n".
+      "WHERE     suppress_in_opac = 'Y'                                    \n",
+  },
   "02-items.csv" => {
     uniqueKey => 0,
     sql =>
@@ -576,7 +599,7 @@ sub extractQuerySelectColumns($) {
   $header_row =~ tr/A-Z/a-z/;
   $header_row =~ s/\w+\((.+?)\)/$1/;          #Trim column functions such as max()
   $header_row =~ s/\.\w+\s+AS\s+(\w+)/\.$1/gi; #Simplify column aliasing... renew_transactions.renew_date AS last_renew_date -> renew_transactions.last_renew_date
-  $header_row =~ s/(\w+)\s+AS\s+(\w+)/$1\.$2/i; #Simplify column aliasing... null AS last_renew_date -> null.last_renew_date
+  $header_row =~ s/(\w+)\s+AS\s+(\w+)/$1\.$2/gi; #Simplify column aliasing... null AS last_renew_date -> null.last_renew_date
   return undef if $header_row eq '*';
   my @cols = split(',', $header_row);
   return \@cols;
