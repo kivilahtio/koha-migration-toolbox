@@ -26,9 +26,10 @@ Usage:
   --noanonymize           Do not anonymize confidential and personally identifiable information? Used when going live.
                           Anonymizes by default.
   -e, --everything        Exports all DB tables as is.
-  -b, --bound             Exports bound MFHD records.
-  -c, --config=PATH       Default '$config'
-                          PATH to the DB connection config.
+  -b, --bound             Exports bound MFHD records as MARC21 XML.
+  -B, --bib               Exports bibliographic records as MARC21 XML.
+  -A, --auth              Exports authorities records as MARC21 XML.
+  -H, --holdings          Exports holdings records as MARC21 XML.
   --bywater               Export everything but MARC using ByWater export sql statements
   --precision=1|REGEXP    Defaults '$exportWithPrecision'.
                           Export with precision everything but MARC.
@@ -39,6 +40,8 @@ Usage:
                                     Used to test changes to extract SQL. Not useful when going live.
                           Parameter is mandatory if option given, but the
                           parameter is used only to limit the precision
+  -c, --config=PATH       Default '$config'
+                          PATH to the DB connection config.
   -h, --help              Show this help
   -v, --verbose           Show debug information
 USAGE
