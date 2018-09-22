@@ -51,7 +51,7 @@ sub exportAuth() {
 }
 
 sub exportMFHD() {
-  _exportMARC(Exp::Config::exportPath('mfhd.xml'),
+  _exportMARC(Exp::Config::exportPath('holdings.xml'),
               'select * from MFHD_DATA order by MFHD_ID, SEQNUM');
 }
 
