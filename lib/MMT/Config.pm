@@ -48,6 +48,9 @@ sub exportPipelineScript() {
 sub importPipelineScript() {
   return $config->{importPipelineScript};
 }
+sub workers() {
+  return $config->{workers};
+}
 
 
 #Check that the environment is properly configured
