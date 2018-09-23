@@ -41,17 +41,17 @@ use Exp::DB;
 use Exp::Encoding;
 
 sub exportBiblios($) {
-  _exportMARC(Exp::Config::exportPath('biblios.xml'),
+  _exportMARC(Exp::Config::exportPath('biblios.marcxml'),
               'select * from BIB_DATA order by BIB_ID, SEQNUM');
 }
 
 sub exportAuth() {
-  _exportMARC(Exp::Config::exportPath('authorities.xml'),
+  _exportMARC(Exp::Config::exportPath('authorities.marcxml'),
               'select * from AUTH_DATA order by AUTH_ID, SEQNUM');
 }
 
 sub exportMFHD() {
-  _exportMARC(Exp::Config::exportPath('holdings.xml'),
+  _exportMARC(Exp::Config::exportPath('holdings.marcxml'),
               'select * from MFHD_DATA order by MFHD_ID, SEQNUM');
 }
 
