@@ -23,18 +23,23 @@ https://github.com/KohaSuomi/OrigoMMTPerl
 
 =cut
 
-sub new {
-  my $class = $_[0];
-  my $self = {};
+sub new($class, $code, $ind1=undef, $ind2=undef) {
+  my $self = bless({}, $class);
 
-  setCode($self, $_[1]) if (exists $_[1]);
+  setCode($self, $code);
 
   #initialize the owned subfields reference array
   $self->{subfields} = [];
 
-  bless($self, $class);
+  $self->setIndicator(1, $ind1) if $ind1;
+  $self->setIndicator(2, $ind2) if $ind2;
 
   return $self;
+}
+
+sub isControlfield($self) {
+  return 1 if $self->code lt '010';
+  return 0;
 }
 
 sub setCode {
@@ -56,46 +61,22 @@ sub code {
   return $self->{fieldNumber};
 }
 
-sub addIndicators {    
-  my $self = shift;
-  my @indicators = split(//, shift);
-  
-  for (my $i=0 ; $i<@indicators ; $i++) {
-    if ($i > 1) {
-      print "ERROR: Too many indicators in docId ".($self->parent() ? $self->parent()->docId() : 'NO_PARENT:(').", field ".$self->code().".\n";
-      return 'TOOMANY';
-    }
-    $self->{"i".($i+1)} = $indicators[$i];
+sub setIndicator($self, $indicator, $value) {
+  if ($self->isControlfield) {
+    die "controlfield '".$self->code."' shouldn't have indicators? Trying to add indicator '$indicator' with value '$value'";
   }
+  $self->{"i$indicator"} = defined($value) ? $value : ' ';
 }
 
-sub setIndicator1 {
-  my $self = shift;
-  my $i1 = shift;
-  $self->{i1} = defined($i1) ? $i1 : ' ';
-}
-
-sub indicator1 {
-  my $self = shift;
-  return $self->{i1} if defined $self->{i1};
+sub indicator($self, $indicator) {
+  if ($self->isControlfield) {
+    return undef;
+  }
+  return $self->{"i$indicator"} if defined $self->{"i$indicator"};
   return " ";
 }
 
-sub setIndicator2 {
-  my $self = shift;
-  my $i2 = shift;
-  $self->{i2} = defined($i2) ? $i2 : ' ';
-}
-
-sub indicator2 {
-  my $self = shift;
-  return $self->{i2} if defined $self->{i2};
-  return " ";
-}
-
-sub addSubfield {
-  my $self = $_[0];
-  my $subfield_code = $_[1];
+sub addSubfield($self, $subfield_code, $content=undef) {
   my $sf;
 
   unless (defined($subfield_code)) {
@@ -107,12 +88,11 @@ sub addSubfield {
     $sf = $subfield_code;
   }
   else {
-    my $subfield_content = $_[2];
-    unless (defined($subfield_content)) {
+    unless (defined($content)) {
       print "Record '".$self->parent()->docId()."'. Trying to add subfield '$subfield_code' for field '".$self->code()."', but no subfield content!\n";
       return undef;
     }
-    $sf = MMT::MARC::Subfield->new($subfield_code, $subfield_content);
+    $sf = MMT::MARC::Subfield->new($subfield_code, $content);
   }
 
   if ( exists $self->{$sf->code} && ref $self->{$sf->code} eq 'ARRAY' ) {
@@ -135,7 +115,7 @@ sub subfields {
   my $self = shift;
   my $subfield = shift;
 
-  if ($subfield) {
+  if (defined $subfield) {
     return $self->{$subfield} if exists $self->{$subfield};
     return undef;
   }

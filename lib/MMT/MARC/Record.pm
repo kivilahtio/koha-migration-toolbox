@@ -64,24 +64,60 @@ sub new {
 }
 
 sub newFromXml {
-  my ($class, $xmlSimple) = @_;
+  my ($class, $xmlPtr) = @_;
   my $self = $class->new();
 
-  $self->leader($xmlSimple->{leader});
+  my (@fields, @subfields);
 
-  $xmlSimple->{controlfield} = [$xmlSimple->{controlfield}] unless ref $xmlSimple->{controlfield} eq 'ARRAY';
-  foreach my $controlField (@{$xmlSimple->{controlfield}}) {
-    $self->addUnrepeatableSubfield($controlField->{tag}, 'a', $controlField->{content});
+  unless ($$xmlPtr =~ m!^\s*<record.*?>(.+?)</record>\s*$!sm) {
+    die "Bad MARC record:\n$$xmlPtr\n";
   }
+  my $fields = $1;
 
-  $xmlSimple->{datafield} = [$xmlSimple->{datafield}] unless ref $xmlSimple->{datafield} eq 'ARRAY';
-  foreach my $dataField (@{$xmlSimple->{datafield}}) {
-    my $f = $self->addField($dataField->{tag});
-    $f->setIndicator1($dataField->{ind1});
-    $f->setIndicator2($dataField->{ind2});
-    $dataField->{subfield} = [$dataField->{subfield}] unless ref $dataField->{subfield} eq 'ARRAY';
-    foreach my $subField (@{$dataField->{subfield}}) {
-      $f->addSubfield($subField->{code}, $subField->{content});
+  unless ($fields =~ m!<leader>(.+?)</leader>!sm) {
+    die "Bad MARC leader:\n$$xmlPtr\n";
+  }
+  $self->leader($1);
+
+  unless (@fields = $fields =~ m!
+                  <(data|control)field\s+tag="(\d+)"     #Extract field type and code
+                    (?:\s+ind1="(.?)"\s+ind2="(.?)")?    #Optional indicators
+                  >                                      #End field starting element
+                  \s*                                    #Let go of surrounding whitespace
+                    (.+?)                                #Capture everything inside the field as the subfields
+                  \s*                                    #Let go of surrounding whitespace
+                  </(?:data|control)field>               #Until we reach the end of field
+  !gsmx) {                                               #Extract as many of these MARC::Field matches as can be found
+    die "Bad MARC fields:\n$fields\n";
+  }
+  for (my $i=0 ; $i<@fields ; $i+=5) {
+    my ($type, $code, $ind1, $ind2, $subfields) = ($fields[$i], $fields[$i+1], $fields[$i+2], $fields[$i+3], $fields[$i+4]);
+
+    $log->debug("New Field: type='".$type."', code='".$code."', ind1='".($ind1//'')."', ind2='".($ind2//'')."'");
+    my $field = MMT::MARC::Field->new($code, $ind1, $ind2);
+    $self->addField($field);
+
+    if ($field->isControlfield) {
+      $field->addSubfield('0', $subfields);
+    }
+    else {
+      unless (@subfields = $subfields =~ m!
+                    <subfield\s+code="(.)">                #Pick the subfield code
+                    \s*                                    #Let go of surrounding whitespace
+                      (.+?)                                #Capture everything inside the subfield as the contents
+                    \s*                                    #Let go of surrounding whitespace
+                    </subfield>                            #Until we reach the end of subfield
+      !gsmx) {
+        die "Bad MARC subfields:\n$subfields\n";
+      }
+
+      for (my $j=0 ; $j<@subfields ; $j+=2) {
+        my ($code, $content) = ($subfields[$j], $subfields[$j+1]);
+
+        $log->debug("New Subfield: code='".($code//'undef')."', content='".($content//'undef')."'");
+        my $subfield = MMT::MARC::Subfield->new($code, $content);
+        $field->addSubfield($subfield);
+      }
     }
   }
 
@@ -173,6 +209,11 @@ sub fields {
   }
   return $self->getAllFields();
 }
+
+sub getControlfield($self, $code) {
+  return $self->getUnrepeatableSubfield($code, '0');
+}
+
 sub getAllFields {
   my $self = shift;
   my $as_sorted = shift;
@@ -220,10 +261,10 @@ sub docId {
     $self->{docId} = $docId;
 
     #save the docid as the 001-field
-    my $target = $self->getUnrepeatableSubfield('001','a');
+    my $target = $self->getControlfield('001');
     if (! (defined $target)) {
       $target = MMT::MARC::Field->new("001");
-      $target->addSubfield("a", $docId);
+      $target->addSubfield("0", $docId);
       $self->addField(  $target  );
     }
     ##replace the old one if exists
@@ -232,7 +273,7 @@ sub docId {
     }
   }
   elsif (not($self->{docId})) {
-    my $target = $self->getUnrepeatableSubfield('001','a');
+    my $target = $self->getControlfield('001');
     $self->{docId} = $target->content() if $target;
   }
   return $self->{docId};
@@ -241,18 +282,18 @@ sub publicationDate {
   my ($self, $publicationDate) = @_;
 
   if ($publicationDate) {
-    my $sf008 = $self->getUnrepeatableSubfield('008','a');
+    my $sf008 = $self->getControlfield('008');
     if ($sf008 && $sf008->content() =~ /^(.{7}).{4}(.+)$/) {
       $sf008->content( $1.$publicationDate.$2 );
     }
     else {
-      $self->addUnrepeatableSubfield('008', 'a', "       $publicationDate    ");
+      $self->addUnrepeatableSubfield('008', '0', "       $publicationDate    ");
     }
     $self->{publicationDate} = $publicationDate;
     return $publicationDate;
   }
   unless ($self->{publicationDate}) {
-    my $sf008 = $self->getUnrepeatableSubfield('008','a');
+    my $sf008 = $self->getControlfield('008');
     if ($sf008 && $sf008->content() =~ /^.{7}(\d{4}).+$/) {
       $self->{publicationDate} = $1;
     }
@@ -289,7 +330,7 @@ sub modTime {
     $self->{modTime} = $modTime;
 
     #save the docid as the 001-field
-    my $target = $self->getUnrepeatableSubfield('005','a');
+    my $target = $self->getControlfield('005');
     if (! (defined $target)) {
       $target = MMT::MARC::Field->new("005");
       $target->addSubfield("a", $modTime);

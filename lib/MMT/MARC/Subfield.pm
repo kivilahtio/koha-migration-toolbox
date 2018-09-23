@@ -23,22 +23,17 @@ https://github.com/KohaSuomi/OrigoMMTPerl
 
 =cut
 
-sub new {
-  my $class = $_[0];
-  my $self = {};
-  bless($self, $class);
+sub new($class, $code, $content) {
+  my $self = bless({}, $class);;
 
-  code($self, $_[1]) if (exists $_[1]);
-  content($self, $_[2]) if (exists $_[2]);
+  $self->code($code) if (defined $code);
+  $self->content($content) if (defined $content);
 
   return $self;
 }
 
-sub code {
-  my $self = shift;
-  my $code = shift;
-
-  if ($code) {
+sub code($self, $code=undef) {
+  if (defined $code) {
     $code = lc $code; #Some subfield codes are upper case, which is a bug
 
     if (! defined $self->{code}) {
@@ -57,10 +52,8 @@ sub content {
   my $self = shift;
   my $content = shift;
 
-  my $maxWordLength = $CFG::CFG->{Biblios}->{MaxWordLength};
-
   if (defined $content) {
-    if ($content =~ /\S{$maxWordLength,}/) { #Zebra indexer dies if single words inside subfields are too long. It is also most certainly an error if such a thing happens.
+    if ($content =~ /\S{500,}/) { #Zebra indexer dies if single words inside subfields are too long. It is also most certainly an error if such a thing happens.
       if (ref $self ne 'MMT::MARC::Subfield') {
         my $dbg = 1;
       }
@@ -68,12 +61,12 @@ sub content {
         my $field = $self->parent() if $self;
         my $record = $field->parent() if $field;
         my $docid = $record->docId() if $record;
-        print 'MARC::Subfield->content(): Subfield word is too long with over "'.$maxWordLength.'" characters. Subfield word is removed.'."\n".
+        print 'MARC::Subfield->content(): Subfield word is too long with over "500" characters. Subfield word is removed.'."\n".
               (($docid) ? 'Record docId: "'.$docid.'",' : '' ).
               (($field) ? 'Field code: "'.$field->code().'",' : '' ).
               (($self && $self->code()) ? 'Subfield code: "'.$self->code().'",' : '' )."  bad content follows:\n".
               $content;
-        $content =~ s/\S{$maxWordLength,}//gsm;
+        $content =~ s/\S{500,}//gsm;
       }
     }
     $self->{content} = $content;
