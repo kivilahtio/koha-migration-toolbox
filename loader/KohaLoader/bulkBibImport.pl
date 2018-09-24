@@ -23,6 +23,7 @@ my %args = (inputMarcFile =>                      ($ENV{MMT_DATA_SOURCE_DIR}//'.
             matchLog =>                           ($ENV{MMT_WORKING_DIR}//'.').'/matchVerifications.log',
             mergeStrategy =>    'defer',
             migrateStrategy =>  'chunk',
+            preserveIds =>      $ENV{MMT_PRESERVE_IDS} // 0,
             legacyIdFieldDef => '001',
             workers =>           4);
 
@@ -32,6 +33,7 @@ Getopt::Long::GetOptions(
   'mergeStrategy:s'     => \$args{mergeStrategy},
   'migrateStrategy:s'   => \$args{migrateStrategy},
   'bnConversionTable:s' => \$args{biblionumberConversionTable},
+  'preserveIds'         => \$args{preserveIds},
   'workers:i'           => \$args{workers},
   'v:i'                 => \$verbosity,
   'legacyIdField:s'     => \$args{legacyIdFieldDef},
@@ -114,6 +116,10 @@ DESCRIPTION
               ...
 
           Defaults to '$args{biblionumberConversionTable}'
+
+    --preserveIds
+          Should the source system database IDs be preserved or should they be overridden by defaults from Koha?
+          Defaults to off, new IDs are generated
 
     --workers count
           Into how many workers the migration is parallellized to.

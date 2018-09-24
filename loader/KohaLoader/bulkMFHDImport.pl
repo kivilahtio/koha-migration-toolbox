@@ -17,12 +17,11 @@ use Log::Log4perl qw(:easy);
 use Bulk::MFHDImporter;
 
 our $verbosity = 3;
-my %args;
-$args{inputMarcFile} = '';
-$args{workers} = 4;
-$args{legacyBibIdFieldDef} = '004';
-$args{biblionumberConversionTable} = 'biblionumberConversionTable';
-$args{holding_idConversionTable} = 'holding_idConversionTable';
+my %args = (inputMarcFile =>                      ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/holdings.marcxml',
+            biblionumberConversionTable =>        ($ENV{MMT_WORKING_DIR}//'.').'/biblionumberConversionTable',
+            holding_idConversionTable =>          ($ENV{MMT_WORKING_DIR}//'.').'/holding_idConversionTable',
+            legacyIdFieldDef => '004',
+            workers =>           4);
 
 Getopt::Long::GetOptions(
   'file:s'              => \$args{inputMarcFile},
@@ -39,7 +38,7 @@ NAME
   $0 - Import MFHDs en masse
 
 SYNOPSIS
-  perl ./bulkMFHDImport.pl --file '/home/koha/mfhd.marcxml' -v $verbosity \
+  perl ./bulkMFHDImport.pl --file '/home/koha/holdings.marcxml' -v $verbosity \
       --bnConversionTable '$args{biblionumberConversionTable}'
 
 DESCRIPTION

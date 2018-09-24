@@ -124,7 +124,7 @@ sub worker($s) {
     # Extracting the controlfield like this is much faster than creating MARC::Record-objects
     my $biblionumberOld = eval {$record->field($s->p('legacyBibIdFieldDef'))->data()};
     if (not($biblionumberOld) || $@) {
-      FATAL "MFHD Record is missing controlfield 004, containing the legacy biblionumber! $@\n$$mfhd\nSKIPPING RECORD!\n";
+      FATAL "MFHD Record is missing field '".$s->p('legacyBibIdFieldDef')."', containing the legacy biblionumber! $@\n$$mfhd\nSKIPPING RECORD!\n";
       next;
     }
     my $biblionumber = $s->{biblionumberConversionTable}->fetch($biblionumberOld);

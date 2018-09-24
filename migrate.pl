@@ -18,6 +18,7 @@ my $log = Log::Log4perl->get_logger(__PACKAGE__);
 use MMT::Extractor;
 use MMT::Loader;
 use MMT::Builder;
+use MMT::TBuilder;
 use MMT::Koha::Biblio;
 
 
@@ -50,6 +51,25 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
   '--biblios' => {
     help => "Transform biblios using ./usemarcon/rules-*/rules.ini",
     callback => sub {MMT::Koha::Biblio::transform()},
+  },
+
+
+  '--holdings' => {
+    help => "Transform holdings",
+    callback => sub {
+      my $builder = MMT::TBuilder->new({
+        type => 'Holding',
+        inputFile => 'holdings.marcxml',
+        outputFile => 'holdings.marcxml',
+        repositories => [
+          {name => 'SuppressInOpacMap', file => '00-suppress_in_opac_map.csv', keys => ['bib_id', 'mfhd_id', 'location_id']},
+        ],
+        translationTables => [
+          {name => 'LocationId'},
+        ],
+      });
+      $builder->build();
+    },
   },
 
 
