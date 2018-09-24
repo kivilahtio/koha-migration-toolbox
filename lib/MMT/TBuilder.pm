@@ -155,10 +155,10 @@ sub build($s) {
     while (not($SIG_TERMINATE_RECEIVED) && defined(my $record = $s->{next}->())) {
       my $wait;
       if ($inputQueue->pending() > $jobBufferMaxSize) { # This is a type of buffering to avoid loading too much into memory. Wait for a while, if the job queue is getting large.
-        $log->trace("Thread MAIN - Jobs queued '".$inputQueue->pending()."' , sleeping") if $log->is_trace();
+        $log->debug("Thread MAIN - Jobs queued '".$inputQueue->pending()."' , sleeping") if $log->is_debug();
         while (not($SIG_TERMINATE_RECEIVED) && $inputQueue->pending() > $jobBufferMaxSize/2) {
           $s->_purgeOutputBuffer();
-          sleep(1); #Wait for the buffer to cool down
+          Time::HiRes::usleep(100); #Wait for the buffer to cool down
         }
       }
 

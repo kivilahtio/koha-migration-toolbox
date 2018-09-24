@@ -27,6 +27,9 @@ sub mainConfigFile() {
 sub voyagerExportDir() {
   return $config->{voyagerExportDir};
 }
+sub holdingsTransformationModule() {
+  return $config->{holdingsTransformationModule};
+}
 sub kohaImportDir() {
   return $config->{kohaImportDir};
 }
