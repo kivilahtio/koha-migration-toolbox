@@ -90,7 +90,7 @@ sub bimp($s) {
     if ($recordQueue->pending() > $jobBufferMaxSize) { # This is a type of buffering to avoid loading too much into memory. Wait for a while, if the job queue is getting large.
       TRACE "Thread MAIN - Jobs queued '".$recordQueue->pending()."' , sleeping";
       while (not($SIG_TERMINATE_RECEIVED) && $recordQueue->pending() > $jobBufferMaxSize/2) {
-        sleep(1); #Wait for the buffer to cool down
+        Time::HiRes::usleep(100); #Wait for the buffer to cool down
       }
     }
 
@@ -116,6 +116,7 @@ sub bimp($s) {
   while (my $bid = $bnConversionQueue->dequeue_nb()) {
     $s->{biblionumberConversionTable}->writeRow($bid->{old}, $bid->{new}, $bid->{op}, $bid->{status});
   }
+  $s->{biblionumberConversionTable}->close(); #Close the filehandle to not lose any data
 
   my $timeneeded = gettimeofday - $starttime;
   INFO "\n$. MARC records done in $timeneeded seconds\n";
