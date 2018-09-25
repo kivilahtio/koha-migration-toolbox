@@ -76,7 +76,7 @@ sub AddMember($s, $data, $useDBIx=0) {
   if ($useDBIx) { #DBIx migrated 8800 Patrons in 8 minutes
     my $patron=Koha::Patron->new($data);
     $patron->store;
-    checkPreserveId($data->{'borrowernumber'}, $patron->borrowernumber);
+    $s->checkPreserveId($data->{'borrowernumber'}, $patron->borrowernumber);
     $data->{'borrowernumber'}=$patron->borrowernumber;
   }
   else {          #DBD::MySQL migrated 10500 Patrons in 11 minutes
@@ -122,7 +122,7 @@ sub addBorrowerDBI($s, $patron) {
     die "last_insert_id() not available after adding a borrower?: ".$s->{dbh}->errstr();
   }
 
-  checkPreserveId($patron->{borrowernumber}, $borrowernumber);
+  $s->checkPreserveId($patron->{borrowernumber}, $borrowernumber);
 }
 
 =head2 addBorrowerAttribute

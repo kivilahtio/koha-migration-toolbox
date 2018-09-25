@@ -317,6 +317,8 @@ sub addRecordFast($s, $record, $recordXmlPtr, $legacyBiblionumber) {
     return ("insert", "ERROR1", $newBiblionumber);
   }
 
+  $s->checkPreserveId($legacyBiblionumber, $newBiblionumber);
+
   $olddata->{'biblionumber'} = $newBiblionumber;
   $olddata->{'biblioitemnumber'} = $newBiblionumber;
   my ($newBiblioitemnumber, $error2) = _koha_add_biblioitem($dbh, $olddata);
@@ -455,6 +457,14 @@ sub _koha_add_biblioitem {
     }
     $sth->finish();
     return ( $bibitemnum, $error );
+}
+
+sub checkPreserveId($s, $legId, $newId) {
+  if ($s->p('preserveIds') && $legId ne $newId) {
+    WARN "Trying to preserve IDs: Legacy biblionumber '$legId' is not the same as the new biblionumber '$newId'.";
+    return 0;
+  }
+  return 1;
 }
 
 return 1;
