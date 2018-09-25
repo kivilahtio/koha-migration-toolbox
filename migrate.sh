@@ -12,15 +12,16 @@ echo -e "Log output uses shell colouring. Remember to set your reader to accept 
 LOG_DIR="$MMT_HOME/logs"
 MMT_HOME="$MMT_HOME" perl migrate.pl --extract         &> $LOG_DIR/01-extract.log
 MMT_HOME="$MMT_HOME" perl migrate.pl --biblios         &> $LOG_DIR/02-biblios.log
-MMT_HOME="$MMT_HOME" perl migrate.pl --items           &> $LOG_DIR/03-items.log
-MMT_HOME="$MMT_HOME" perl migrate.pl --patrons         &> $LOG_DIR/04-patrons.log
-MMT_HOME="$MMT_HOME" perl migrate.pl --issues          &> $LOG_DIR/05-issues.log
-MMT_HOME="$MMT_HOME" perl migrate.pl --fines           &> $LOG_DIR/06-fines.log
-MMT_HOME="$MMT_HOME" perl migrate.pl --reserves        &> $LOG_DIR/07-reserves.log
-MMT_HOME="$MMT_HOME" perl migrate.pl --serials         &> $LOG_DIR/08-serials.log
-MMT_HOME="$MMT_HOME" perl migrate.pl --subscriptions   &> $LOG_DIR/09-subscriptions.log
-MMT_HOME="$MMT_HOME" perl migrate.pl --branchtransfers &> $LOG_DIR/10-branchtransfers.log
-MMT_HOME="$MMT_HOME" perl migrate.pl --load            &> $LOG_DIR/11-load.log
+MMT_HOME="$MMT_HOME" perl migrate.pl --holdings        &> $LOG_DIR/03-holdings.log
+MMT_HOME="$MMT_HOME" perl migrate.pl --items           &> $LOG_DIR/04-items.log
+MMT_HOME="$MMT_HOME" perl migrate.pl --patrons         &> $LOG_DIR/05-patrons.log
+MMT_HOME="$MMT_HOME" perl migrate.pl --issues          &> $LOG_DIR/06-issues.log
+MMT_HOME="$MMT_HOME" perl migrate.pl --fines           &> $LOG_DIR/07-fines.log
+MMT_HOME="$MMT_HOME" perl migrate.pl --reserves        &> $LOG_DIR/08-reserves.log
+MMT_HOME="$MMT_HOME" perl migrate.pl --serials         &> $LOG_DIR/09-serials.log
+MMT_HOME="$MMT_HOME" perl migrate.pl --subscriptions   &> $LOG_DIR/10-subscriptions.log
+MMT_HOME="$MMT_HOME" perl migrate.pl --branchtransfers &> $LOG_DIR/11-branchtransfers.log
+MMT_HOME="$MMT_HOME" perl migrate.pl --load            &> $LOG_DIR/12-load.log
 
 echo ""
 echo "Data migration pipeline complete. Please carefully check all the logs in the log directory '$LOG_DIR'"
