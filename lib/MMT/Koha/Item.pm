@@ -28,7 +28,7 @@ MMT::Koha::Item - Transforms a bunch of Voyager data into a Koha item
 =cut
 
 sub build($self, $o, $b) {
-  $self->setKeys($o, $b, [['item_id' => 'itemnumber'], ['bib_id' => 'biblionumber']]);
+  $self->setKeys($o, $b, [['item_id' => 'itemnumber'], ['bib_id' => 'biblionumber'], ['mfhd_id' => 'holding_id']]);
 
   $self->set(barcode              => 'barcode',            $o, $b);
   $self->set(add_date             => 'dateaccessioned',    $o, $b);
@@ -80,6 +80,8 @@ sub build($self, $o, $b) {
   #$self->set(? => sub_location, $o, $b);
   #$self->set(? => circulation_level, $o, $b);
   #$self->set(? => reserve_level, $o, $b);
+
+  $self->dropBoundItem                                    ($o, $b);
 }
 
 sub id {
@@ -267,6 +269,15 @@ sub setStatuses($s, $o, $b) {
       $log->warn($s->logId()." is getting notforloan='".$s->{notforloan}."' status overloaded with '".$branchcodeLocation->{notforloan}."' from the LocationId translation table.");
     }
     $s->{notforloan} = $branchcodeLocation->{notforloan};
+  }
+}
+
+sub dropBoundItem($s, $o, $b) {
+  $s->sourceKeyExists($o, 'bibs_count');
+  $s->sourceKeyExists($o, 'holdings_count');
+
+  if ($o->{bibs_count} > 1 || $o->{holdings_count} > 1) {
+    MMT::Exception::Delete->throw(error => $s->logId()." - Looks like an Item for a bound Record. Has '".$o->{bibs_count}."' linked biblios and '".$o->{holdings_count}."' linked holdings");
   }
 }
 
