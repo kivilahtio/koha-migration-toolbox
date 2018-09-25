@@ -133,9 +133,9 @@ sub worker($s) {
       next;
     }
 
-    my $holding_idOld = eval {$record->field('001')->data()};
+    my $holding_idOld = eval {$record->field( $s->p('legacyIdFieldDef') )->data()};
     if (not($holding_idOld) || $@) {
-      FATAL "MFHD Record is missing controlfield 001, containing the legacy holding_id! $@\n$$mfhd\nSKIPPING RECORD!\n";
+      FATAL "MFHD Record is missing controlfield '".$s->p('legacyIdFieldDef')."', containing the legacy holding_id! $@\n$$mfhd\nSKIPPING RECORD!\n";
       next;
     }
 
@@ -156,7 +156,7 @@ sub worker($s) {
   }
 }
 
-# OVERLOAD the C4::Holdings::AddHolding()
+# Copy the C4::Holdings::AddHolding()
 # so it can be mutilated
 
 sub AddHolding {
@@ -171,15 +171,12 @@ sub AddHolding {
     my $dbh = C4::Context->dbh;
 
     my $biblio = Koha::Biblios->find( $biblionumber );
+    die "No biblio in Koha with biblionumber='$biblionumber'. Is the biblionumber conversion table out of sync?" unless $biblio;
     my $biblioitemnumber = $biblio->biblioitem->biblioitemnumber;
 
     # transform the data into koha-table style data
     C4::Charset::SetUTF8Flag($record);
     my $rowData = C4::Holdings::TransformMarcHoldingToKoha( $record );
-
-    ##HACK HACK
-    $rowData->{holdingbranch} = 'HAMK';
-    $rowData->{location} = 'KIR'; #Holding-record branch and location is yet untranslated
 
     my ($holding_id) = C4::Holdings::_koha_add_holding( $dbh, $rowData, $frameworkcode, $biblionumber, $biblioitemnumber );
 

@@ -20,16 +20,18 @@ our $verbosity = 3;
 my %args = (inputMarcFile =>                      ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/holdings.marcxml',
             biblionumberConversionTable =>        ($ENV{MMT_WORKING_DIR}//'.').'/biblionumberConversionTable',
             holding_idConversionTable =>          ($ENV{MMT_WORKING_DIR}//'.').'/holding_idConversionTable',
-            legacyIdFieldDef => '004',
-            workers =>           4);
+            legacyIdFieldDef =>    '001',
+            legacyBibIdFieldDef => '004',
+            workers =>             4);
 
 Getopt::Long::GetOptions(
   'file:s'              => \$args{inputMarcFile},
   'bnConversionTable:s' => \$args{biblionumberConversionTable},
   'hiConversionTable:s' => \$args{holding_idConversionTable},
   'v|verbosity:i'       => \$verbosity,
+  'legacyIdField:s'     => \$args{legacyIdFieldDef},
   'legacyBibIdField:s'  => \$args{legacyBibIdFieldDef},
-  'workers:i'           => \$args{workers},
+  'w|workers:i'         => \$args{workers},
   'version'             => sub { Getopt::Long::VersionMessage() },
   'h|help'              => sub {
   print <<HELP;
@@ -38,7 +40,7 @@ NAME
   $0 - Import MFHDs en masse
 
 SYNOPSIS
-  perl ./bulkMFHDImport.pl --file '/home/koha/holdings.marcxml' -v $verbosity \
+  perl ./bulkMFHDImport.pl --file '$args{inputMarcFile}' -v $verbosity \
       --bnConversionTable '$args{biblionumberConversionTable}'
 
 DESCRIPTION
@@ -48,6 +50,10 @@ DESCRIPTION
 
     --file filepath
           The MARC21XML file
+
+    --legacyIdField field[subfield] definition
+          From where to get the legacy system holdings record database id?
+          Defaults to '$args{legacyIdFieldDef}'.
 
     --legacyBibIdField field[subfield] definition
           From where to get the legacy system bibliographic record database id?
