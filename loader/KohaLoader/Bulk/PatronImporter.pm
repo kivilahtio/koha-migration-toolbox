@@ -123,6 +123,7 @@ sub addBorrowerDBI($s, $patron) {
   }
 
   $s->checkPreserveId($patron->{borrowernumber}, $borrowernumber);
+  $patron->{borrowernumber} = $borrowernumber;
 }
 
 =head2 addBorrowerAttribute

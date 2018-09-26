@@ -28,20 +28,6 @@ my %args = (importFile =>                         ($ENV{MMT_DATA_SOURCE_DIR}//'.
             defaultAdmin =>                       0,
             borrowernumberConversionTableFile =>  ($ENV{MMT_WORKING_DIR}//'.').'/borrowernumberConversionTable');
 
-GetOptions(
-    'file:s'                   => \$args{importFile},
-    'deduplicate'              => \$args{deduplicate},
-    'defaultadmin:s'           => \$args{defaultAdmin},
-    'b|bnConversionTable:s'    => \$args{borrowernumberConversionTableFile},
-    'v|verbosity:i'            => \$verbosity,
-    'preserveIds'              => \$args{preserveIds},
-    'messagingPreferencesOnly' => \$args{messagingPreferencesOnly},
-    'uploadSSNKeysOnly'        => \$args{uploadSSNKeysOnly},
-    'uploadSSNKeysFile:s'      => \$args{uploadSSNKeysFile},
-    'uploadSSNKeysHetulaCredentialsFile:s' => \$args{uploadSSNKeysHetulaCredentialsFile},
-    'profile'                  => \$args{profile},
-);
-
 my $help = <<HELP;
 
 NAME
@@ -113,6 +99,22 @@ DESCRIPTION
           Currently profiles different levels of Bcrypt hashing strength to speed up password migration
 
 HELP
+
+GetOptions(
+    'file:s'                   => \$args{importFile},
+    'deduplicate'              => \$args{deduplicate},
+    'defaultadmin:s'           => \$args{defaultAdmin},
+    'b|bnConversionTable:s'    => \$args{borrowernumberConversionTableFile},
+    'v|verbosity:i'            => \$verbosity,
+    'preserveIds'              => \$args{preserveIds},
+    'messagingPreferencesOnly' => \$args{messagingPreferencesOnly},
+    'uploadSSNKeysOnly'        => \$args{uploadSSNKeysOnly},
+    'uploadSSNKeysFile:s'      => \$args{uploadSSNKeysFile},
+    'uploadSSNKeysHetulaCredentialsFile:s' => \$args{uploadSSNKeysHetulaCredentialsFile},
+    'profile'                  => \$args{profile},
+    'version'             => sub { Getopt::Long::VersionMessage() },
+    'h|help'              => sub { print $help."\n"; exit 0; },
+);
 
 require Bulk::Util; #Init logging && verbosity
 
