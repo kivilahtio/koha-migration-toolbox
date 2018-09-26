@@ -1,10 +1,15 @@
-Files in this directory are used to extract data from Voyager, copy this directory to the Voyager DB-server.
+Files in this directory are used to extract data from Voyager.
+First, copy this directory to the Voyager DB server.
+Then cd into this directory on Voyager DB server.
 
-Then configure
-  config.pl
-with DB connection params.
+Then create ./config.pl and configure it with DB connection params:
+
+$ cp config/config.pl .
+$ $EDITOR config.pl
 
 Finally run
-  export.pl --bound -A -B -H --precision
+
+$ ./extract.pl --bound -A -B -H --precision
+
 to write .csv-files to the VoyagerDB-server
 
