@@ -30,6 +30,8 @@ Transforms the given MARC Holdings Record to Koha
 sub transform($s, $r, $b) {
   my $f852s = $r->fields('852');
   transform852($s, $r, $b, $_) for (@$f852s);
+
+  isSuppressInOPAC($s, $r, $b);
 }
 
 =head2 Transforms the given MARC Holdings Record to Koha
@@ -75,6 +77,33 @@ sub transform852($s, $r, $b, $f) {
   my $sfn = $f->subfields('n');
   _deleteExcessSubfields($s, $r, $b, $sfn) if $sfn;
   $sfn ? $sfn->[0]->content('fi') : $f->addSubfield('n', 'fi', {last => 1});
+}
+
+=head2 isSuppressInOPAC
+
+Sets the 942$n if the holding record is suppressed in OPAC
+
+=cut
+
+sub isSuppressInOPAC($s, $r, $b) {
+                                       #Key for the info is built with bib_id.mfhd_id.location_id
+  my $suppressInOpac = $b->{SuppressInOpacMap}->get('NULL'.$r->docId().'NULL');
+  if ($suppressInOpac) {
+    $suppressInOpac = $suppressInOpac->[0]->{suppress_in_opac};
+    $log->debug($s->logId()." - Suppress in opac '$suppressInOpac'") if $log->is_debug();
+
+    my $f942s = $r->fields('942');
+    my $f942 = $f942s ? $f942s->[0] : $r->addField('942');
+
+    my $sfns = $f942->subfields('n');
+    _deleteExcessSubfields($s, $r, $b, $sfns) if $sfns; #It is not ok to have multiple instances
+    if ($sfns) {
+      $sfns->[0]->content($suppressInOpac);
+    }
+    else {
+      $f942->addSubfield('n', $suppressInOpac);
+    }
+  }
 }
 
 sub _deleteExcessSubfields($s, $r, $b, $sfs) {
