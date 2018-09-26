@@ -241,10 +241,10 @@ sub setStatuses($s, $o, $b) {
 
   for my $affliction (@$itemStatuses) {
     my $desc = $affliction->{item_status_desc};
-    $log->trace($s->logId().' has affliction "'.$desc.'"');
     my $ks = $b->{ItemStatus}->translate(@_, $desc);
+    $log->trace($s->logId()." has affliction '$desc' with value '$ks'");
     next unless $ks;
-    my ($kohaStatus, $kohaStatusValue) = split('\W+', $ks);
+    my ($kohaStatus, $kohaStatusValue) = split(qr/[,.= ]+/, $ks);
 
     given ($kohaStatus) {
       when('itemlost')   { $s->{$_} = $kohaStatusValue;
