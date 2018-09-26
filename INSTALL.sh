@@ -86,7 +86,7 @@ fi
 setConf "voyagerExportDir" "$VOYAGER_EXPORT_DIR" $CONFIG_MAIN
 setConf "kohaImportDir"    "$KOHA_IMPORT_DIR"    $CONFIG_MAIN
 
-echo <<STEPS
+cat <<STEPS
 -----------------------
 Awesome! MMT installed!
 -----------------------
