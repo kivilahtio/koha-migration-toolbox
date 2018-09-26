@@ -81,7 +81,8 @@ sub createBoundMfhdParentRecord($$) {
 sub _linkChildToParent($$$) {
   my ($boundParentRecord, $boundChildIds, $boundChildRecords) = @_;
 
-  for (my $j = 0; $j <= @$boundChildRecords; $j++) {
+  my @bCR = @$boundChildRecords;
+  for (my $j = 0; $j <= $#bCR; $j++) {
     my $boundChildId = $boundChildIds->[$j];
     my $boundChildRecord = $boundChildRecords->[$j];
 
@@ -100,7 +101,8 @@ sub _mergeChildMetadataToParent($$$) {
   my ($boundParentRecord, $boundChildIds, $boundChildRecords) = @_;
 
   my @other_books;
-  for ( my $j = 1; $j <= @$boundChildIds; $j++ ) {
+  my @bCI = @$boundChildIds;
+  for ( my $j = 1; $j <= $#bCI; $j++ ) {
     my $boundChildId = $boundChildIds->[$j];
     my $boundChildRecord = $boundChildRecords->[$j];
 
