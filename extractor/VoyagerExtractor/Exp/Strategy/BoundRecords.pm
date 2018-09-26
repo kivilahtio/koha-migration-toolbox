@@ -58,6 +58,9 @@ sub createBoundMfhdParentRecord($$) {
   my $bibIds = Exp::DB::mfhd_id2bib_ids($mfhdId);
   # Parent is arbitrarily picked from the smallest bib_id
   my $boundParentRecord = Exp::DB::bib_id2bib_record($bibIds->[0]);
+  if ( !defined($boundParentRecord) || !$boundParentRecord ) {
+    print STDERR "MFHD-$mfhdId\tERROR\tRefers to a missing bib ", $bibIds->[0], ", check BIB_MFHD table...\n";
+  }
   # Set the new parent's $001 to the reused bib id
   $boundParentRecord = Exp::nvolk_marc21::marc21_record_replace_field($boundParentRecord, '001', $boundParentId);
 
