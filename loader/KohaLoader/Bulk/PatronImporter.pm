@@ -140,7 +140,8 @@ sub addBorrowerAttribute($s, $patron, $attribute, $value) {
   $s->{sth_addBorrowerAttribute}->execute($patron->{borrowernumber}, $attribute, $value) or die("Adding borrower_attribute 'SSN' failed for borrowernumber='".$patron->{borrowernumber}."': ".$s->{sth_addBorrowerAttribute}->errstr());
 }
 
-sub addDefaultAdmin {
+sub addDefaultAdmin($defaultAdmin) {
+  my ($username, $password) = split(':', $defaultAdmin);
   INFO "Adding default admin";
   my $dbh = C4::Context->dbh;
   my $categorycode = $dbh->selectrow_array("SELECT categorycode from categories LIMIT 1") or die "Failed to get default admin categorycode ".$dbh->errstr(); #Pick any borrower.categorycode
@@ -158,8 +159,8 @@ sub addDefaultAdmin {
     categorycode => $categorycode,
     dateenrolled => "2015-09-25",
     dateexpiry =>   "2018-09-25",
-    password =>     "Baba-Gnome",
-    userid =>       "kalifi",
+    password =>     $password,
+    userid =>       $username,
     privacy =>      1,
   );
   eval {
