@@ -262,6 +262,8 @@ sub _getFreeBibId {
     }
     return _getFreeBibId() if (not($nextExistingId)); #Exit the loop if existing ids ran out
   }
+  print STDERR "_getFreeBibId(): check code...\n";
+  return ++$usedBibIdsNextCandidateValue;
 }
 
 return 1;
