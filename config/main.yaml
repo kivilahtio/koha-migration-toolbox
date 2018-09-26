@@ -30,6 +30,12 @@ workers: 0
 # The way holdings records are used in various databases vary, hence one transformation set of rules wont work for all source databases.
 holdingsTransformationModule: HAMK
 
+# If the item doesn't have a price or a replacementprice, use this default.
+defaultReplacementPrice: 25
+
+# Set the Patron home library to this value for all patrons. Leave empty to use the LocationId-translation table.
+patronHomeLibrary:
+
 #############################
 ### 3) Data loading phase ###
 ## Exported DB rows are mangled into Koha-objects

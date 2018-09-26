@@ -108,11 +108,11 @@ sub setDateaccessioned($s, $o, $b) {
   }
 }
 sub setPrice($s, $o, $b) {
-  $s->{price} = (defined($o->{price})) ? MMT::Validator::voyagerMoneyToKohaMoney($o->{price}) : undef;
+  $s->{price} = ($o->{price}) ? MMT::Validator::voyagerMoneyToKohaMoney($o->{price}) : undef;
   #$log->warn($s->logId()."' has no price.") unless $s->{price}; #Too much complaining about the missing price. Hides all other issues.
 }
 sub setReplacementprice($s, $o, $b) {
-  $s->{replacementprice} = $s->{price};
+  $s->{replacementprice} = $s->{price} // MMT::Config::defaultReplacementPrice;
 }
 sub setDatelastborrowed($s, $o, $b) {
   my $lastBorrowDates = $b->{LastBorrowDate}->get($o);
