@@ -76,21 +76,35 @@ my %queries = (
   "02-items.csv" => {
     uniqueKey => 0,
     sql =>
-      "SELECT    item.item_id,
-                 bib_item.bib_id, bib_item.add_date,
-                 item_vw.barcode, item.perm_location, item.temp_location, item.item_type_id, item.temp_item_type_id,
-                 item_vw.enumeration, item_vw.chronology, item_vw.historical_charges, item_vw.call_no,
-                 item_vw.call_no_type,
-                 item.price, item.copy_number, item.pieces
-       FROM      item_vw
-       JOIN      item               ON (item_vw.item_id = item.item_id)
-       JOIN      bib_item           ON (item_vw.item_id = bib_item.item_id)
-       JOIN      (
-                  SELECT bib_item.item_id,
-                  COUNT(item_id)
-                  FROM bib_item
-                  GROUP BY bib_item.item_id
-                  HAVING COUNT(item_id) = 1) filtered_items ON (filtered_items.item_id = item.item_id)" #items with multiple bib_item-rows are related to bound bibs which are to be imported separately. 
+      "SELECT    item.item_id,                                                                          \n".
+      "          bib_item.bib_id, bibi.add_date, multi_bibious.bibs_count,                              \n".
+      "          mfhd_item.mfhd_id, multi_holdacious.holdings_count,                                    \n".
+      "          item_vw.barcode, item.perm_location, item.temp_location,                               \n".
+      "          item.item_type_id, item.temp_item_type_id,                                             \n".
+      "          item_vw.enumeration, item_vw.chronology, item_vw.historical_charges, item_vw.call_no,  \n".
+      "          item_vw.call_no_type,                                                                  \n".
+      "          item.price, item.copy_number, item.pieces                                              \n".
+      "FROM      item_vw                                                                                \n".
+      "LEFT JOIN item               ON (item_vw.item_id = item.item_id)                                 \n".
+      "LEFT JOIN ( SELECT   mfhd_item.item_id, MIN(mfhd_item.mfhd_id) as mfhd_id                        \n". #Of all the Holdings records attached to this Item, pick the oldest one.
+      "            FROM     mfhd_item                                                                   \n".
+      "            GROUP BY mfhd_item.item_id                                                           \n".
+      "          ) mfhd_item        ON (mfhd_item.item_id = item_vw.item_id)                            \n".
+      "LEFT JOIN ( SELECT   mfhd_item.item_id, COUNT(mfhd_item.mfhd_id) as holdings_count               \n". # Select the count of related holdings for this item, this is a strong indication that we are working with bound records. Such Items are dealt with elsewhere.
+      "            FROM     mfhd_item                                                                   \n".
+      "            GROUP BY mfhd_item.item_id                                                           \n".
+      "          ) multi_holdacious ON (multi_holdacious.item_id = item_vw.item_id)                     \n".
+      "LEFT JOIN ( SELECT   bib_item.item_id, MIN(bib_item.bib_id) as bib_id                            \n". #Of all the Bibliographic records attached to this Item, pick the oldest one.
+      "            FROM     bib_item                                                                    \n".
+      "            GROUP BY bib_item.item_id                                                            \n".
+      "          ) bib_item         ON (bib_item.item_id = item_vw.item_id)                             \n".
+      "LEFT JOIN bib_item bibi      ON (bibi.bib_id  = bib_item.bib_id AND                              \n". # We must first choose the bib_id we want to include here, then choose information related to the bib. It is either an extra join or a single deeply nested subqueries join
+      "                                 bibi.item_id = item_vw.item_id)                                 \n".
+      "LEFT JOIN ( SELECT   bib_item.item_id, COUNT(bib_item.bib_id) as bibs_count                      \n". # Select the count of related biblios for this item, this is a strong indication that we are working with bound records. Such Items are dealt with elsewhere.
+      "            FROM     bib_item                                                                    \n".
+      "            GROUP BY bib_item.item_id                                                            \n".
+      "          ) multi_bibious ON (multi_bibious.item_id = item_vw.item_id)                           \n".
+      "",
   },
   "02-items_last_borrow_date.csv" => { #This needs to be separate from the 02-items.csv, because otherwise Oracle drops Item-rows with last_borrow_date == NULL, even if charge_date is NULL in both the comparator and the comparatee.
     uniqueKey => 0,

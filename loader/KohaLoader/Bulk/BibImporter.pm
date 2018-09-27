@@ -90,7 +90,7 @@ sub bimp($s) {
     if ($recordQueue->pending() > $jobBufferMaxSize) { # This is a type of buffering to avoid loading too much into memory. Wait for a while, if the job queue is getting large.
       TRACE "Thread MAIN - Jobs queued '".$recordQueue->pending()."' , sleeping";
       while (not($SIG_TERMINATE_RECEIVED) && $recordQueue->pending() > $jobBufferMaxSize/2) {
-        sleep(1); #Wait for the buffer to cool down
+        Time::HiRes::usleep(100); #Wait for the buffer to cool down
       }
     }
 
@@ -116,6 +116,7 @@ sub bimp($s) {
   while (my $bid = $bnConversionQueue->dequeue_nb()) {
     $s->{biblionumberConversionTable}->writeRow($bid->{old}, $bid->{new}, $bid->{op}, $bid->{status});
   }
+  $s->{biblionumberConversionTable}->close(); #Close the filehandle to not lose any data
 
   my $timeneeded = gettimeofday - $starttime;
   INFO "\n$. MARC records done in $timeneeded seconds\n";
@@ -317,6 +318,8 @@ sub addRecordFast($s, $record, $recordXmlPtr, $legacyBiblionumber) {
     return ("insert", "ERROR1", $newBiblionumber);
   }
 
+  $s->checkPreserveId($legacyBiblionumber, $newBiblionumber);
+
   $olddata->{'biblionumber'} = $newBiblionumber;
   $olddata->{'biblioitemnumber'} = $newBiblionumber;
   my ($newBiblioitemnumber, $error2) = _koha_add_biblioitem($dbh, $olddata);
@@ -455,6 +458,14 @@ sub _koha_add_biblioitem {
     }
     $sth->finish();
     return ( $bibitemnum, $error );
+}
+
+sub checkPreserveId($s, $legId, $newId) {
+  if ($s->p('preserveIds') && $legId ne $newId) {
+    WARN "Trying to preserve IDs: Legacy biblionumber '$legId' is not the same as the new biblionumber '$newId'.";
+    return 0;
+  }
+  return 1;
 }
 
 return 1;

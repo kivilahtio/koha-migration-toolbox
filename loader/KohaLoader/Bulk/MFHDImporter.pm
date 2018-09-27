@@ -10,6 +10,7 @@ use Carp;
 use English;
 use threads;
 use threads::shared;
+use Thread::Semaphore;
 #$|=1; #Are hot filehandles necessary?
 
 ## Thank you https://stackoverflow.com/questions/12696375/perl-share-filehandle-with-threads
@@ -19,6 +20,9 @@ $SIG{INT} = $SIG{TERM} = sub {
   print("\n>>> Terminating <<<\n\n");
   $SIG_TERMINATE_RECEIVED = 1;
 };
+
+my $preventJoiningBeforeAllWorkIsDone;
+
 my $jobBufferMaxSize = 500;
 
 # External modules
@@ -67,18 +71,21 @@ import conflicts with require feature.
 =cut
 
 sub doImport($s) {
-  my $i = Bulk::Util::getMarcFileIterator($s);
+  my $starttime = gettimeofday;
+
+  $preventJoiningBeforeAllWorkIsDone = Thread::Semaphore->new( -1*$s->p('workers') +1 ); #Semaphore blocks until all threads have released it.
 
   my @threads;
   push @threads, threads->create(\&worker, $s)
     for 1..$s->p('workers');
 
+  my $i = Bulk::Util::getMarcFileIterator($s);
   #Enqueue MFHDs to the job queue. This way we avoid strange race conditions in the file handle
   while (not($SIG_TERMINATE_RECEIVED) && defined(my $mfhd = $i->())) {
     if ($mfhdQueue->pending() > $jobBufferMaxSize) { # This is a type of buffering to avoid loading too much into memory. Wait for a while, if the job queue is getting large.
       TRACE "Thread MAIN - Jobs queued '".$mfhdQueue->pending()."' , sleeping";
       while (not($SIG_TERMINATE_RECEIVED) && $mfhdQueue->pending() > $jobBufferMaxSize/2) {
-        sleep(1); #Wait for the buffer to cool down
+        Time::HiRes::usleep(100); #Wait for the buffer to cool down
       }
     }
 
@@ -95,15 +102,24 @@ sub doImport($s) {
   # Signal to threads that there is no more work.
   $mfhdQueue->end();
 
+  #This script crashes when threads are being joined, so wait for them to stop working first.
+  #It is very hacky, but so far there seems to be no side-effects for it.
+  #It is easier to do this, than employ some file-splitting and forking.
+  $preventJoiningBeforeAllWorkIsDone->down();
+
+  INFO "Writing remaining '".$hnConversionQueue->pending()."' holding_id conversions";
+  while (my $hid = $hnConversionQueue->dequeue_nb()) {
+    $s->{holding_idConversionTable}->writeRow($hid->{old}, $hid->{new});
+  }
+  $s->{holding_idConversionTable}->close(); #Close the filehandle to not lose any data
+
+  my $timeneeded = gettimeofday - $starttime;
+  INFO "\n$. MARC records done in $timeneeded seconds\n";
+
   # Wait for all the threads to finish.
   for (@threads) {
     $_->join();
     INFO "Thread ".$_->tid()." - Joined";
-  }
-
-  #Write the holdings_idConversionTable
-  while (my $hid = $hnConversionQueue->dequeue_nb()) {
-    $s->{holding_idConversionTable}->writeRow($hid->{old}, $hid->{new});
   }
 
   return undef;
@@ -133,9 +149,9 @@ sub worker($s) {
       next;
     }
 
-    my $holding_idOld = eval {$record->field('001')->data()};
+    my $holding_idOld = eval {$record->field( $s->p('legacyIdFieldDef') )->data()};
     if (not($holding_idOld) || $@) {
-      FATAL "MFHD Record is missing controlfield 001, containing the legacy holding_id! $@\n$$mfhd\nSKIPPING RECORD!\n";
+      FATAL "MFHD Record is missing controlfield '".$s->p('legacyIdFieldDef')."', containing the legacy holding_id! $@\n$$mfhd\nSKIPPING RECORD!\n";
       next;
     }
 
@@ -154,9 +170,11 @@ sub worker($s) {
   if ($@) {
     warn "Thread ".($tid//'undefined')." - died:\n$@\n";
   }
+
+  $preventJoiningBeforeAllWorkIsDone->up(); #This worker has finished working
 }
 
-# OVERLOAD the C4::Holdings::AddHolding()
+# Copy the C4::Holdings::AddHolding()
 # so it can be mutilated
 
 sub AddHolding {
@@ -171,15 +189,12 @@ sub AddHolding {
     my $dbh = C4::Context->dbh;
 
     my $biblio = Koha::Biblios->find( $biblionumber );
+    die "No biblio in Koha with biblionumber='$biblionumber'. Is the biblionumber conversion table out of sync?" unless $biblio;
     my $biblioitemnumber = $biblio->biblioitem->biblioitemnumber;
 
     # transform the data into koha-table style data
     C4::Charset::SetUTF8Flag($record);
     my $rowData = C4::Holdings::TransformMarcHoldingToKoha( $record );
-
-    ##HACK HACK
-    $rowData->{holdingbranch} = 'HAMK';
-    $rowData->{location} = 'KIR'; #Holding-record branch and location is yet untranslated
 
     my ($holding_id) = C4::Holdings::_koha_add_holding( $dbh, $rowData, $frameworkcode, $biblionumber, $biblioitemnumber );
 

@@ -58,6 +58,9 @@ sub createBoundMfhdParentRecord($$) {
   my $bibIds = Exp::DB::mfhd_id2bib_ids($mfhdId);
   # Parent is arbitrarily picked from the smallest bib_id
   my $boundParentRecord = Exp::DB::bib_id2bib_record($bibIds->[0]);
+  if ( !defined($boundParentRecord) || !$boundParentRecord ) {
+    print STDERR "MFHD-$mfhdId\tERROR\tRefers to a missing bib ", $bibIds->[0], ", check BIB_MFHD table...\n";
+  }
   # Set the new parent's $001 to the reused bib id
   $boundParentRecord = Exp::nvolk_marc21::marc21_record_replace_field($boundParentRecord, '001', $boundParentId);
 
@@ -81,7 +84,8 @@ sub createBoundMfhdParentRecord($$) {
 sub _linkChildToParent($$$) {
   my ($boundParentRecord, $boundChildIds, $boundChildRecords) = @_;
 
-  for (my $j = 0; $j <= @$boundChildRecords; $j++) {
+  my @bCR = @$boundChildRecords;
+  for (my $j = 0; $j <= $#bCR; $j++) {
     my $boundChildId = $boundChildIds->[$j];
     my $boundChildRecord = $boundChildRecords->[$j];
 
@@ -100,7 +104,8 @@ sub _mergeChildMetadataToParent($$$) {
   my ($boundParentRecord, $boundChildIds, $boundChildRecords) = @_;
 
   my @other_books;
-  for ( my $j = 1; $j <= @$boundChildIds; $j++ ) {
+  my @bCI = @$boundChildIds;
+  for ( my $j = 1; $j <= $#bCI; $j++ ) {
     my $boundChildId = $boundChildIds->[$j];
     my $boundChildRecord = $boundChildRecords->[$j];
 
@@ -257,6 +262,8 @@ sub _getFreeBibId {
     }
     return _getFreeBibId() if (not($nextExistingId)); #Exit the loop if existing ids ran out
   }
+  print STDERR "_getFreeBibId(): check code...\n";
+  return ++$usedBibIdsNextCandidateValue;
 }
 
 return 1;

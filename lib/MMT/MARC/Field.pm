@@ -76,7 +76,19 @@ sub indicator($self, $indicator) {
   return " ";
 }
 
-sub addSubfield($self, $subfield_code, $content=undef) {
+=head2 addSubfield
+
+ @param {Char or MMT::MARC::Subfield} subfield code or the subfield itself to add
+ @param {String} Content of the subfield, optional
+ @param {HASHRef of operation => target}
+          first => 1    # Put the new subfield as the first subfield
+          last => 1     # Put the subfield last under this field
+          after => 'a'  # Put the subfield after the last instance of subfield 'a'
+          before => 'c' # Put the subfield just before the first instance of subfield 'c'
+
+=cut
+
+sub addSubfield($self, $subfield_code, $content=undef, $position={last => 1}) {
   my $sf;
 
   unless (defined($subfield_code)) {
@@ -106,9 +118,32 @@ sub addSubfield($self, $subfield_code, $content=undef) {
   $sf->parent($self);
 
   #update the owned fields reference list
-  push @{$self->{subfields}}, $sf;
+  if (exists $position->{last}) {
+    push @{$self->{subfields}}, $sf;
+  }
+  elsif (exists $position->{first}) {
+    unshift @{$self->{subfields}}, $sf;
+  }
+  elsif (exists $position->{before}) {
+    for (my $i=0 ; $i<@{$self->{subfields}} ; $i++) {
+      if ((ref $position->{before} && $self->{subfields}->[$i] == $position->{before}) ||
+                                      ($self->{subfields}->[$i]->code eq $position->{before})) {
+        splice(@{$self->{subfields}}, $i, 0, $sf);
+        last;
+      }
+    }
+  }
+  elsif (exists $position->{after}) {
+    for (my $i=scalar(@{$self->{subfields}})-1 ; $i>=0 ; $i--) {
+      if ((ref $position->{after} && $self->{subfields}->[$i] == $position->{after}) ||
+                                    ($self->{subfields}->[$i]->code eq $position->{after})) {
+        splice(@{$self->{subfields}}, $i+1, 0, $sf);
+        last;
+      }
+    }
+  }
 
-  return $self;
+  return $sf;
 }
 
 sub subfields {

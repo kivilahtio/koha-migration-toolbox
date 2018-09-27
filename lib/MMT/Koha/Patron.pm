@@ -310,11 +310,16 @@ sub setEmail($s, $o, $b) {
   $log->warn($s->logId()." has no email.") unless $s->{email};
 }
 sub setBranchcode($s, $o, $b) {
-  my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{home_location});
-  $s->{branchcode} = $branchcodeLocation->{branch};
-  return if $s->{branchcode};
+  if (MMT::Config::patronHomeLibrary) {
+    $s->{branchcode} = MMT::Config::patronHomeLibrary;
+  }
+  else {
+    my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{home_location});
+    $s->{branchcode} = $branchcodeLocation->{branch};
+    return if $s->{branchcode};
 
-  $s->{branchcode} = $b->{Branchcodes}->translate(@_, '_DEFAULT_'); #Waiting for https://tiketti.koha-suomi.fi:83/issues/3265
+    $s->{branchcode} = $b->{Branchcodes}->translate(@_, '_DEFAULT_'); #Waiting for https://tiketti.koha-suomi.fi:83/issues/3265
+  }
 }
 sub setCategorycode($s, $o, $b) {
   my $patronGroupsBarcodes = $b->{Barcodes}->get($s->{borrowernumber});

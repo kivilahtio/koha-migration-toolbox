@@ -1,6 +1,11 @@
 use MMT::Pragmas;
 
-use Test::Most tests => 2;
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+$ENV{MMT_HOME} = "$FindBin::Bin/../";
+print "\nMMT_HOME => $FindBin::Bin/../\n";
+
+use Test::Most tests => 3;
 
 use MMT::MARC::Record;
 use MMT::Koha::Holding;
@@ -14,8 +19,8 @@ my @records = (
   <controlfield tag="005">20150520100954.0</controlfield>
   <controlfield tag="008">0206282p    8   4001aufin0000000</controlfield>
   <datafield tag="852" ind1="8" ind2=" ">
-    <subfield code="a">Hamka</subfield>
-    <subfield code="b">Hamkavana</subfield>
+    <subfield code="a">Hamkl</subfield>
+    <subfield code="b">Hamklmhl</subfield>
     <subfield code="h">371.3</subfield>
     <subfield code="i">TOISKALLIO</subfield>
   </datafield>
@@ -103,6 +108,35 @@ subtest "Parse MARC records", sub {
   is($r->docId, '150628', 'r0 - docId');
 
   is(MMT::Koha::Holding::serialize({r => $r}), $records[1], 'r1 - serialized');
+};
+
+subtest "Field 852 - Voyager location to Koha", sub {
+  require MMT::TranslationTable::LocationId;
+  require MMT::Koha::Holding::HAMK;
+  my $TTLocationId = MMT::TranslationTable::LocationId->new();
+  my $builder = {LocationId => $TTLocationId};
+  my $kohaObject = MMT::Koha::Holding->new();
+  $kohaObject->{id} = 1001;
+  my $record = MMT::MARC::Record->newFromXml(\$records[0]);
+
+  MMT::Koha::Holding::HAMK::transform($kohaObject, $record, $builder);
+  my $f = $record->fields('852');
+
+  testSubfields($f->[0]->getAllSubfields, [
+    ['a', 'FI-Hamk'],
+    ['b', 'HAMKL'],
+    ['b', 'LIN'],
+    ['c', 'MUS'],
+    ['h', '371.3'],
+    ['i', 'TOISKALLIO'],
+    ['n', 'fi'],
+  ]);
+
+  MMT::Koha::Holding::HAMK::transform($kohaObject, $record, $builder);
+
+  $f->[0]->deleteSubfield( $_ ) for @{$f->[0]->subfields('b')};
+  $f->[0]->deleteSubfield( $_ ) for @{$f->[0]->subfields('b')};
+  MMT::Koha::Holding::HAMK::transform($kohaObject, $record, $builder);
 };
 
 sub testFields($fs, $tests) {

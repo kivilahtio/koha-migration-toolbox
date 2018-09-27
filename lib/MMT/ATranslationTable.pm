@@ -76,6 +76,19 @@ rules.
 my $re_isSubroutineCall = qr{(.+)\(\s*(.*)\s*\)$};
 sub translate($s, $kohaObject, $voyagerObject, $builder, $val, @otherArgs) {
   my $kohaVal = $s->{_mappings}->{$val} if defined($val);
+
+  #Dereference references to reach the real rule
+  my $depth = 0;
+  while (defined($kohaVal) && $kohaVal =~ /^ref\((.+?)\)$/) {
+    $kohaVal = $s->{_mappings}->{$1} if defined($1);
+    $log->trace("Tracing reference '$1' to '$kohaVal'");
+
+    if ($depth++ > 10) {
+      $log->fatal(ref($s)." is trying to translate value '".($val ? $val : 'undef')."', but there is a mapping table reference loop!");
+      last;
+    }
+  }
+
   #Check if using the fallback catch-all -value
   if (not(defined($kohaVal)) ||
       ($val eq '' && not(defined($kohaVal)))) {

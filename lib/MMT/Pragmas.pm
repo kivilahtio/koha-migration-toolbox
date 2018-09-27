@@ -24,6 +24,7 @@ sub import {
 
   #External modules
   Data::Dumper->import::into($target);
+  Data::Printer->import::into($target);
   Scalar::Util->import::into($target, 'blessed', 'weaken');
   Log::Log4perl->import::into($target);
 

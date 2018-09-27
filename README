@@ -64,6 +64,16 @@ b) Commands to Run
 
 0. Run INSTALL.sh
 
+NB! If installing module 'Carp::Always::Color' fails, change line
+
+cpanm -L extlib --installdeps .
+
+to
+
+cpanm -L extlib --force --installdeps .
+
+and re-run the script.
+
 0. Install the VoyagerDB extraction script
 
 - Configure ssh-connection to the Voyager DB-server from the Koha-server.

@@ -18,6 +18,9 @@ MMT::Config - Manage app-wide config
 
 our $config;
 
+sub defaultReplacementPrice() {
+  return $config->{defaultReplacementPrice};
+}
 sub getEffectiveUser() {
   return $ENV{LOGNAME} || $ENV{USER} || getpwuid($<);
 }
@@ -26,6 +29,9 @@ sub mainConfigFile() {
 }
 sub voyagerExportDir() {
   return $config->{voyagerExportDir};
+}
+sub holdingsTransformationModule() {
+  return $config->{holdingsTransformationModule};
 }
 sub kohaImportDir() {
   return $config->{kohaImportDir};
@@ -47,6 +53,9 @@ sub exportPipelineScript() {
 }
 sub importPipelineScript() {
   return $config->{importPipelineScript};
+}
+sub patronHomeLibrary() {
+  return $config->{patronHomeLibrary};
 }
 sub workers() {
   return $config->{workers};
