@@ -208,73 +208,79 @@ sub subfield {
   die "parameter \$fCode is undefined" unless defined($fCode);
   die "parameter \$sfCode is undefined" unless defined($sfCode);
 
+  $$xmlPtr =~ m!
+    <datafield\s+tag="$fCode".+?>
+      (.+?)
+    </datafield>
+  !smx;
+  my $field = $1;
+  my $oldField = $1;
+
+  return undef if (not($field) && not($content)); #If we are looking for the subfield value, return nothing because there is no field
+
   unless (defined($content)) {
-    unless ($$xmlPtr =~ m!
-(                                                   #Lookbehind, find a reliably uniquely identifiable position to alter with precision (nooo... Variable length lookbehind not implemented in regex)
-  <datafield\s+tag="$fCode".+?>                     #Find the correct datafield
-    .+?                                             #Rewind until the correct subfield is found
-    <subfield\s+code="$sfCode">                     #Correct subfield found
-)                                                   #Terminate lookbehind
-    (.*?)                                           #Target acquired
-(?=                                                 #Lookahead to substitute only the subfield contents
-    </subfield>                                     #
-)                                                   #Terminate lookahead
-!smx) {
+    unless ($field =~ m!
+      <subfield\s+code="$sfCode">                     #Correct subfield found
+        (.*?)                                         #Target acquired
+      </subfield>                                     #Subfield closes
+    !smx) {
       return undef;
     }
-    return $2;
+    return $1;
   }
 
-  # Replace an existing field
-  if ($$xmlPtr =~ s!
-(                                                   #Lookbehind, find a reliably uniquely identifiable position to alter with precision (nooo... Variable length lookbehind not implemented in regex)
-  <datafield\s+tag="$fCode".+?>                     #Find the correct datafield
-    .+?                                             #Rewind until the correct subfield is found
-    <subfield\s+code="$sfCode">                     #Correct subfield found
-)                                                   #Terminate lookbehind
-    .*?                                             #Substitution target acquired
-(?=                                                 #Lookahead to substitute only the subfield contents
-    </subfield>                                     #
-)                                                   #Terminate lookahead
-!$1$content!smx) {
-    return 'replace';
-  }
+  if ($field) {
+    # Replace an existing field
+    if ($field =~ s!
+      (                                                     #Lookbehind for the subfield start tag (nooo... Variable length lookbehind not implemented in regex)
+        <subfield\s+code="$sfCode"\s*>                      #Correct subfield found
+      )                                                     #Lookbehind closes
+        .*?                                                 #Target acquired
+      (?=                                                   #Lookahead to substitute only the subfield contents
+        </subfield>                                         #Subfield closes
+      )                                                     #Terminate lookahead
+    !$1$content!smx) {
+      $$xmlPtr =~ s!\Q$oldField\E!$field!sm;
+      return 'replace';
+    }
 
-  _getPadding($xmlPtr) unless defined($_p); #Padding is needed only now, so avoid calculating it until necessary
+    _getPadding($xmlPtr) unless defined($_p); #Padding is needed only now, so avoid calculating it until necessary
 
-  #Append a subfield after some other
-  if ($position->{after}) {
+    #Append a subfield after some other
+    if ($position->{after}) {
+      if ($field =~ s!
+        (                                                   #Lookbehind, find a reliably uniquely identifiable position to alter with precision (nooo... Variable length lookbehind not implemented in regex)
+            .*?                                             #Rewind until the desired subfield is found
+            <subfield\s+code="$position->{after}"\s*>       #Correct subfield found
+              .*?
+            </subfield>                                     #And closed
+        )                                                   #Terminate lookbehind
+                                                            #Substitution target acquired
+      !$1\n$_p$_p<subfield code="$sfCode">$content</subfield>!smx) {
+        $$xmlPtr =~ s!\Q$oldField\E!$field!sm;
+        return 'after';
+      }
+    }
+
+    #Append a subfield by default
     if ($$xmlPtr =~ s!
-(                                                   #Lookbehind, find a reliably uniquely identifiable position to alter with precision (nooo... Variable length lookbehind not implemented in regex)
-(\s*)<datafield\s+tag="$fCode".+?>                  #Find the correct datafield, capture the indentation depth
-      .+?                                           #Rewind until the desired subfield is found
-      <subfield\s+code="$position->{after}">        #Correct subfield found
-      .*?</subfield>\s+                             #And closed
-)                                                   #Terminate lookbehind
-                                                    #Substitution target acquired
-!$1  <subfield code="$sfCode">$content</subfield>$2!smx) {
-      return 'after';
+      (                                                   #Lookbehind, find a reliably uniquely identifiable position to alter with precision (nooo... Variable length lookbehind not implemented in regex)
+        <datafield\s+tag="$fCode".+?>                     #Find the correct datafield, capture the indentation depth
+          .*?                                             #Rewind until the end of this datafield
+      )                                                   #Terminate lookbehind
+                                                          #Substitution target acquired
+      (?=                                                 #Lookahead to substitute only the subfield contents
+        </datafield>                                      #
+      )                                                   #Terminate lookahead
+      !$1$_p<subfield code="$sfCode">$content</subfield>\n$_p!smx) {
+      return 'last';
     }
   }
-
-  #Append a subfield by default
-  if ($$xmlPtr =~ s!
-(                                                   #Lookbehind, find a reliably uniquely identifiable position to alter with precision (nooo... Variable length lookbehind not implemented in regex)
-(\s*)<datafield\s+tag="$fCode".+?>                  #Find the correct datafield, capture the indentation depth
-    .+?                                             #Rewind until the end of this datafield
-)                                                   #Terminate lookbehind
-                                                    #Substitution target acquired
-(                                                   #Lookahead to substitute only the subfield contents
-\s*</datafield>                                     #
-)                                                   #Terminate lookahead
-!$1$2  <subfield code="$sfCode">$content</subfield>$3!smx) {
-    return 'last';
+  else { #There is no field
+    return $self->datafield($xmlPtr, $fCode, $sfCode, $content, $position);
   }
 
-  #Probably this is because there is no such field. Adding the whole shebang.
-  return $self->datafield($xmlPtr, $fCode, $sfCode, $content, $position);
-
-  #die "Unable to set the subfield '$fCode\$$sfCode' with content '$content' for record:\n$$xmlPtr\n!!";
+  die "Unable to set the subfield '$fCode\$$sfCode' with content '$content' for record:\n$$xmlPtr\n!!";
 }
 
 return 1;

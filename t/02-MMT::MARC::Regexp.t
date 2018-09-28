@@ -110,10 +110,70 @@ RECORD
     my $xml = $records[0];
     is(MMT::MARC::Regex->subfield(\$xml, '852', 'h'), '371.3',      'Get 852$h');
     is(MMT::MARC::Regex->subfield(\$xml, '852', 'i'), 'TOISKALLIO', 'Get 852$i');
+
     is(MMT::MARC::Regex->subfield(\$xml, '852', 'h', '84.2'),                'replace',    'replace subfield 852$h 84.2');
+    eq_or_diff($xml, <<RECORD, 'Record ok');
+<record format="MARC21" type="Bibliographic" xmlns="http://www.loc.gov/MARC21/slim">
+  <leader>00181cx  a22000853  4500</leader>
+  <controlfield tag="001">3</controlfield>
+  <controlfield tag="004">14</controlfield>
+  <controlfield tag="005">20150520100954.0</controlfield>
+  <controlfield tag="008">asd</controlfield>
+  <datafield tag="852" ind1="8" ind2=" ">
+    <subfield code="h">84.2</subfield>
+    <subfield code="i">TOISKALLIO</subfield>
+  </datafield>
+</record>
+RECORD
+
     is(MMT::MARC::Regex->subfield(\$xml, '852', 'i', 'POTTA'),               'replace',    'replace subfield 852$i POTTA');
+    eq_or_diff($xml, <<RECORD, 'Record ok');
+<record format="MARC21" type="Bibliographic" xmlns="http://www.loc.gov/MARC21/slim">
+  <leader>00181cx  a22000853  4500</leader>
+  <controlfield tag="001">3</controlfield>
+  <controlfield tag="004">14</controlfield>
+  <controlfield tag="005">20150520100954.0</controlfield>
+  <controlfield tag="008">asd</controlfield>
+  <datafield tag="852" ind1="8" ind2=" ">
+    <subfield code="h">84.2</subfield>
+    <subfield code="i">POTTA</subfield>
+  </datafield>
+</record>
+RECORD
+
     is(MMT::MARC::Regex->subfield(\$xml, '852', 't', 'dik'),                 'last',       'last subfield 852$t dik');
-    is(MMT::MARC::Regex->subfield(\$xml, '852', 'n', 'fi', {after => 't'}),  'after',      'before subfield 852$n fi');
+    eq_or_diff($xml, <<RECORD, 'Record ok');
+<record format="MARC21" type="Bibliographic" xmlns="http://www.loc.gov/MARC21/slim">
+  <leader>00181cx  a22000853  4500</leader>
+  <controlfield tag="001">3</controlfield>
+  <controlfield tag="004">14</controlfield>
+  <controlfield tag="005">20150520100954.0</controlfield>
+  <controlfield tag="008">asd</controlfield>
+  <datafield tag="852" ind1="8" ind2=" ">
+    <subfield code="h">84.2</subfield>
+    <subfield code="i">POTTA</subfield>
+    <subfield code="t">dik</subfield>
+  </datafield>
+</record>
+RECORD
+
+    is(MMT::MARC::Regex->subfield(\$xml, '852', 'n', 'fi', {after => 'i'}),  'after',      'after subfield 852$n fi');
+    eq_or_diff($xml, <<RECORD, 'Record ok');
+<record format="MARC21" type="Bibliographic" xmlns="http://www.loc.gov/MARC21/slim">
+  <leader>00181cx  a22000853  4500</leader>
+  <controlfield tag="001">3</controlfield>
+  <controlfield tag="004">14</controlfield>
+  <controlfield tag="005">20150520100954.0</controlfield>
+  <controlfield tag="008">asd</controlfield>
+  <datafield tag="852" ind1="8" ind2=" ">
+    <subfield code="h">84.2</subfield>
+    <subfield code="i">POTTA</subfield>
+    <subfield code="n">fi</subfield>
+    <subfield code="t">dik</subfield>
+  </datafield>
+</record>
+RECORD
+
     is(MMT::MARC::Regex->subfield(\$xml, '100', 'a', 'PRINKALA', {after => 't'}),  'last', 'new field via subfield 100$a PRINKALA');
 
     eq_or_diff($xml, <<RECORD, 'Record ok');
@@ -126,8 +186,8 @@ RECORD
   <datafield tag="852" ind1="8" ind2=" ">
     <subfield code="h">84.2</subfield>
     <subfield code="i">POTTA</subfield>
-    <subfield code="t">dik</subfield>
     <subfield code="n">fi</subfield>
+    <subfield code="t">dik</subfield>
   </datafield>
   <datafield tag="100" ind1=" " ind2=" ">
     <subfield code="a">PRINKALA</subfield>
