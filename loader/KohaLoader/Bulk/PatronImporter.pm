@@ -141,7 +141,7 @@ sub addBorrowerAttribute($s, $patron, $attribute, $value) {
   $s->{sth_addBorrowerAttribute}->execute($patron->{borrowernumber}, $attribute, $value) or die("Adding borrower_attribute 'SSN' failed for borrowernumber='".$patron->{borrowernumber}."': ".$s->{sth_addBorrowerAttribute}->errstr());
 }
 
-sub addDefaultAdmin($defaultAdmin) {
+sub addDefaultAdmin($s, $defaultAdmin) {
   my ($username, $password) = split(':', $defaultAdmin);
   INFO "Adding default admin";
   my $dbh = C4::Context->dbh;

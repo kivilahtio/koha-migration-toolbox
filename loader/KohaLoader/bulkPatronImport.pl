@@ -34,7 +34,7 @@ NAME
   $0 - Import patrons en masse
 
 SYNOPSIS
-  perl bulkPatronImport.pl --file $args{importFile} --deduplicate --defaultadmin kalifi:Baba-Gnome \
+  perl bulkPatronImport.pl --file $args{importFile} --deduplicate --defaultAdmin kalifi:Baba-Gnome \
       --bnConversionTable $args{borrowernumberConversionTableFile}
 
   then
@@ -65,7 +65,7 @@ DESCRIPTION
           Should we deduplicate the Patrons? Case-insensitively checks for same
           surname, firstnames, othernames, dateofbirth
 
-    --defaultadmin username:password
+    --defaultAdmin username:password
           Should we populate the default test superlibrarian?
           Defaults to '$args{defaultAdmin}'
 
@@ -103,7 +103,7 @@ HELP
 GetOptions(
     'file:s'                   => \$args{importFile},
     'deduplicate'              => \$args{deduplicate},
-    'defaultadmin:s'           => \$args{defaultAdmin},
+    'defaultAdmin:s'           => \$args{defaultAdmin},
     'b|bnConversionTable:s'    => \$args{borrowernumberConversionTableFile},
     'v|verbosity:i'            => \$verbosity,
     'preserveIds'              => \$args{preserveIds},
@@ -133,6 +133,9 @@ if ($args{uploadSSNKeysOnly}) {
 }
 
 
+$patronImporter->addDefaultAdmin($args{defaultAdmin}) if $args{defaultAdmin};
+
+
 INFO "Opening BorrowernumberConversionTable '$args{borrowernumberConversionTableFile}' for writing";
 my $borrowernumberConversionTable = Bulk::ConversionTable::BorrowernumberConversionTable->new($args{borrowernumberConversionTableFile}, 'write');
 my $now = DateTime->now()->ymd();
@@ -141,8 +144,6 @@ INFO "Now is $now";
 my @guarantees;#Store all the juveniles with a guarantor here.
 #Guarantor is linked via barcode, but it won't be available if a guarantor
 #is added after the guarantee. After all borrowers have been migrated, migrate guarantees.
-
-$patronImporter->addDefaultAdmin() if $args{defaultAdmin};
 
 
 INFO "Looping Patron rows";
