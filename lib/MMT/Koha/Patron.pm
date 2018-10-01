@@ -185,7 +185,12 @@ sub setBorrowernotes($s, $o, $b) {
       push(@sb, ' | ') if (@sb > 0);
       if ($patronNote->{note_type}) {
         if (my $noteType = $b->{NoteType}->translate(@_, $patronNote->{note_type})) {
-          push(@sb, $noteType.': ');
+            if ($noteType eq 'Pop-Up') { # There can be only one popup-message
+              $s->{popup} = $patronNote->{note};
+            }
+            else {
+              push(@sb, $noteType.': ');
+            }
         }
       }
       push(@sb, $patronNote->{note});

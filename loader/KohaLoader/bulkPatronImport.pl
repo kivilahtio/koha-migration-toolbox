@@ -15,6 +15,7 @@ use C4::Members::Attributes;
 use Koha::Patron::Debarments qw/AddDebarment/;
 use Koha::Patron;
 use Koha::Patron::Message::Preferences;
+use Koha::Patron::Message;
 
 use Bulk::ConversionTable::BorrowernumberConversionTable;
 use Bulk::PatronImporter;
@@ -210,6 +211,7 @@ sub processNewFromRow($patron) {
     my $debarments = $patron->{debarments};                             delete $patron->{debarments};
     my $extendedPatronAttributes = $patron->{ExtendedPatronAttributes}; delete $patron->{ExtendedPatronAttributes};
     my $ssn = $patron->{ssn};                                           delete $patron->{ssn};
+    my $popup = $patron->{popup};                                       delete $patron->{popup};
     unless ($old_borrowernumber) {
         eval { $patron->{borrowernumber} = $patronImporter->AddMember($patron) };
         if ($@) {
@@ -266,5 +268,13 @@ sub processNewFromRow($patron) {
                 $patronImporter->addBorrowerAttribute($patron, $attr, $val);
             }
         }
+    }
+
+    if ($popup) {
+      my $popup_message  = Koha::Patron::Message->new({
+        borrowernumber => $patron->{borrowernumber},
+        message_type   => 'L', ## circulation messages for librarians
+        message        => $popup,
+      })->store;
     }
 }
