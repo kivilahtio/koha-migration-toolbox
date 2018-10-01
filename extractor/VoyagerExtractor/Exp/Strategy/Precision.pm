@@ -289,10 +289,12 @@ my %queries = (
     uniqueKey => 0,
     anonymize => {note => 'scramble'},
     sql =>
-      "SELECT    patron_notes.patron_note_id,
-                 patron_notes.patron_id, patron_notes.note, patron_notes.note_type, patron_notes.modify_date
-       FROM      patron_notes 
-       ORDER BY  patron_notes.patron_id,patron_notes.modify_date",
+      "SELECT    patron_notes.patron_note_id,                                                       \n".
+      "          patron_notes.patron_id, patron_notes.note, patron_notes.note_type,                 \n".
+      "          patron_notes.modify_date                                                           \n". #Modify date is used by some other external tooling. Do not remove it.
+      "FROM      patron_notes                                                                       \n".
+      "ORDER BY  patron_notes.patron_id, patron_notes.modify_date                                   \n".
+      "",
   },
   "10-patron_phones.csv" => {
     uniqueKey => 0,

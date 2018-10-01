@@ -50,7 +50,18 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
 
   '--biblios' => {
     help => "Transform biblios using ./usemarcon/rules-*/rules.ini",
-    callback => sub {MMT::Koha::Biblio::transform()},
+    #callback => sub {MMT::Koha::Biblio::usemarcon()},
+    callback => sub {
+      my $builder = MMT::TBuilder->new({
+        type => 'Biblio',
+        inputFile => 'biblios.marcxml',
+        outputFile => 'biblios.marcxml',
+        repositories => [
+          {name => 'SuppressInOpacMap', file => '00-suppress_in_opac_map.csv', keys => ['bib_id', 'mfhd_id', 'location_id']},
+        ],
+      });
+      $builder->build();
+    },
   },
 
 

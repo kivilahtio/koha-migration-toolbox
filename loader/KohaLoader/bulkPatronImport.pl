@@ -25,21 +25,8 @@ my %args = (importFile =>                         ($ENV{MMT_DATA_SOURCE_DIR}//'.
             uploadSSNKeysFile =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Patron.ssn.csv',
             uploadSSNKeysHetulaCredentialsFile => ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Hetula.credentials',
             preserveIds =>                        $ENV{MMT_PRESERVE_IDS} // 0,
+            defaultAdmin =>                       0,
             borrowernumberConversionTableFile =>  ($ENV{MMT_WORKING_DIR}//'.').'/borrowernumberConversionTable');
-
-GetOptions(
-    'file:s'                   => \$args{importFile},
-    'deduplicate'              => \$args{deduplicate},
-    'defaultadmin'             => \$args{defaultAdmin},
-    'b|bnConversionTable:s'    => \$args{borrowernumberConversionTableFile},
-    'v|verbosity:i'            => \$verbosity,
-    'preserveIds'              => \$args{preserveIds},
-    'messagingPreferencesOnly' => \$args{messagingPreferencesOnly},
-    'uploadSSNKeysOnly'        => \$args{uploadSSNKeysOnly},
-    'uploadSSNKeysFile:s'      => \$args{uploadSSNKeysFile},
-    'uploadSSNKeysHetulaCredentialsFile:s' => \$args{uploadSSNKeysHetulaCredentialsFile},
-    'profile'                  => \$args{profile},
-);
 
 my $help = <<HELP;
 
@@ -47,7 +34,7 @@ NAME
   $0 - Import patrons en masse
 
 SYNOPSIS
-  perl bulkPatronImport.pl --file $args{importFile} --deduplicate --defaultadmin \
+  perl bulkPatronImport.pl --file $args{importFile} --deduplicate --defaultAdmin kalifi:Baba-Gnome \
       --bnConversionTable $args{borrowernumberConversionTableFile}
 
   then
@@ -78,8 +65,9 @@ DESCRIPTION
           Should we deduplicate the Patrons? Case-insensitively checks for same
           surname, firstnames, othernames, dateofbirth
 
-    --defaultadmin
-          Should we populate the default test admin 1234?
+    --defaultAdmin username:password
+          Should we populate the default test superlibrarian?
+          Defaults to '$args{defaultAdmin}'
 
     --preserveIds
           Should the source system database IDs be preserved or should they be overridden by defaults from Koha?
@@ -112,6 +100,22 @@ DESCRIPTION
 
 HELP
 
+GetOptions(
+    'file:s'                   => \$args{importFile},
+    'deduplicate'              => \$args{deduplicate},
+    'defaultAdmin:s'           => \$args{defaultAdmin},
+    'b|bnConversionTable:s'    => \$args{borrowernumberConversionTableFile},
+    'v|verbosity:i'            => \$verbosity,
+    'preserveIds'              => \$args{preserveIds},
+    'messagingPreferencesOnly' => \$args{messagingPreferencesOnly},
+    'uploadSSNKeysOnly'        => \$args{uploadSSNKeysOnly},
+    'uploadSSNKeysFile:s'      => \$args{uploadSSNKeysFile},
+    'uploadSSNKeysHetulaCredentialsFile:s' => \$args{uploadSSNKeysHetulaCredentialsFile},
+    'profile'                  => \$args{profile},
+    'version'             => sub { Getopt::Long::VersionMessage() },
+    'h|help'              => sub { print $help."\n"; exit 0; },
+);
+
 require Bulk::Util; #Init logging && verbosity
 
 my $patronImporter = Bulk::PatronImporter->new(\%args);
@@ -129,6 +133,9 @@ if ($args{uploadSSNKeysOnly}) {
 }
 
 
+$patronImporter->addDefaultAdmin($args{defaultAdmin}) if $args{defaultAdmin};
+
+
 INFO "Opening BorrowernumberConversionTable '$args{borrowernumberConversionTableFile}' for writing";
 my $borrowernumberConversionTable = Bulk::ConversionTable::BorrowernumberConversionTable->new($args{borrowernumberConversionTableFile}, 'write');
 my $now = DateTime->now()->ymd();
@@ -137,8 +144,6 @@ INFO "Now is $now";
 my @guarantees;#Store all the juveniles with a guarantor here.
 #Guarantor is linked via barcode, but it won't be available if a guarantor
 #is added after the guarantee. After all borrowers have been migrated, migrate guarantees.
-
-$patronImporter->addDefaultAdmin() if $args{defaultAdmin};
 
 
 INFO "Looping Patron rows";

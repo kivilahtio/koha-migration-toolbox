@@ -2,15 +2,37 @@
 
 cpanm --installdeps .
 
-OP=$1              #Which operation to conduct?
-DATA_SOURCE_DIR=$2 #Where the importable files are?
-WORKING_DIR=$3     #Where to put all the conversion tables and generated logs?
-CONFIRM=$4         #Automatically confirm that you want to cause all kinds of bad side effects on yourself.
-PRESERVE_IDS=$5    #Preserve the original database IDs in Koha for some types of data, such as bibs and patrons.
+# Set parameter defaults
+OP=""
+DATA_SOURCE_DIR="../KohaImports/"
+WORKING_DIR="../KohaMigration/"
+CONFIRM=""
+PRESERVE_IDS=""
+DEFAULT_ADMIN=""
 
 test ! -e "$KOHA_CONF" && echo "\$KOHA_CONF=$KOHA_CONF doesn't exist. Aborting!" exit 2
 KOHA_DB=$(xmllint --xpath "yazgfs/config/database/text()" $KOHA_CONF)
 test -z "$KOHA_DB" && echo "\$KOHA_DB is unknown. Couldn't parse it from \$KOHA_CONF=$KOHA_CONF. Aborting!" exit 3
+
+## getopt --long
+OPTS=`getopt -o o::d::w::cpa:: --long operation::,data-source::,working-dir::,confirm,preserve-ids,default-admin:: --name "$(basename "$0")" -- "$@"`
+if [ $? != 0 ] ; then echo "Failed parsing options." >&2 ; exit 1 ; fi
+
+eval set --$OPTS
+echo $OPTS
+# extract options and their arguments into variables.
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -o|--operation)      OP=$2 ;              shift 2 ;;
+        -d|--data-source)    DATA_SOURCE_DIR=$2 ; shift 2 ;;
+        -w|--working-dir)    WORKING_DIR=$2 ;     shift 2 ;;
+        -a|--default-admin)  DEFAULT_ADMIN=$2 ;   shift 2 ;;
+        -c|--confirm)        CONFIRM=1 ;          shift ;;
+        -p|--preserve-ids)   PRESERVE_IDS=1 ;     shift ;;
+        --) shift ; break ;;
+        *) echo "Internal error! '$1'" ; exit 1 ;;
+    esac
+done
 
 function help {
   echo "NAME"
@@ -21,29 +43,45 @@ function help {
   echo "using this tooling."
   echo ""
   echo "SYNOPSIS"
-  echo "  " $(basename $0) "operation importFilesDir workingDir"
+  echo "  " $(basename $0) "--operation=migrate --data-source=$DATA_SOURCE_DIR --working-dir=$WORKING_DIR --confirm --preserve_ids --default-admin=admin:1234"
   echo ""
   echo "OPTIONS"
   echo ""
-  echo "  operation"
-  echo "    one of backup, restore, migrate, merge"
+  echo "  --operation String"
+  echo "    Which operation to conduct? One of backup, restore, migrate, merge"
   echo ""
-  echo "  importFilesDir"
+  echo "  --data-source Path to directory"
   echo "    Where to find the importable files"
   echo ""
-  echo "  workingDir"
+  echo "  --working-dir Path to dir"
   echo "    Where to write primary key conversion tables and working logs"
+  echo ""
+  echo "  --confirm"
+  echo "    Automatically confirm that you want to cause all kinds of bad side effects on yourself."
+  echo ""
+  echo "  --preserve-ids"
+  echo "    Preserve the original database IDs in Koha for some types of data, such as bibs and patrons"
+  echo ""
+  echo "  --default-admin username:password"
+  echo "    username:password of the default superlibrarian to add automatically, leave as 0|null to ingore adding the default admin"
   echo ""
 }
 
+
 test -z $OP &&                echo -e "\$OP is undefined\n" &&                         help && exit 5
+echo "Doing operation '$OP'"
 test -z $DATA_SOURCE_DIR &&   echo -e "\$DATA_SOURCE_DIR is undefined\n" &&            help && exit 6
+echo "\$DATA_SOURCE_DIR='$DATA_SOURCE_DIR'"
 test -z $WORKING_DIR &&       echo -e "\$WORKING_DIR is undefined\n" &&                help && exit 7
+echo "\$WORKING_DIR='$WORKING_DIR'"
 test ! -r $DATA_SOURCE_DIR && echo -e "\$DATA_SOURCE_DIR=$DATA_SOURCE_DIR is not readable?" && exit 8
 test ! -w $WORKING_DIR &&     echo -e "\$WORKING_DIR=$WORKING_DIR is not writable?"         && exit 9
 
 test -z $PRESERVE_IDS &&      echo -e "\$PRESERVE_IDS not set. Letting Koha generate new primary keys for everything"
 test $PRESERVE_IDS &&         echo -e "\$PRESERVE_IDS set. Preserving legacy database IDs"
+
+test $DEFAULT_ADMIN &&        echo -e "\$DEFAULT_ADMIN scheduled for creation."
+test -z $DEFAULT_ADMIN &&     echo -e "\$DEFAULT_ADMIN not being created."
 
 # Make environment known for bulk*.pl -scripts, so they can infer defaults automatically.
 export MMT_DATA_SOURCE_DIR=$DATA_SOURCE_DIR
@@ -73,7 +111,7 @@ function migrateBulkScripts {
 
     #./bulkItemImport.pl --file $DATA_SOURCE_DIR/Hankinta.migrateme --bnConversionTable $WORKING_DIR/biblionumberConversionTable &> $WORKING_DIR/bulkAcquisitionImport.log
 
-    ./bulkPatronImport.pl --defaultadmin &> $WORKING_DIR/bulkPatronImport.log
+    ./bulkPatronImport.pl --defaultadmin "$DEFAULT_ADMIN" &> $WORKING_DIR/bulkPatronImport.log
     ./bulkPatronImport.pl --messagingPreferencesOnly &> $WORKING_DIR/bulkPatronImportMessagingDefaults.log & #This is forked on the background
     ./bulkPatronImport.pl --uploadSSNKeysOnly &> $WORKING_DIR/bulkPatronImportSSNKeys.log & #This is forked on the background
 

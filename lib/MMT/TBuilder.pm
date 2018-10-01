@@ -121,8 +121,8 @@ sub now($s) {
   return $s->{now};
 }
 
-my $i :shared = 0; #Track how many KohaObjects are processed
-my $w :shared = 0; #Track how many KohaObjects actually survived the build
+my $i = 0; #Track how many KohaObjects are processed
+my $w = 0; #Track how many KohaObjects actually survived the build
 sub build($s) {
   $log->info($s->{type}." - Starting to build");
 
@@ -164,6 +164,7 @@ sub build($s) {
 
       chomp($record);
       $inputQueue->enqueue($record);
+      $i++;
 
       $log->info("Queued $. Records") if ($. % 1000 == 0);
 
@@ -181,9 +182,6 @@ sub build($s) {
     $log->info("Writing remaining '".$outputQueue->pending()."' records");
     $s->_purgeOutputBuffer();
 
-    my $timeneeded = Time::HiRes::gettimeofday - $starttime;
-    $log->info("\n$. records done in $timeneeded seconds\n");
-
     # ((((: Wait for all the threads to finish. :DDDDDDD
     for (@threads) {
       $_->join();
@@ -192,6 +190,8 @@ sub build($s) {
     # :XXXX
   } #<Thread logic ends
 
+  my $timeneeded = Time::HiRes::gettimeofday - $starttime;
+  $log->info("\n$. records done in $timeneeded seconds\n");
 
   close $s->{outFH};
   close $s->{inFH} if $s->{inFH};
@@ -229,7 +229,7 @@ sub task($s, $textPtr) {
   };
   if ($@) {
     if (ref($@) eq 'MMT::Exception::Delete') {
-      $log->debug($ko->logId()." was dropped. Reason: ".$@->error) if $log->is_debug();
+      $log->error($ko->logId()." was dropped. Reason: ".$@->error) if $log->is_error();
     }
     else {
       $log->fatal("Received an unhandled exception '".MMT::Validator::dumpObject($@)."'") if $log->is_fatal();
@@ -333,7 +333,7 @@ sub getMarcFileIterator($s) {
     my $textPtr = $s->_getChunk($s->{inFH});
     return undef unless defined $textPtr;
 
-    $$textPtr =~ s/(?:^\s+)|(?:\s+$)//gsm; #Trim leading and trailing whitespace
+    $$textPtr =~ s/\s+$//gsm; #Trim trailing whitespace
     #Trim colection information or other whitespace fluff
     $$textPtr =~ s!^.+?<record!<record!sm;
     $$textPtr =~ s!</record>.+$!</record>!sm;

@@ -96,7 +96,7 @@ sub key($s, $o) {
   my $key = '';
   foreach my $k (@{$s->keys()}) {
     $log->error("Object '".MMT::Validator::dumpObject($o)."' doesn't have the needed Cache key '$k'") unless defined $o->{$k};
-    $key .= $o->{$k};
+    $key .= $o->{$k}||'NULL';
   }
   return $key;
 }

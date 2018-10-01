@@ -5,7 +5,8 @@ use lib "$FindBin::Bin/../lib";
 $ENV{MMT_HOME} = "$FindBin::Bin/../";
 print "\nMMT_HOME => $FindBin::Bin/../\n";
 
-use Test::Most tests => 3;
+use Test::Most tests => 4;
+use Test::MockModule;
 
 use MMT::MARC::Record;
 use MMT::Koha::Holding;
@@ -47,8 +48,90 @@ RECORD
   </datafield>
 </record>
 RECORD
+  <<RECORD,
+<record>
+  <leader>00181cx  a22000853  4500</leader>
+  <controlfield tag="001">3</controlfield>
+  <controlfield tag="003">14</controlfield>
+  <controlfield tag="005">20150520100954.0</controlfield>
+  <datafield tag="942" ind1="8" ind2=" ">
+    <subfield code="a">Hamkl</subfield>
+  </datafield>
+</record>
+RECORD
 );
 
+subtest "Transform a Bibliographic record", sub {
+  plan tests => 2;
+  require MMT::Cache;                                # Mock the 'SuppressInOpacMap' to return (Y)es
+  my $mmtCache = Test::MockModule->new('MMT::Cache');
+  $mmtCache->mock('get', sub { return [{suppress_in_opac => 'Y'}] });
+
+  require MMT::Koha::Biblio;
+  my $builder = {SuppressInOpacMap => bless({}, 'MMT::Cache')};
+  my $kohaObject = MMT::Koha::Biblio->new();
+  $kohaObject->{id} = 1001;
+  $kohaObject->build(\$records[0], $builder);
+
+  my $record = MMT::MARC::Record->newFromXml($kohaObject->{xmlPtr});
+  my $f003 = $record->getControlfield('003');
+  is($f003->content(), 'FI-Hamk');
+  my $sf942n = $record->getUnrepeatableSubfield('942', 'n');
+  is($sf942n->content(), 'Y');
+
+  is(${$kohaObject->{xmlPtr}}, <<RECORD, 'Record intendation ok');
+<record format="MARC21" type="Bibliographic" xmlns="http://www.loc.gov/MARC21/slim">
+  <leader>00181cx  a22000853  4500</leader>
+  <controlfield tag="001">3</controlfield>
+  <controlfield tag="003">FI-Hamk</controlfield>
+  <controlfield tag="004">14</controlfield>
+  <controlfield tag="005">20150520100954.0</controlfield>
+  <controlfield tag="008">0206282p    8   4001aufin0000000</controlfield>
+  <datafield tag="852" ind1="8" ind2=" ">
+    <subfield code="a">Hamkl</subfield>
+    <subfield code="b">Hamklmhl</subfield>
+    <subfield code="h">371.3</subfield>
+    <subfield code="i">TOISKALLIO</subfield>
+  </datafield>
+  <datafield tag="942" ind1=" " ind2=" ">
+    <subfield code="n">Y</subfield>
+  </datafield>
+</record>
+RECORD
+
+
+  $kohaObject = MMT::Koha::Biblio->new();
+  $kohaObject->{id} = 1002;
+  $kohaObject->build(\$records[2], $builder);
+
+  $record = MMT::MARC::Record->newFromXml($kohaObject->{xmlPtr});
+p($kohaObject->{xmlPtr});
+  $f003 = $record->getControlfield('003');
+  is($f003->content(), 'FI-Hamk');
+  $sf942n = $record->getUnrepeatableSubfield('942', 'n');
+  is($sf942n->content(), 'Y');
+
+  is(${$kohaObject->{xmlPtr}}, <<RECORD, 'Record intendation ok');
+<record format="MARC21" type="Bibliographic" xmlns="http://www.loc.gov/MARC21/slim">
+  <leader>00181cx  a22000853  4500</leader>
+  <controlfield tag="001">3</controlfield>
+  <controlfield tag="003">FI-Hamk</controlfield>
+  <controlfield tag="004">14</controlfield>
+  <controlfield tag="005">20150520100954.0</controlfield>
+  <controlfield tag="008">0206282p    8   4001aufin0000000</controlfield>
+  <datafield tag="852" ind1="8" ind2=" ">
+    <subfield code="a">Hamkl</subfield>
+    <subfield code="b">Hamklmhl</subfield>
+    <subfield code="h">371.3</subfield>
+    <subfield code="i">TOISKALLIO</subfield>
+  </datafield>
+  <datafield tag="942" ind1=" " ind2=" ">
+    <subfield code="n">Y</subfield>
+  </datafield>
+</record>
+RECORD
+};
+exit;
 subtest "isControlField", sub {
   plan tests => 2;
   my $f = MMT::MARC::Field->new('001');

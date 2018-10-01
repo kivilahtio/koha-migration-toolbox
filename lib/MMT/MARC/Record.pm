@@ -124,6 +124,49 @@ sub newFromXml {
   return $self;
 }
 
+=head2 serialize
+
+MARC serialization to MARCXML
+
+COPYRIGHT Koha-Suomi Oy
+Originally from https://github.com/KohaSuomi/OrigoMMTPerl
+
+=cut
+
+sub serialize($r) {
+  my $fieldType;
+
+  my @sb; #Initialize a new StringBuilder(TM) to collect all printable text for one huge IO operation.
+
+  push @sb, '<record format="MARC21" type="Bibliographic" xmlns="http://www.loc.gov/MARC21/slim">'."\n";
+  push @sb, '  <leader>'.$r->leader.'</leader>'."\n";
+
+  ##iterate all the fields
+  foreach my $f ( @{$r->getAllFields("sorted")} ) {
+
+    unless ($f->code()) {
+      $log->warning("Biblio docId '".$r->docId."' has an empty field!");
+    }
+
+    if($f->isControlfield) {
+      push @sb, '  <controlfield tag="'.$f->code.'">';
+      my $sf = $f->getUnrepeatableSubfield('0');
+      push @sb, $sf->content;
+      push @sb, "</controlfield>\n";
+    }
+    else {
+      push @sb, '  <datafield tag="'.$f->code.'" ind1="'.$f->indicator(1).'" ind2="'.$f->indicator(2).'">';
+      foreach my $sf (  @{ $f->getAllSubfields() }  ) {
+        push @sb, "\n".'    <subfield code="'.$sf->code.'">'.$sf->contentXMLEscaped.'</subfield>';
+      } #EndOf subfields iteration
+      push @sb, "\n  </datafield>\n";
+    }
+  } #EndOf fields iteration
+  push @sb, '</record>'."\n";
+
+  return join('',@sb);
+}
+
 #Receives either a 3-digit field identifier or a MARC:Field-object
 sub addField {
   my $self = shift;

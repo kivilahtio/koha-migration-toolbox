@@ -12,6 +12,7 @@ KOHA_HOST="koha-host-server"
 KOHA_HOME="/home/koha"
 KOHA_LOAD_WORKING_DIR="$KOHA_HOME/KohaMigration"
 KOHA_LOADER_DIR="$KOHA_HOME/KohaLoader"
+KOHA_LOADER_CMD="./load.sh --operation=migrate --data-source=$KOHA_HOME/KohaImports --working-dir=$KOHA_LOAD_WORKING_DIR --confirm --preserve-ids --default-admin=0"
 
 HETULA_CREDENTIALS_FILE="Hetula.credentials" #This must be manually created with login information. This filename is hardcoded, don't change it.
 HETULA_CREDS_FILE_IN_TRANSFORMER="$MMT_HOME/KohaImports/$HETULA_CREDENTIALS_FILE"
@@ -44,5 +45,5 @@ ssh $KOHA_HOST "mkdir -p $KOHA_LOAD_WORKING_DIR && chown koha:koha $KOHA_LOAD_WO
 test $? != 0 && echo "Creating load-phase working dir remotely failed!" && exit 13
 
 echo "Start loading"
-ssh $KOHA_HOST "cd $KOHA_LOADER_DIR && su -c './load.sh migrate $KOHA_HOME/KohaImports $KOHA_LOAD_WORKING_DIR I_CONSENT_TO_EVERYTHING' koha"
+ssh $KOHA_HOST "cd $KOHA_LOADER_DIR && su -c '$KOHA_LOADER_CMD' koha"
 test $? != 0 && echo "Loading Koha data failed!" && exit 14

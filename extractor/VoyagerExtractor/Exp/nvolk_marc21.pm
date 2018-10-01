@@ -1513,7 +1513,7 @@ sub nvolk_marc212oai_marc($) {
       if ( $content =~ s/[\x00-\x08\x0B\x0C\x0E-\x1F]//g ) {
 	print STDERR "WARNING: Removing wierd characters (record $id)\n";
       }
-      $output .= "<controlfield tag=\"$tag\">$content</controlfield>\n";
+      $output .= "  <controlfield tag=\"$tag\">$content</controlfield>\n";
     }
     elsif ( $content =~ s/^(.)(.)\x1F// ) {
       my $i1 = $1;
@@ -1532,7 +1532,7 @@ sub nvolk_marc212oai_marc($) {
 	      if ( $sf_data =~ s/[\x00-\x08\x0B\x0C\x0E-\x1F]//g ) {
 		print STDERR "WARNING: Removing wierd characters (record $id)\n";
 	      }
-	      $subfield_contents .= " <subfield code=\"$sf_code\">".html_escapes($sf_data)."</subfield>\n";
+	      $subfield_contents .= "    <subfield code=\"$sf_code\">".html_escapes($sf_data)."</subfield>\n";
 	    }
 	    else {
 	      print STDERR "WARNING: Skipping subfield due to bad subfield code (record $id)\n";
@@ -1544,9 +1544,9 @@ sub nvolk_marc212oai_marc($) {
 	}
       }
       if ( length($subfield_contents) ) {
-	$output .= "<datafield tag=\"$tag\" ind1=\"$i1\" ind2=\"$i2\">\n";
+	$output .= "  <datafield tag=\"$tag\" ind1=\"$i1\" ind2=\"$i2\">\n";
 	$output .= $subfield_contents;
-	$output .= "</datafield>\n";
+	$output .= "  </datafield>\n";
       }
     }
     else {
