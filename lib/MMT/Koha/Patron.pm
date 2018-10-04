@@ -426,16 +426,16 @@ sub setPassword($s, $o, $b) {
 sub setSsn($s, $o, $b) {
   $s->{ssn} = $o->{institution_id}; #For some reason ssn is here
   if ($s->{ssn}) {
-    unless (MMT::Validator::checkIsValidFinnishSSN($s->{ssn})) {
-      #HAMK-3339 - Leave non-valid ssns in Koha.
-      my $notification = "SSN is not a valid Finnish SSN";
-      $log->warn($s->logId()." - $notification");
-
-      $s->concatenate($notification => 'borrowernotes');
-    }
-    else {
+    if (eval { MMT::Validator::checkIsValidFinnishSSN($s->{ssn}) }) {
       $s->_exportSsn($s->{borrowernumber}, $s->{ssn});
       $s->{ssn} = 'via Hetula'; #This ssn is valid, and is transported to Hetula.
+    }
+    else {
+      #HAMK-3339 - Leave non-valid ssns in Koha.
+      my $notification = "SSN is not a valid Finnish SSN";
+      $log->warn($s->logId()." - $notification - $@");
+
+      $s->concatenate($notification => 'borrowernotes');
     }
   }
   else {

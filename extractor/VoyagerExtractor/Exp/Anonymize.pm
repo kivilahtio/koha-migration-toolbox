@@ -152,7 +152,7 @@ sub createSsnIfSsn {
   return undef;
 }
 # From Hetula
-my @ssnValidCheckKeys = (0..9,'A'..'Y');
+my @ssnValidCheckKeys = (0..9,qw(A B C D E F H J K L M N P R S T U V W X Y));
 sub _getSsnChecksum {
   my ($day, $month, $year, $checkNumber) = @_;
 

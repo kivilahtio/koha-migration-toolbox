@@ -31,6 +31,8 @@ Validators beginning with 'check':
 
 =cut
 
+use MMT::Exception::SSN;
+
 sub isArray($array, $variable, $opts) {
   if (!ref $array eq 'ARRAY') {
     _parameterValidationFailed("Variable '$array' is not an ARRAY", $variable, $opts);
@@ -68,12 +70,22 @@ sub checkIsAbsolutePath($value) {
 sub checkIsValidFinnishPhoneNumber($value) {
   return $value =~ m/^((90[0-9]{3})?0|\+358\s?)(?!(100|20(0|2(0|[2-3])|9[8-9])|300|600|700|708|75(00[0-3]|(1|2)\d{2}|30[0-2]|32[0-2]|75[0-2]|98[0-2])))(4|50|10[1-9]|20(1|2(1|[4-9])|[3-9])|29|30[1-9]|71|73|75(00[3-9]|30[3-9]|32[3-9]|53[3-9]|83[3-9])|2|3|5|6|8|9|1[3-9])\s?(\d\s?){4,19}\d$/;
 }
+
+=head2 checkIsValidFinnishSSN
+
+ @param {String} SSN
+ @returns {Boolean} True, if validates ok
+ @throws MMT::Exception::SSN if validation failed.
+
+=cut
+
 sub checkIsValidFinnishSSN($value) {
-  return undef unless ($value =~ /^(\d\d)(\d\d)(\d\d)([+-A])(\d{3})([A-Z0-9])$/);
-  return undef unless (1 <= $1 && $1 <= 31);
-  return undef unless (1 <= $2 && $2 <= 12); # This is not DateTime but this is fast and good enough.
-  return undef unless (0 <= $3 && $3 <= 99);
-  return undef unless $6 eq _getSsnChecksum($1, $2, $3, $5);
+  MMT::Exception::SSN->throw(error => "Given ssn '$value' is not well formed") unless ($value =~ /^(\d\d)(\d\d)(\d\d)([+-A])(\d{3})([A-Z0-9])$/);
+  MMT::Exception::SSN->throw(error => "Given ssn '$value' has a bad day-component") unless (1 <= $1 && $1 <= 31);
+  MMT::Exception::SSN->throw(error => "Given ssn '$value' has a bad month-component") unless (1 <= $2 && $2 <= 12); # This is not DateTime but this is fast and good enough.
+  MMT::Exception::SSN->throw(error => "Given ssn '$value' has a bad year-component") unless (0 <= $3 && $3 <= 99);
+  my $expectedChecksum = _getSsnChecksum($1, $2, $3, $5);
+  MMT::Exception::SSN->throw(error => "Given ssn '$value' has a bad checksum-component. Expected '$expectedChecksum'") unless $6 eq $expectedChecksum;
   return 1;
 }
 
@@ -145,7 +157,7 @@ sub _getEffectiveUsername {
 }
 
 # From Hetula
-my @ssnValidCheckKeys = (0..9,'A'..'Y');
+my @ssnValidCheckKeys = (0..9,qw(A B C D E F H J K L M N P R S T U V W X Y));
 sub _getSsnChecksum {
   my ($day, $month, $year, $checkNumber) = @_;
 
