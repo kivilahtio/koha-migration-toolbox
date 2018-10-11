@@ -7,16 +7,21 @@
 ## it defines mappings from voyager.patron_stat_id -column to Koha's ExtendedPatronAttributes-feature repeatable attribute 'statistic'
 ##
 
-#patron_stat_id,patron_stat_desc
-1:     1:HAMK opiskelija
-2:     2:Toisen asteen opiskelija
-3:     3:Oman amk:n henkilökunta
-4:     4:Ulkopuol. AMK opiskelija
-5:     5:Ulkopuol. AMK henkilökunt
-6:     6:Yo Opisk./Henkilökunta
-7:     7:Muu oppilaitos
-8:     8:Julkishallinnon edustaja
-9:     9:Elinkeinoelämän edustaja
-10:    10:Kotimainen kaukopalveluas
-11:    11:Ulkomainen kaukopalveluas
-12:    12:Muu asiakas
+
+
+#Asiakkaiden tilastoryhmissä (STAT_CAT Statistinen ryhmittely) pitäisi käyttää auktorisoituja arvoja. Lisäsin tilastoryhmät Auktorisoiduiksi arvoiksi nimeltä PATRON_STAT_GROUPS
+
+#Mapataan patron_stat_coden mukaan PATRON_STAT_GROUPS arvoihin:
+#PATRON_STAT_ID,PATRON_STAT_CODE,PATRON_STAT_DESC
+1:  D   # HAMK opiskelija
+2:  M   # Toisen asteen opiskelija
+3:  A   # Oman amk:n henkil?kunta
+4:  G   # Ulkopuol. AMK opiskelija
+5:  F   # Ulkopuol. AMK henkil?kunt
+6:  K   # Yo Opisk./Henkil?kunta
+7:  P   # Muu oppilaitos
+8:  S   # Julkishallinnon edustaja
+9:  R   # Elinkeinoel?m?n edustaja
+10: "N" # Kotimainen kaukopalveluas (N might get confused with NULL, yamllint suggests using "N")
+11: O   # Ulkomainen kaukopalveluas
+12: U   # Muu asiakas
