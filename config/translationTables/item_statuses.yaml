@@ -27,7 +27,7 @@ Claims Returned:        itemlost=4   # 15
 Damaged:                damaged=1    # 16
 Withdrawn:              withdrawn=1  # 17
 At Bindery:             notforloan=2 # 18 - #HAMKilla tässä on henkilökuntakokoelmaa (muilla kirjastoilla arvo olisi 3 eli atbindery)
-Cataloging Review:      notforloan=4 # 19
+Cataloging Review:      notforloan=-4 # 19
 Circulation Review:     notforloan=5 # 20
 Scheduled:              ''           # 21 - #Ei käytössä
 In Process:             notforloan=-2 # 22 - #Hankinnan kautta saapuneiksi käsitellyt
