@@ -182,21 +182,17 @@ sub setBorrowernotes($s, $o, $b) {
   my $patron_notes = $b->{notes}->get($s->{borrowernumber});
   if ($patron_notes) {
     foreach my $patronNote (@$patron_notes) {
-      push(@sb, ' | ') if (@sb > 0);
       if ($patronNote->{note_type}) {
-        if (my $noteType = $b->{NoteType}->translate(@_, $patronNote->{note_type})) {
-            if ($noteType eq 'Pop-Up') { # There can be only one popup-message
-              $s->{popup} = $patronNote->{note};
-            }
-            else {
-              push(@sb, $noteType.': ');
-            }
+        if (my $noteType = $b->{NoteType}->translate(@_, $patronNote->{note_type}, $patronNote)) { #Some notes are handled differently in the translation table
+          push(@sb, $noteType.': '.$patronNote->{note});
         }
       }
-      push(@sb, $patronNote->{note});
+      else {
+        $log->warn($s->logId()." - Has a patron note '".$patronNote->{patron_note_id}."' with no note_type?");
+      }
     }
   }
-  $s->concatenate(join('', @sb) => 'borrowernotes');
+  $s->concatenate(join(' | ', @sb) => 'borrowernotes');
 }
 sub setSort1($s, $o, $b) {
   $s->{sort1} = $o->{patron_id};

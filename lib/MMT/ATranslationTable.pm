@@ -68,6 +68,7 @@ rules.
  @param2 HASHRef, Voyager data row hashified
  @param3 MMT::Builder, Builder configured to build the KohaObject.
  @param4 value to translate
+ @param5... Rest of the parameters are moved to the translation table subroutine hook for a specific value, eg. 'MMT::TranslationTable::NoteType::popUp()'
  @returns the translated value
  @dies $DELETE if the Object in processing should be removed from migration
 
