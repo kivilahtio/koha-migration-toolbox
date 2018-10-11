@@ -77,7 +77,7 @@ and re-run the script.
 0. Install the VoyagerDB extraction script
 
 - Configure ssh-connection to the Voyager DB-server from the Koha-server.
-- Copy the "extract/voyagerDB"-directory to the VoyagerDB-server and configure config.yaml in the copied dir
+- Copy the "extractor/VoyagerExtractor" directory to the VoyagerDB-server and configure the scripts there as per instructions in extractor/VoyagerExtractor/README.
 - Configure the extraction automation script. Set the script used to pull the Voyager data dump to the main configuration at
     ~/MMT-Voyager/config/main.yaml
   For example implementations take a look at
