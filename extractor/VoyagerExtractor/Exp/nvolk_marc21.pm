@@ -52,7 +52,7 @@ use Encode;
 use strict;
 my $debug = 0;
 
-# package Exp::nvolk_marc21;
+package Exp::nvolk_marc21;
 
 #########################################
 sub ere_get_field($$) {
