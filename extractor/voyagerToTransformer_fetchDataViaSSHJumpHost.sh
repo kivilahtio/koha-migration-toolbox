@@ -46,6 +46,7 @@ if [[ ! -z $JUMP_HOST ]]; then
     sshpass -p $SSH_PASSWORD scp -o ProxyCommand="ssh -A -W %h:%p $JUMP_HOST" \
 	    $VOYAGERDB_SERVER:$VOYAGER_MMT_DATA_DIR/voyagerData.zip $MMT_HOME/VoyagerExports/
 else
+    sshpass -p $SSH_PASSWORD scp \
     $VOYAGERDB_SERVER:$VOYAGER_MMT_DATA_DIR/voyagerData.zip ~/MMT-Voyager/VoyagerExports/
 fi
 
