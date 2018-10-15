@@ -211,7 +211,7 @@ sub processNewFromRow($patron) {
     my $debarments = $patron->{debarments};                             delete $patron->{debarments};
     my $extendedPatronAttributes = $patron->{ExtendedPatronAttributes}; delete $patron->{ExtendedPatronAttributes};
     my $ssn = $patron->{ssn};                                           delete $patron->{ssn};
-    my $popup = $patron->{popup};                                       delete $patron->{popup};
+    my $popup_message = $patron->{popup_message};                       delete $patron->{popup_message};
     unless ($old_borrowernumber) {
         eval { $patron->{borrowernumber} = $patronImporter->AddMember($patron) };
         if ($@) {
@@ -270,11 +270,14 @@ sub processNewFromRow($patron) {
         }
     }
 
-    if ($popup) {
-      my $popup_message  = Koha::Patron::Message->new({
+    if ($popup_message) {
+      my $patron_message = Koha::Patron::Message->new({
         borrowernumber => $patron->{borrowernumber},
-        message_type   => 'L', ## circulation messages for librarians
-        message        => $popup,
+        message_type   => 'L', ## circulation messages for librarians, 'B' stands for borrowers
+        message        => $popup_message->{message},
+        message_date   => $popup_message->{message_date},
+        branchcode     => $popup_message->{branchcode},
       })->store;
+      WARN "Patron '".$patron->{cardnumber}."' has a popup message, but adding that failed?: $!" unless $patron_message;
     }
 }

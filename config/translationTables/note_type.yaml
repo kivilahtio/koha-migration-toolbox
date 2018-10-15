@@ -11,5 +11,5 @@
 2:       Address
 3:       Barcode
 4:       Phone
-5:       Pop-Up
+5:       popUp()              # Pop-Up, handle special logic in a separate function.
 6:       Universal Borrowing

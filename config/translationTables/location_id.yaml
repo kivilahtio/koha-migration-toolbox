@@ -54,7 +54,7 @@ Hamkakir: ref(16)
 Hamkaref: ref(17)
 18: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkasal, Visam?ki Salainen,
 Hamkasal: ref(18)
-19: branchLoc(HAMKA, KONVERSIO) #Hamkasai, Sairio K?sikirjasto, # Visamäen käsikirjastoon?
+19: branchLoc(HAMKA, SAIREF) #Hamkasai, Sairio K?sikirjasto,
 Hamkasai: ref(19)
 20: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkaopi, Visam?ki Opinn?ytteet,
 Hamkaopi: ref(20)

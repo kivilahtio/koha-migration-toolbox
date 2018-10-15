@@ -676,6 +676,8 @@ sub extractSerialsMFHD($) {
     sub { #Logic from https://github.com/GeekRuthie/koha-migration-toolbox/blob/master/migration/Voyager/serials_subscriptions_loader.pl#L122
       my ($FH, $id, $record_ptr) = @_;
 
+      if ( $$record_ptr eq '' ) { return; }
+
       my $mfhd_id = '0';
       my $location = '0';
       my $holdings = ''; #Concatenate all individual holdings here for subscription histories

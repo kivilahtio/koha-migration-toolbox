@@ -1115,12 +1115,18 @@ sub marc21_fix_composition($) {
   my @tags = @$tags_ref;
   my @contents = @$contents_ref;
 
+  my $changes = 0;
   for ( my $i=0; $i <= $#tags; $i++ ) {
-    $contents[$i] = unicode_fixes2($contents[$i], 1);
+    my $tmp = unicode_fixes2($contents[$i], 1);
+    if ( $tmp ne $contents[$i] ) {
+      $changes++;
+      $contents[$i] = $tmp;
+    }
   }
-
-  $record = &marc21_leader_directoryarr_fieldsarr2record($leader, \@tags, \@contents);
-
+  if ( $changes ) {
+    $record = &marc21_leader_directoryarr_fieldsarr2record($leader, \@tags, \@contents);
+  }
+  
   return $record;
 }
 
@@ -1467,9 +1473,11 @@ sub encoding_fixes($) {
 
 sub html_escapes($) {
   my $str = $_[0];
-  $str =~ s/\&/\&amp;/g;
-  $str =~ s/</\&lt;/g;
-  $str =~ s/>/\&gt;/g;
+  if ( $str =~ /[<>&]/ ) { # trying to optimize...
+    $str =~ s/\&/\&amp;/g;
+    $str =~ s/</\&lt;/g;
+    $str =~ s/>/\&gt;/g;
+  }
   return $str;
 }
 
@@ -1501,59 +1509,73 @@ sub nvolk_marc212oai_marc($) {
   my @tags = @$tags_ref;
   my @contents = @$contents_ref;
 
-  my $id = marc21_record_get_field($record, '001', undef);
+  my $id = '???'; # marc21_record_get_field($record, '001', undef);
 
-  my $output = "<record xmlns=\"http://www.loc.gov/MARC21/slim\">\n";
-  $output .= "<leader>$leader</leader>\n";
-  my $i;
-  for ( $i=0; $i <= $#tags; $i++ ) {
+  my $clean_up = ( $record =~ /[\x00-\x08\x0B\x0C\x0E-\x1C]/ ? 1 : 0 );
+  
+  my $output = "<record xmlns=\"http://www.loc.gov/MARC21/slim\">\n<leader>$leader</leader>\n";
+
+  my $n_tags = $#tags + 1;
+  if ( $n_tags == 0 ) { die(); }
+  for ( my $i=0; $i < $n_tags; $i++ ) {
     my $tag = $tags[$i];
     my $content = $contents[$i];
     if ( $tag =~ /^00[1-9]$/ ) {
-      if ( $content =~ s/[\x00-\x08\x0B\x0C\x0E-\x1F]//g ) {
-	print STDERR "WARNING: Removing wierd characters (record $id)\n";
+      if ( $tag eq "001" ) { $id = $content; }
+      if ( $clean_up && $content =~ /[\x00-\x08\x0B\x0C\x0E-\x1F]/ ) {
+	print STDERR "WARNING: Removing wierd characters from '$content' (record: $id, tag: $tag) \n";
+	$content =~ s/[\x00-\x08\x0B\x0C\x0E-\x1F]//g;
       }
-      $output .= "  <controlfield tag=\"$tag\">$content</controlfield>\n";
-    }
-    elsif ( $content =~ s/^(.)(.)\x1F// ) {
-      my $i1 = $1;
-      my $i2 = $2;
-
-      # Tee osakentät:
-      my $subfield_contents = '';
-      my @subs = split(/\x1F/, $content);
-      for ( my $j=0; $j <= $#subs; $j++ ) {
-	my $sf = $subs[$j];
-	if ( $sf =~ /^(.)(.*)$/ ) {
-	  my $sf_code = $1;
-	  my $sf_data = $2;
-	  if ( defined($sf_code) ) {
-	    if ( $sf_code =~ /^[a-z0-9]$/ ) {
-	      if ( $sf_data =~ s/[\x00-\x08\x0B\x0C\x0E-\x1F]//g ) {
-		print STDERR "WARNING: Removing wierd characters (record $id)\n";
-	      }
-	      $subfield_contents .= "    <subfield code=\"$sf_code\">".html_escapes($sf_data)."</subfield>\n";
-	    }
-	    else {
-	      print STDERR "WARNING: Skipping subfield due to bad subfield code (record $id)\n";
-	    }
-	  }
-	  else {
-	    print STDERR "WARNING: Skipping subfield due to erronous marc21 (record $id)\n";
-	  }
-	}
-      }
-      if ( length($subfield_contents) ) {
-	$output .= "  <datafield tag=\"$tag\" ind1=\"$i1\" ind2=\"$i2\">\n";
-	$output .= $subfield_contents;
-	$output .= "  </datafield>\n";
-      }
+      $output .= "<controlfield tag=\"$tag\">$content</controlfield>\n";
     }
     else {
-      die("$tag\t'$content'");
+      my $sep = substr($content, 2, 1);
+      if ( $sep eq "\x1F" ) {
+	my $i1 = substr($content, 0, 1);
+	my $i2 = substr($content, 1, 1);
+	# TODO: indicator sanity checks?
+	$content = substr($content, 3); # the rest: subfield contents
+
+	# Tee osakentät:
+	my $subfield_contents = '';
+	my @subs = split(/\x1F/, $content);
+	my $n_subs = $#subs+1;
+
+	for ( my $j=0; $j < $n_subs; $j++ ) {
+	  my $sf = $subs[$j];
+	  if ( length($sf) ) {
+	    # I assume that my earlier /^(.)(.*)$/ was way slower than
+	    # the substr()-based solution below:
+	    my $sf_code = substr($sf, 0, 1); # first char: subfield code
+	    my $sf_data = substr($sf, 1); # the rest: subfield contents
+	    if ( $sf_code =~ /^[a-z0-9]$/ ) {
+	      if ( $clean_up && $sf_data =~ /[\x00-\x08\x0B\x0C\x0E-\x1F]/ ) {
+		print STDERR "WARNING: Removing wierd characters from '$sf_data' (record: $id, tag: $tag$sf_code)\n";
+		$sf_data =~ s/[\x00-\x08\x0B\x0C\x0E-\x1F]//g;
+	      }
+	      if ( $sf_data =~ /[<>&]/ ) {
+		# (check this here to avoid a function call)
+		$sf_data = html_escapes($sf_data);
+	      }
+	      $subfield_contents .= " <subfield code=\"$sf_code\">".$sf_data."</subfield>\n";
+	    }
+	    else {
+	      print STDERR "WARNING: Skipping subfield '$sf_code' (record $id)\n";
+	    }
+	  }
+	}
+	if ( length($subfield_contents) ) {
+	  $output .= "<datafield tag=\"$tag\" ind1=\"$i1\" ind2=\"$i2\">\n" .
+	    $subfield_contents .
+	    "</datafield>\n";
+	}
+      }
+      else {
+	print STDERR "WARNING: Skipping subfield '$content' due to erronous marc21 (record $id)\n";
+      }
     }
   }
-  if ( $i == 0 ) { die(); }
+
   $output .= "</record>\n";
   # Pitääkö nämä klaarata täällä vai missä?
   $output =~ s/'/&#39;/g;
@@ -1562,6 +1584,7 @@ sub nvolk_marc212oai_marc($) {
 
 
 sub nvolk_marc212aleph($) {
+  # TODO: optimize the code here as well, see nvolk_marc212oai_marc($).
   my $record = shift();
   $record = marc21_record_target_aleph($record);
   my ( $leader, $directory, $cfstr ) = marc21_record2leader_directory_fields($record);
@@ -2057,7 +2080,9 @@ sub marc21_record_get_publication_year {
 	    if ( defined($cand) && $cand =~ /^\D*([0-9]{4})\D*$/ ) {
 		my $y264 = $1;
 		my $id = marc21_record_get_field($record, '001', undef);
-		print STDERR "$id\t264 I2=1\$c '$cand' overrides 008 '$y008'\n";
+		if ( $y008 ne 'uuuu'&& $y008 ne '    ' ) {
+		  print STDERR "$id\t264 I2=1\$c '$cand' overrides 008 '$y008'\n";
+		}
 		return $y264;
 	    }
 	}
@@ -3005,7 +3030,7 @@ sub marc21_record_replace_field_with_field($$$$) {
 sub marc21_remove_duplicate_fields($$) {
   my ( $record, $tag ) = @_;
   my $id = 0;
-  my @fields = marc21_record_get_fields($record, '035', undef);
+  my @fields = marc21_record_get_fields($record, $tag, undef);
   for ( my $i = $#fields; $i > 0; $i-- ) {
     my $f1 = $fields[$i];
     my $poista = 0;
@@ -3019,8 +3044,8 @@ sub marc21_remove_duplicate_fields($$) {
       if ( $id == 0 ) {
 	$id = marc21_record_get_field($record, '001', undef);
       }
-      print STDERR "$id\tPoistettu 035 '", $fields[$i], "'\n";
-      $record = marc21_record_remove_nth_field($record, '035', '', $i);
+      print STDERR "$id\tPoistettu $tag '", $fields[$i], "'\n";
+      $record = marc21_record_remove_nth_field($record, $tag, '', $i);
     }
   }
   return $record;
@@ -3057,7 +3082,9 @@ sub get_773h_from_host($) {
   if ( !defined($h) ) { return ''; }
 
   $h =~ s/[ \.:;\+]*$//;
-  $h =~ s/(\S)\s*\([^\)]*\)$/$1/; # loppusulut (kesto) pois.
+  if ( $h =~ s/(\S)\s*\([^\)]*\)$/$1/ ) { # loppusulut (kesto) pois.
+    $h =~ s/[ \.:;\+]*$//;
+  }
   return $h;
 }
 
@@ -3258,6 +3285,7 @@ sub create773($$$) {
       # . " -\x1Fnnvolk 790"
 
     $new773 =~ s/\.$//;
+    $new773 =~ s/\s+/ /g;
     return $new773;
   }
   else {
