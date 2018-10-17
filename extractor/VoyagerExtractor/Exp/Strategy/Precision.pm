@@ -109,13 +109,28 @@ my %queries = (
   "02-items_last_borrow_date.csv" => { #This needs to be separate from the 02-items.csv, because otherwise Oracle drops Item-rows with last_borrow_date == NULL, even if charge_date is NULL in both the comparator and the comparatee.
     uniqueKey => 0,
     sql =>
+      #
+      # Pick last checkin location normally from the old issues table.
+      #
       "SELECT    circ_trans_archive.item_id, max(circ_trans_archive.charge_date) as last_borrow_date \n".
-      "FROM      circ_trans_archive \n".
-      "LEFT JOIN item ON (circ_trans_archive.item_id = item.item_id) \n".
-      "WHERE     circ_trans_archive.charge_date IS NOT NULL \n".
-      "      AND item.item_id IS NOT NULL \n".
-      "GROUP BY  circ_trans_archive.item_id \n".
-      "ORDER BY  circ_trans_archive.item_id ASC \n",
+      "FROM      circ_trans_archive                                                                  \n".
+      "LEFT JOIN item ON (circ_trans_archive.item_id = item.item_id)                                 \n".
+      "WHERE     circ_trans_archive.charge_date IS NOT NULL                                          \n".
+      "      AND item.item_id IS NOT NULL                                                            \n".
+      "GROUP BY  circ_trans_archive.item_id                                                          \n".
+      "ORDER BY  circ_trans_archive.item_id ASC                                                      \n".
+      "                                                                                              \n".
+      "UNION                                                                                         \n".
+      "                                                                                              \n".
+      #
+      # Voyager doesn't add a circ_trans_archive-row when the item which is "IN TRANSIT ON HOLD" arrives to the pickup location.
+      # One must know to infer that such Items that are waiting for pickup must naturally be in the correct pickup location.
+      #
+      "SELECT    hold_recall_items.item_id, hold_recall_items.hold_recall_status_date as last_borrow_date \n".
+      "FROM      hold_recall_items                                                                        \n".
+      "WHERE     hold_recall_items.hold_recall_status = 2    \n". # 2 = 'Pending'. In Voyager-speak this is a hold which is waiting for pickup.
+      "                                                      \n".
+      "",
   },
   "02a-item_notes.csv" => {
     uniqueKey => -1, #One Item can have multiple item_notes and there is no unique key in the item_notes table
@@ -205,44 +220,7 @@ my %queries = (
                OR
                circ_trans_archive.circ_transaction_id IS NULL
              )
-
-      UNION
-      ".
-    #sql =>
-      # Call slips in transfer
-      "                                                                                                                  \n".
-      "SELECT    item.item_id, item_status.item_status,                                                                  \n".
-      "          item_status.item_status_date, circ_trans_archive.discharge_date,                                        \n".
-      "          circ_trans_archive.discharge_location,                                                                  \n". # call_slip.location_id might be a good substitute for this.
-      "          call_slip.pickup_location_id as to_location,                                                            \n".
-      "          call_slip.call_slip_id                                                                                  \n". # This is a call_slip request related transfer
-      "FROM      call_slip                                                                                               \n".
-      "LEFT JOIN call_slip_status_type ON (call_slip.status       = call_slip_status_type.status_type)                   \n".
-      "LEFT JOIN hold_recall           ON (call_slip.call_slip_id = hold_recall.call_slip_id)                            \n".
-      "LEFT JOIN circ_transactions     ON (call_slip.patron_id          = circ_transactions.patron_id AND                \n". # There is no direct link between a hold_recall|call_slip, but we can be pretty certain that a combination of
-      "                                    call_slip.item_id            = circ_transactions.item_id AND                  \n". # having the same patron, item and checkout day
-      "                                    TRUNC(call_slip.status_date) = TRUNC(circ_transactions.charge_date)           \n". # is a pretty strong quarantee that the attached circ_transaction satisifed the hold_recall.
-      "                                   )                                                                              \n".
-      "LEFT JOIN item                  ON (item.item_id               = call_slip.item_id)                               \n".
-      "LEFT JOIN item_status           ON (item_status.item_id        = item.item_id)                                    \n".
-      "LEFT JOIN item_status_type      ON (item_status.item_status    = item_status_type.item_status_type)               \n".
-      "LEFT JOIN circ_trans_archive    ON (circ_trans_archive.item_id = item.item_id)                                    \n".
-      "WHERE     ( TRUNC(circ_trans_archive.discharge_date) = TRUNC(item_status.item_status_date)                        \n". # Finding the last location where this Item has been checked in to.
-      "            OR                                                                                                    \n".
-      "            circ_trans_archive.circ_transaction_id = ( SELECT MAX(circ_transaction_id)                            \n".
-      "                                                       FROM   circ_trans_archive                                  \n".
-      "                                                       WHERE item_id = item.item_id                               \n".
-      "                                                     )                                                            \n".
-      "            OR                                                                                                    \n".
-      "            circ_trans_archive.circ_transaction_id IS NULL                                                        \n".
-      "          )                                                                                                       \n".
-      "     AND  item_status.item_status = (SELECT MIN(item_status) FROM item_status WHERE item_id = item.item_id)       \n". # Simply flatten possible multiple item status rows. Item status is not important for call slip requested items that might be in transfer.
-      "     AND  call_slip_status_type.status_desc = 'Filled'                                                            \n". # Only call slips that don't have an attached hold_recall yet
-      "     AND  hold_recall.hold_recall_id IS NULL                                                                      \n". # and the requested item has not been checked out by the requestor
-      "     AND  circ_transactions.circ_transaction_id IS NULL                                                           \n". # are in transfer.
-      "                                                                                                                  \n".
-      "ORDER BY  item_id                                                                                                 \n".
-      "",
+      ",
   },
   "05-patron_addresses.csv" => {
     uniqueKey => 0,
@@ -490,9 +468,9 @@ my %queries = (
       "  LEFT JOIN call_slip_status_type ON (call_slip.status       = call_slip_status_type.status_type)                                    \n".
       "  LEFT JOIN hold_recall           ON (call_slip.call_slip_id = hold_recall.call_slip_id)                                             \n".
       "  LEFT JOIN circ_transactions     ON (call_slip.patron_id = circ_transactions.patron_id AND                                          \n". # There is no direct link between a hold_recall|call_slip, but we can be pretty certain that a combination of
-      "                                      call_slip.item_id = circ_transactions.item_id AND                                              \n". # having the same patron, item and checkout day
-      "                                      TRUNC(call_slip.status_date) = TRUNC(circ_transactions.charge_date)                            \n". # is a pretty strong quarantee that the attached circ_transaction satisifed the hold_recall.
-      "                                     )                                                                                               \n".
+      "                                      call_slip.item_id = circ_transactions.item_id                                                  \n". # having the same patron and item
+      #"                                      AND TRUNC(call_slip.status_date) = TRUNC(circ_transactions.charge_date)                        \n". # (requiring the same checkout day is not necessary)
+      "                                     )                                                                                               \n". # is a pretty strong quarantee that the attached circ_transaction satisfied the hold_recall.
 #      "  ORDER BY  call_slip.call_slip_id, call_slip.item_id                                                                                \n".
 #      "",
       ")                                                                                                                                    \n".
