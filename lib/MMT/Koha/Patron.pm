@@ -387,14 +387,16 @@ sub setPhones($s, $o, $b) {
 }
 my $re_ssnToDob = qr/^(\d\d)(\d\d)(\d\d)([-+A])/;
 sub setDateofbirth($s, $o, $b) {
-  $s->{dateofbirth} = $o->{birth_date};
-  if (not($s->{dateofbirth}) && $o->{institution_id}) { #Try to get dob from ssn
+  if (not($o->{birth_date}) && $o->{institution_id}) { #Try to get dob from ssn
     if ($o->{institution_id} && not($o->{institution_id} =~ $re_ssnToDob)) {
       $log->error($s->logId()." making the date of birth from ssn failed, because the ssn '".$o->{institution_id}."' is unparseable");
       return undef;
     }
     my $year = ($4 eq 'A') ? "20$3" : "19$3";
     $s->{dateofbirth} = "$year-$2-$1";
+  }
+  else {
+    $s->{dateofbirth} = $o->{birth_date};
   }
   if (not($s->{dateofbirth}) && $o->{institution_id}) {
     $log->warn("Patron '".$s->logId()."' has no dateofbirth and it couldn't be salvaged from the ssn.");
