@@ -42,8 +42,8 @@ if [[ ! -z $JUMP_HOST ]]; then
     sshpass -p $SSH_PASSWORD ssh -o ProxyCommand="ssh -A -W %h:%p $JUMP_HOST" $VOYAGERDB_SERVER \
 	    "cd $VOYAGER_MMT_DIR/VoyagerExtractor && time $EXTRACT_CMD && cd $VOYAGER_MMT_DATA_DIR && zip voyagerData.zip *.marcxml *.csv && rm *.csv *.marcxml"
 else
-      sshpass -p $SSH_PASSWORD ssh $VOYAGERDB_SERVER \
-    "cd $VOYAGER_MMT_DIR/VoyagerExtractor && time $EXTRACT_CMD && cd $VOYAGER_MMT_DATA_DIR && zip voyagerData.zip *.xml *.csv && rm *.csv *.xml"
+    sshpass -p $SSH_PASSWORD ssh $VOYAGERDB_SERVER \
+	    "cd $VOYAGER_MMT_DIR/VoyagerExtractor && time $EXTRACT_CMD && cd $VOYAGER_MMT_DATA_DIR && zip voyagerData.zip *.marcxml *.csv && rm *.csv *.marcxml"
 fi
 
 #Download the data
