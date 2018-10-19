@@ -52,7 +52,7 @@ use Encode;
 use strict;
 my $debug = 0;
 
-package Exp::nvolk_marc21;
+# package Exp::nvolk_marc21;
 
 #########################################
 sub ere_get_field($$) {
@@ -1509,22 +1509,34 @@ sub nvolk_marc212oai_marc($) {
   my @tags = @$tags_ref;
   my @contents = @$contents_ref;
 
-  my $id = '???'; # marc21_record_get_field($record, '001', undef);
-
-  my $clean_up = ( $record =~ /[\x00-\x08\x0B\x0C\x0E-\x1C]/ ? 1 : 0 );
-  
-  my $output = "<record xmlns=\"http://www.loc.gov/MARC21/slim\">\n<leader>$leader</leader>\n";
-
   my $n_tags = $#tags + 1;
   if ( $n_tags == 0 ) { die(); }
+
+
+
+  my $clean_up = ( $record =~ /[\x00-\x08\x0B\x0C\x0E-\x1C]/ ? 1 : 0 );
+  my $clean_up2 = ( $record =~ /[<>&]/ ? 1 : 0 );
+
+  my $output = "<record xmlns=\"http://www.loc.gov/MARC21/slim\">\n<leader>$leader</leader>\n";
+
+  my $id = '???'; # marc21_record_get_field($record, '001', undef);
+
   for ( my $i=0; $i < $n_tags; $i++ ) {
     my $tag = $tags[$i];
     my $content = $contents[$i];
     if ( $tag =~ /^00[1-9]$/ ) {
       if ( $tag eq "001" ) { $id = $content; }
-      if ( $clean_up && $content =~ /[\x00-\x08\x0B\x0C\x0E-\x1F]/ ) {
+      if ( $content =~ /[\x00-\x08\x0B\x0C\x0E-\x1F]/ ) {
 	print STDERR "WARNING: Removing wierd characters from '$content' (record: $id, tag: $tag) \n";
 	$content =~ s/[\x00-\x08\x0B\x0C\x0E-\x1F]//g;
+	$clean_up = 1;
+      }
+      # Normalisoidaanko entiteetit, ei niitä pitäisi olla, mutta
+      # toisaalta kiinteämittaisia kenttiä on niin vähän, ettei tehojutut
+      # haittaa...
+      if ( $clean_up2 ) {
+	$content = html_escapes($content);
+	$clean_up = 1;
       }
       $output .= "<controlfield tag=\"$tag\">$content</controlfield>\n";
     }
@@ -1549,17 +1561,17 @@ sub nvolk_marc212oai_marc($) {
 	    my $sf_code = substr($sf, 0, 1); # first char: subfield code
 	    my $sf_data = substr($sf, 1); # the rest: subfield contents
 	    if ( $sf_code =~ /^[a-z0-9]$/ ) {
-	      if ( $clean_up && $sf_data =~ /[\x00-\x08\x0B\x0C\x0E-\x1F]/ ) {
+	      if ( $sf_data =~ /[\x00-\x08\x0B\x0C\x0E-\x1F]/ ) {
 		print STDERR "WARNING: Removing wierd characters from '$sf_data' (record: $id, tag: $tag$sf_code)\n";
 		$sf_data =~ s/[\x00-\x08\x0B\x0C\x0E-\x1F]//g;
 	      }
-	      if ( $sf_data =~ /[<>&]/ ) {
-		# (check this here to avoid a function call)
+	      if ( $clean_up2 ) {
 		$sf_data = html_escapes($sf_data);
 	      }
 	      $subfield_contents .= " <subfield code=\"$sf_code\">".$sf_data."</subfield>\n";
 	    }
 	    else {
+	      $clean_up = 1;
 	      print STDERR "WARNING: Skipping subfield '$sf_code' (record $id)\n";
 	    }
 	  }
@@ -1572,6 +1584,7 @@ sub nvolk_marc212oai_marc($) {
       }
       else {
 	print STDERR "WARNING: Skipping subfield '$content' due to erronous marc21 (record $id)\n";
+	$clean_up = 1;
       }
     }
   }
@@ -2606,6 +2619,30 @@ sub is_host($) {
   return 0;
 }
 
+sub is_auth($) {
+  my $record = $_[0];
+  if ( $record =~ /^.{6}z/ ) {
+    return 1;
+  }
+  return 0;
+}
+
+sub is_bib($) {
+  my $record = $_[0];
+  if ( $record =~ /^.{6}[acdefgijkmoprt]/ ) {
+    return 1;
+  }
+  return 0;
+}
+
+sub is_holding($) {
+  my $record = $_[0];
+  if ( $record =~ /^.{6}[uvxy]/ ) {
+    return 1;
+  }
+  return 0;
+}
+
 sub is_component_part($) {
   my $record = $_[0];
   if ( $record =~ /^.{7}[ab]/ ) {
@@ -3293,6 +3330,97 @@ sub create773($$$) {
   }
 
   return undef;
+}
+
+sub critical_sanity_checks($$) {
+  my ( $id, $record ) = @_;
+
+  $record =~ /^.........(.)/;
+  my $encoding = $1;
+
+  if ( $encoding ne 'a' ) {
+    print STDERR "$id\tLDR/09='$encoding'\ţNot Unicode\n";
+  }
+
+  if ( is_bib($record) ) {
+    my @f245 = marc21_record_get_fields($record, '245', undef);
+    if ( $#f245 != 0 ) {
+      print STDERR "$id\tVirheellinen määrä 245-kenttiä: ", ($#f245+1), "\n";
+    } elsif ( $f245[0] !~ /^..(\x1F[68][^\x1F]+)?\x1Fa/ ) {
+      print STDERR "$id\tOuto nimeke '", $f245[0], "'\n";
+    } elsif ( $f245[0] !~ /^[01][0-9]\x1F/ ) {
+      print STDERR "$id\t245 indikaattoriongelma '", $f245[0], "'\n";
+    }
+
+    my @f100 = marc21_record_get_fields($record, '100', undef);
+    my @f110 = marc21_record_get_fields($record, '110', undef);
+    
+    my @f260 = marc21_record_get_fields($record, '260', undef);
+    my @f264 = marc21_record_get_fields($record, '264', undef);
+    
+    if ( $#f100 + $#f110 + 2 > 1 ) {
+      print STDERR "$id\t100=", ($#f100+1), "\t110=", ($#f110+1), "\tYHT=", ( $#f100 + $#f110 + 2 ), "\n";
+    }
+    
+    my @require_a = ( '100', '110' );
+    for ( my $j=0; $j <= $#require_a; $j++ ) {
+      my $tag = $require_a[$j];
+      my @content = marc21_record_get_fields($record, $tag, undef);
+      for ( my $i=0; $i <= $#content; $i++ ) {
+	my $field = $content[$i];
+	if ( $field !~ /\x1Fa/ ) {
+	  print STDERR "$id\tKentästä $tag puuttuu osakenttä \$a: '$field'\n";
+	} elsif ( $field !~ /\x1Fa[^\x1F]/ ) {
+	  print STDERR "$id\tKentän $tag\$a:n arvo on outo: '$field'\n";
+	}
+      }
+    }
+
+    if ( $#f260 >= 0 && $#f264 >= 0 ) {
+      print STDERR "$id\tnähty sekä 260 että 264!\n";
+    }
+  }
+  elsif ( is_auth($record) ) {
+    my ( $leader, $directory, $cfstr ) = marc21_record2leader_directory_fields($record);
+    my ( $tags_ref, $contents_ref ) = marc21_dir_and_fields2arrays($directory, $cfstr);
+    my @tags = @$tags_ref;
+    my $seen_1XX = 0;
+    for ( my $i=0; $i <= $#tags; $i++ ) {
+      if ( $tags[$i] =~ /^1/ ) {
+	$seen_1XX++;
+      }
+    }
+    if ( $seen_1XX > 1 ) {
+      my $f001 = marc21_record_get_field($record, '001', undef);
+      print STDERR "AUTH-$id\tMultiple 1XX fields\n";
+    }
+  }
+  elsif ( is_holding($record) ) {
+
+  }
+  else {
+    die();
+  }
+
+  # Tarkista tarkistan, että kunkin kentän osakentät on speksattu kelvollisesti:
+  my @fields = split(/\x1E/, $record);
+  for ( my $i=0; $i <= $#fields; $i++ ) {
+    my $content = $fields[$i];
+    if ( $content =~ /^[^\x01-\x1C\x1F]+$/ ) {
+      #print STDERR "OK kiinteä\n";
+      # ok, kiinteämittainen
+    }
+    elsif ( $content =~ /^[^\x1F][^\x1F](\x1F[a-z0-9][^\x00-\x1F]*)+$/ ) {
+      #print STDERR "OK normo\n";
+      # Ok normikenttä
+    }
+    else {
+      print STDERR "$id\tOuto kenttä '$content'\n";
+      print STDERR nvolk_marc212oai_marc($record);
+    }
+  }
+
+  return $record;
 }
 
 1;
