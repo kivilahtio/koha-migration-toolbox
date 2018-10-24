@@ -34,13 +34,15 @@ test $? != 0 && echo "Couldn't cd to app source code directory '$MMT_CODE', fail
 
 echo "Installing Perl dependencies to the program dir '$MMT_CODE'"
 cpanm -L extlib --installdeps .
-test $? != 0 && echo "Perl dependencies install failed with error code '$?'" && exit 9
+# Ubuntu 18 fails on one of the dependencies, unless --force is used...
+test $? != 0 && echo "Perl dependencies install failed with error code '$?'. Using force." && cpanm -L extlib --force --installdeps .
+test $? != 0 && echo "Perl dependencies install failed with error code '$?'. Force did not help." && exit 9
 
 
 echo "Configuring application home to '$MMT_HOME'"
 mkdir -p $MMT_HOME           || exit 11
 mkdir -p $VOYAGER_EXPORT_DIR || exit 11
-mkdir -p $KOHA_IMPORT_DIR    || exit 11
+mkdir -p $KOHA_IMPORT_DIR    || exit 11
 mkdir -p $LOG_DIR            || exit 11
 mkdir -p $TEST_DIR           || exit 11
 mkdir -p $PIPELINE_SCRIPTS   || exit 11

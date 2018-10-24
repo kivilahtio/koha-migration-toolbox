@@ -13,23 +13,28 @@ which sshpass
 test $? != 0 && echo "sshpass is not installed. Install it with 'apt install sshpass'" && exit 10
 
 # Comment JUMP_HOST if you are not using one.
+VOYAGERDB="xxxdb"
 JUMP_HOST="user@jumphost"
 VOYAGERDB_SERVER="user@voyagerserver.fi"
 SSH_PASSWORD="password"
 EXTRACT_CMD='/opt/CSCperl/current/bin/perl extract.pl -B -A -H --precision=1 --bound'
-VOYAGER_MMT_DIR="/m1/groupcron/hamk/scripts/koha"
-VOYAGER_MMT_DATA_DIR="/m1/groupcron/hamk/scripts/koha/data"
+VOYAGER_MMT_DIR="/m1/koha_migration/${VOYAGERDB}_koha"
+VOYAGER_MMT_DATA_DIR="${VOYAGER_MMT_DIR}/data"
 
 
 test -z "$MMT_HOME" && echo "Environmental variable MMT_HOME is not defined!" && exit 7
 
 #Tunnel to VoyagerDB-server and deploy the newest version of the extractor program.
 if [[ ! -z $JUMP_HOST ]]; then
+    sshpass -p $SSH_PASSWORD ssh -o ProxyCommand="ssh -A -W %h:%p $JUMP_HOST" $VOYAGERDB_SERVER \
+	    "if [ ! -e $VOYAGER_MMT_DIR ]; then mkdir $VOYAGER_MMT_DIR; fi"    
     sshpass -p $SSH_PASSWORD scp -r -o ProxyCommand="ssh -A -W %h:%p $JUMP_HOST" \
 	    extractor/VoyagerExtractor $VOYAGERDB_SERVER:$VOYAGER_MMT_DIR/
 else
+    sshpass -p $SSH_PASSWORD ssh $VOYAGERDB_SERVER \
+	    "if [ ! -e $VOYAGER_MMT_DIR ]; then mkdir $VOYAGER_MMT_DIR; fi"
     sshpass -p $SSH_PASSWORD scp -r  \
-extractor/VoyagerExtractor $VOYAGERDB_SERVER:$VOYAGER_MMT_DIR/
+	    extractor/VoyagerExtractor $VOYAGERDB_SERVER:$VOYAGER_MMT_DIR/
 fi
 
 #Tunnel to VoyagerDB-server and run the extract.pl, make the zip and cleanup.
@@ -37,8 +42,8 @@ if [[ ! -z $JUMP_HOST ]]; then
     sshpass -p $SSH_PASSWORD ssh -o ProxyCommand="ssh -A -W %h:%p $JUMP_HOST" $VOYAGERDB_SERVER \
 	    "cd $VOYAGER_MMT_DIR/VoyagerExtractor && time $EXTRACT_CMD && cd $VOYAGER_MMT_DATA_DIR && zip voyagerData.zip *.marcxml *.csv && rm *.csv *.marcxml"
 else
-      sshpass -p $SSH_PASSWORD ssh $VOYAGERDB_SERVER \
-    "cd $VOYAGER_MMT_DIR/VoyagerExtractor && time $EXTRACT_CMD && cd $VOYAGER_MMT_DATA_DIR && zip voyagerData.zip *.xml *.csv && rm *.csv *.xml"
+    sshpass -p $SSH_PASSWORD ssh $VOYAGERDB_SERVER \
+	    "cd $VOYAGER_MMT_DIR/VoyagerExtractor && time $EXTRACT_CMD && cd $VOYAGER_MMT_DATA_DIR && zip voyagerData.zip *.marcxml *.csv && rm *.csv *.marcxml"
 fi
 
 #Download the data
