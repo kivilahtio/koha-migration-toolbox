@@ -538,7 +538,7 @@ my %queries = (
       JOIN  fund_note ON (fund.fund_id = fund_note.fund_id)
       JOIN  fund_type ON (fund.fund_type = fund_type.fund_type_id)
       JOIN  ledger    ON (fund.ledger_id = ledger.ledger_id)
-      ORDER BY fund.fund_id, ledger_ledger_name"
+      ORDER BY fund.fund_id, ledger.ledger_name"
   },
   "32-fundledger.csv" => {
     encoding => "iso-8859-1",
