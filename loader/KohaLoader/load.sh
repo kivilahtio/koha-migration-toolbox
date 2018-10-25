@@ -43,7 +43,7 @@ function help {
   echo "using this tooling."
   echo ""
   echo "SYNOPSIS"
-  echo "  " $(basename $0) "--operation=migrate --data-source=$DATA_SOURCE_DIR --working-dir=$WORKING_DIR --confirm --preserve_ids --default-admin=admin:1234"
+  echo "  " $(basename $0) "--operation=migrate --data-source=$DATA_SOURCE_DIR --working-dir=$WORKING_DIR --confirm --preserve-ids --default-admin=admin:1234"
   echo ""
   echo "OPTIONS"
   echo ""
