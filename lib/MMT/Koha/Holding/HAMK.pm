@@ -61,14 +61,14 @@ sub transform852($s, $r, $b, $f) {
     my $blcsin = $b->{LocationId}->translate($s, $r, $b, $sfb->[0]->content);
     # Put branch to the first instance of $b
     $sfb->[0]->content($blcsin->{branch});
-    # Put ccode to the second instance of $b
-    $f->addSubfield('b', $blcsin->{collectionCode}, {after => $sfb->[0]}) if $blcsin->{collectionCode};
     # Put permanent_location to the first instance of $c
     my $sfc = $f->subfields('c');
     _deleteExcessSubfields($s, $r, $b, $sfc) if $sfc; #It is ok to have multiple instances, but don't know what to do with those.
     $sfc ? $sfc->[0]->content($blcsin->{location}) : $f->addSubfield('c', $blcsin->{location}, {after => 'b'}) if $blcsin->{location};
     # Put sub_location to the second instance of $c
     $f->addSubfield('c', $blcsin->{sub_location}, {after => 'c'}) if $blcsin->{sub_location};
+    # Put ccode to $g
+    $f->addSubfield('g', $blcsin->{collectionCode}, {after => 'c'}) if $blcsin->{collectionCode};
   }
 
   # Don't touch the call number portions
