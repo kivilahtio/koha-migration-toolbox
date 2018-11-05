@@ -116,13 +116,14 @@ Serializes the Koha Object to a Perl-data structure, ready for digestion by the 
 
 =cut
 
-local $Data::Dumper::Indent = 0;
-local $Data::Dumper::Sortkeys = 1;
-local $Data::Dumper::Useqq = 1;
-local $Data::Dumper::Purity = 1;
-local $Data::Dumper::Useperl = 1;
-local $Data::Dumper::Terse = 1;
 sub serialize($s) {
+  # Unfortunately these localizations have to be here to be repeatedly called, otherwise they leak to other Perl modules and interfere with their operation.
+  local $Data::Dumper::Indent = 0;
+  local $Data::Dumper::Sortkeys = 1;
+  local $Data::Dumper::Useqq = 1;
+  local $Data::Dumper::Purity = 1;
+  local $Data::Dumper::Useperl = 1;
+  local $Data::Dumper::Terse = 1;
   my $dump = Data::Dumper::Dumper($s);
   $dump =~ s/\n/\\n/g;
   return $dump;
