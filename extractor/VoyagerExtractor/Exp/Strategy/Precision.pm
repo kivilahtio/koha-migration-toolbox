@@ -112,13 +112,14 @@ my %queries = (
       #
       # Pick last checkin location normally from the old issues table.
       #
+      "SELECT * FROM                                                                                 \n".
+      "(                                                                                             \n".
       "SELECT    circ_trans_archive.item_id, max(circ_trans_archive.charge_date) as last_borrow_date \n".
       "FROM      circ_trans_archive                                                                  \n".
       "LEFT JOIN item ON (circ_trans_archive.item_id = item.item_id)                                 \n".
       "WHERE     circ_trans_archive.charge_date IS NOT NULL                                          \n".
       "      AND item.item_id IS NOT NULL                                                            \n".
       "GROUP BY  circ_trans_archive.item_id                                                          \n".
-      "ORDER BY  circ_trans_archive.item_id ASC                                                      \n".
       "                                                                                              \n".
       "UNION                                                                                         \n".
       "                                                                                              \n".
@@ -130,6 +131,8 @@ my %queries = (
       "FROM      hold_recall_items                                                                        \n".
       "WHERE     hold_recall_items.hold_recall_status = 2    \n". # 2 = 'Pending'. In Voyager-speak this is a hold which is waiting for pickup.
       "                                                      \n".
+      ")                                                                                             \n".
+      "ORDER BY  item_id ASC                                                                         \n".
       "",
   },
   "02a-item_notes.csv" => {
