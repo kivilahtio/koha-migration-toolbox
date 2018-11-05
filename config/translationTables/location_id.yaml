@@ -100,7 +100,7 @@ Hamkrvar: ref(39)
 Hamkrark: ref(40)
 41: branchLoc(HAMKR, LEH) #Hamkrleh, Riihim?ki Lehdet,
 Hamkrleh: ref(41)
-42: branchLoc(HAMKR, EI_KOHAAN) #Hamkropi, Riihim?ki Opinn?ytteet,
+42: branchLoc(HAMKR, EI_KOHAAN,,) #Hamkropi, Riihim?ki Opinn?ytteet,
 Hamkropi: ref(42)
 43: branchLoc(HAMKR, STAN) #Hamkrstan, Riihim?ki Standardit,
 Hamkrstan: ref(43)
