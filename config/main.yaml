@@ -33,6 +33,10 @@ holdingsTransformationModule: HAMK
 # If the item doesn't have a price or a replacementprice, use this default.
 defaultReplacementPrice: 25
 
+# ISIL-code for the migrated organization
+# Used primarily in the MARC record transformations.
+organizationISILCode: FI-Hamk
+
 # Set the Patron home library to this value for all patrons. Leave empty to use the LocationId-translation table.
 patronHomeLibrary:
 

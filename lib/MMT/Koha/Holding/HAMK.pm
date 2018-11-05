@@ -46,7 +46,7 @@ sub transform($s, $xmlPtr, $b) {
     MMT::Exception::Delete->throw(error => "Missing field 004 with record:\n$$xmlPtr\n!!");
   }
 
-  MMT::MARC::Regex->controlfield($xmlPtr, '003', 'FI-Hamk', {after => '001'});
+  MMT::MARC::Regex->controlfield($xmlPtr, '003', MMT::Config::organizationISILCode(), {after => '001'});
 
   transform852($s, $xmlPtr, $b);
 
@@ -65,8 +65,8 @@ sub transform($s, $xmlPtr, $b) {
 =cut
 
 sub transform852($s, $xmlPtr, $b) {
-  # Force ISIL-code 'FI-Hamk' to 852$a
-  MMT::MARC::Regex->subfield($xmlPtr, '852', 'a', 'FI-Hamk', {first => 1}) or MMT::Exception::Delete->throw(error => "Unable to set the 852\$a for record:\n$$xmlPtr");
+  # Force ISIL-code to 852$a
+  MMT::MARC::Regex->subfield($xmlPtr, '852', 'a', MMT::Config::organizationISILCode(), {first => 1}) or MMT::Exception::Delete->throw(error => "Unable to set the 852\$a for record:\n$$xmlPtr");
 
   # Transform 852$b using the location transformation table, set relevant subfields
   my $sfb = MMT::MARC::Regex->subfield($xmlPtr, '852', 'b');

@@ -35,7 +35,7 @@ sub build($s, $xmlPtr, $b) {
     MMT::Exception::Delete->throw(error => "Missing field 001 with record:\n$$xmlPtr\n!!");
   }
 
-  MMT::MARC::Regex->controlfield($xmlPtr, '003', 'FI-Hamk', {after => '001'});
+  MMT::MARC::Regex->controlfield($xmlPtr, '003', MMT::Config::organizationISILCode(), {after => '001'});
 
   $s->isSuppressInOPAC($xmlPtr, $b);
 

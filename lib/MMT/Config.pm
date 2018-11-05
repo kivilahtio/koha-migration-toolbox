@@ -60,6 +60,9 @@ sub patronHomeLibrary() {
 sub workers() {
   return $config->{workers};
 }
+sub organizationISILCode() {
+  return $config->{organizationISILCode};
+}
 
 
 #Check that the environment is properly configured
