@@ -1,6 +1,9 @@
 #!/bin/bash -x
 
-cpanm --installdeps .
+echo ""
+echo "Installing Perl dependencies"
+echo "----------------------------"
+sudo cpanm --installdeps .
 
 # Set parameter defaults
 OP=""
