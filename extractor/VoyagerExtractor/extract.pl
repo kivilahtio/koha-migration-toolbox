@@ -12,6 +12,7 @@ use Exp::Config;
 my $config = 'config.pl';
 my $noanonymize = 0;
 my ($help, $verbose, $exportEverything, $exportBoundRecords, $exportBibliographicRecords, $exportAuthoritiesRecords, $exportHoldingsRecords, $exportByWaterStyle);
+my $excludedTables = 'BIB_USAGE_LOG OPAC_SEARCH_LOG';
 my $exportWithPrecision = 0;
 
 sub print_usage {
@@ -26,6 +27,9 @@ Usage:
   --noanonymize           Do not anonymize confidential and personally identifiable information? Used when going live.
                           Anonymizes by default.
   -e, --everything        Exports all DB tables as is.
+  --exclude               String of table names, case insensitively.
+                          Defaults to 'BIB_USAGE_LOG OPAC_SEARCH_LOG'
+                          Exclude the given tables
   -b, --bound             Exports bound MFHD records as MARC21 XML.
   -B, --bib               Exports bibliographic records as MARC21 XML.
   -A, --auth              Exports authorities records as MARC21 XML.
@@ -44,12 +48,19 @@ Usage:
                           PATH to the DB connection config.
   -h, --help              Show this help
   -v, --verbose           Show debug information
+
+Examples:
+
+  Dump all tables except some nasty ones
+  $0 --everything --except BIB_USAGE_LOG OPAC_SEARCH_LOG -v
+
 USAGE
 }
 
 GetOptions(
     'noanonymize'   => \$noanonymize,
     'e|everything'  => \$exportEverything,
+    'exclude:s'     => \$excludedTables,
     'b|bound'       => \$exportBoundRecords,
     'B|bib'         => \$exportBibliographicRecords,
     'A|auth'        => \$exportAuthoritiesRecords,
@@ -74,7 +85,7 @@ Exp::Config::LoadConfig($ENV{VOYAGER_EXPORTER_CONFIG_PATH});
 
 if ($exportEverything) {
   require Exp::Strategy::Everything;
-  Exp::Strategy::Everything::exportAllTables();
+  Exp::Strategy::Everything::exportAllTables($excludedTables);
 }
 
 if ($exportWithPrecision) {

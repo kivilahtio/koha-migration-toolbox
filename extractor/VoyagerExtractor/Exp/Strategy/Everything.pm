@@ -50,16 +50,24 @@ sub printAllTableMetadata {
 
 =head2 exportAllTables
 
-Exports all tables as .csv-files to /tmp/$dbName.$tableName.csv
+Exports all tables as .csv-files to
+(config.pl -> exportDir) . $tableName . (.csv)
+
+ @param {ARRAYRef} List of table names to skip.
 
 =cut
 
-sub exportAllTables {
+sub exportAllTables($) {
+  my ($excludedTables) = @_;
   my $dbh = Exp::DB::dbh();
   my $sth = $dbh->table_info( '%', $Exp::DB::config->{dbname}, '%', 'TABLE' ) || confess $dbh->errstr;
   my $tables = $sth->fetchall_arrayref({}) || confess $dbh->errstr;
 
   for my $tableInfo (@$tables) {
+    if ($excludedTables && $excludedTables =~ m!\Q$tableInfo->{TABLE_NAME}\E!i) {
+      warn "Skipping table '".$tableInfo->{TABLE_NAME}."' because it matches one of the given excluded tables '$excludedTables'";
+      next;
+    }
     eval {
       exportTable($tableInfo);
     };
