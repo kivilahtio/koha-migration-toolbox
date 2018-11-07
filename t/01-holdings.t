@@ -1,9 +1,11 @@
-use MMT::Pragmas;
+BEGIN {
+  use FindBin;
+  use lib "$FindBin::Bin/../lib";
+  $ENV{MMT_HOME} = "$FindBin::Bin/../";
+  print "# MMT_HOME => $FindBin::Bin/../\n";
+}
 
-use FindBin;
-use lib "$FindBin::Bin/../lib";
-$ENV{MMT_HOME} = "$FindBin::Bin/../";
-print "\nMMT_HOME => $FindBin::Bin/../\n";
+use MMT::Pragmas;
 
 use Test::Most tests => 3;
 use Test::Differences;
@@ -70,7 +72,6 @@ subtest "Transform a Holdings record with ccode", sub {
   my $xml = $records[0];
   $kohaObject->build(\$xml, $builder);
 
-  $DB::single=1;
   is($kohaObject->id(), 113, 'Holdings id ok');
   eq_or_diff($xml, <<RECORD, 'Record ok');
 <record xmlns="http://www.loc.gov/MARC21/slim">

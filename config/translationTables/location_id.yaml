@@ -19,241 +19,241 @@
 #branchLoc sets the following attributes:
 #       branchcode, shelving_location, collection_code, sub_location, item.itemtype, item.notforloan-status
 1: branchLoc(HAMKO, EI_KOHAAN) #Hamkoark, Evo Arkisto
-Hamkoark: ref(1)
++Hamkoark: ref(1)
 2: branchLoc(HAMKO, LAI) #Hamkokir, Evo Kirjasto lainakokoelma
-Hamkokir: ref(2)
++Hamkokir: ref(2)
 3: branchLoc(HAMKO, VAR) #Hamkovar, Evo Varasto,
-Hamkovar: ref(3)
++Hamkovar: ref(3)
 4: branchLoc(HAMKO, LEH) #Hamkoleh, Evo Lehdet,
-Hamkoleh: ref(4)
++Hamkoleh: ref(4)
 5: branchLoc(HAMKO, EI_KOHAAN) #Hamkoopi, Evo Opinn?ytteet,
-Hamkoopi: ref(5)
++Hamkoopi: ref(5)
 6: branchLoc(HAMKF, EI_KOHAAN) #Hamkfark, Forssa Arkisto,
-Hamkfark: ref(6)
++Hamkfark: ref(6)
 7: branchLoc(HAMKF, LAI) #Hamkfkir, Forssa Kirjasto lainakokoelma
-Hamkfkir: ref(7)
++Hamkfkir: ref(7)
 8: branchLoc(HAMKF, EI_KOHAAN) #Hamkfref, Forssa K?sikirjasto
-Hamkfref: ref(8)
++Hamkfref: ref(8)
 9: branchLoc(HAMKF, LEH) #Hamkfleh, Forssa Lehdet,
-Hamkfleh: ref(9)
++Hamkfleh: ref(9)
 10: branchLoc(HAMKF, EI_KOHAAN) #Hamkfopi, Forssa Opinn?ytteet,
-Hamkfopi: ref(10)
++Hamkfopi: ref(10)
 11: branchLoc(HAMKF, EI_KOHAAN) #Hamkfstan, Forssa Standardit,
-Hamkfstan: ref(11)
++Hamkfstan: ref(11)
 12: branchLoc(HAMKA, LAI) #Hamkavana, Visam?ki Kirjasto,
-Hamkavana: ref(12)
++Hamkavana: ref(12)
 13: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkaahve,zz?L? K?YT?
-Hamkaahve: ref(13)
++Hamkaahve: ref(13)
 14: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkaaula, zzEI K?YT?SS?,
-Hamkaaula: ref(14)
++Hamkaaula: ref(14)
 15: branchLoc(HAMKA, LEH) #Hamkaleh, Visam?ki Lehdet,
-Hamkaleh: ref(15)
++Hamkaleh: ref(15)
 16: branchLoc(HAMKA, EI_KOHAAN) #Hamkakir, zzPOIS K?YT?ST?,
-Hamkakir: ref(16)
++Hamkakir: ref(16)
 17: branchLoc(HAMKH, VAR) #Hamkaref, Visam?ki K?sikirjasto,#uusi kirjasto KOHAssa Henkilökunnan kokoelma, Hamkh, hyllypaikka varasto
-Hamkaref: ref(17)
++Hamkaref: ref(17)
 18: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkasal, Visam?ki Salainen,
-Hamkasal: ref(18)
++Hamkasal: ref(18)
 19: branchLoc(HAMKA, SAIREF) #Hamkasai, Sairio K?sikirjasto,
-Hamkasai: ref(19)
++Hamkasai: ref(19)
 20: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkaopi, Visam?ki Opinn?ytteet,
-Hamkaopi: ref(20)
++Hamkaopi: ref(20)
 21: branchLoc(HAMKA, STAN) #Hamkastan, Visam?ki Standardit,
-Hamkastan: ref(21)
++Hamkastan: ref(21)
 22: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkavar, Visam?ki Varasto,
-Hamkavar: ref(22)
++Hamkavar: ref(22)
 23: branchLoc(HAMKL, LAI) #Hamklkir, Lepaa Kirjasto,
-Hamklkir: ref(23)
++Hamklkir: ref(23)
 24: branchLoc(HAMKL, REF) #Hamklref, Lepaa K?sikirjasto,
-Hamklref: ref(24)
++Hamklref: ref(24)
 25: branchLoc(HAMKL, LEH) #Hamklleh, Lepaa Lehdet,
-Hamklleh: ref(25)
++Hamklleh: ref(25)
 26: branchLoc(HAMKL, EI_KOHAAN) #Hamklopi, Lepaa Opinn?ytteet,
-Hamklopi: ref(26)
++Hamklopi: ref(26)
 27: branchLoc(HAMKL, VAR) #Hamklvar, Lepaa Varasto,
-Hamklvar: ref(27)
++Hamklvar: ref(27)
 28: branchLoc(HAMKL, EI_KOHAAN) #Hamklstan, Lepaa Standardit,
-Hamklstan: ref(28)
++Hamklstan: ref(28)
 29: branchLoc(HAMKL, MUS, LIN) #Hamklmhl, LepaaMuseo Hertta Linkola,#Kirjasto Lepaa, hyllypaikka_loc museo ja Ccode Hertta Linkolan kokoelma
-Hamklmhl: ref(29)
++Hamklmhl: ref(29)
 30: branchLoc(HAMKL, MUS) #Hamklmmus, LepaaMuseo Museokokoelma, #Kirjasto Lepaa, Hyllypaikka useo
-Hamklmmus: ref(30)
++Hamklmmus: ref(30)
 31: branchLoc(HAMKM, ARK) #Hamkmark, Mustiala Arkisto,
-Hamkmark: ref(31)
++Hamkmark: ref(31)
 32: branchLoc(HAMKM, LAI) #Hamkmkir, Mustiala Kirjasto,
-Hamkmkir: ref(32)
++Hamkmkir: ref(32)
 33: branchLoc(HAMKM, VAR) #Hamkmvar, Mustiala Varasto,
-Hamkmvar: ref(33)
++Hamkmvar: ref(33)
 34: branchLoc(HAMKM, EI_KOHAAN) #Hamkmref, Mustiala K?sikirjasto,
-Hamkmref: ref(34)
++Hamkmref: ref(34)
 35: branchLoc(HAMKM, LEH) #Hamkmleh, Mustiala Lehdet,
-Hamkmleh: ref(35)
++Hamkmleh: ref(35)
 36: branchLoc(HAMKM, EI_KOHAAN) #Hamkmopi, Mustiala Opinn?ytteet,
-Hamkmopi: ref(36)
++Hamkmopi: ref(36)
 37: branchLoc(HAMKR, REF) #Hamkrref, Riihim?ki K?sikirjasto,
-Hamkrref: ref(37)
++Hamkrref: ref(37)
 38: branchLoc(HAMKR, LAI) #Hamkrkir, Riihim?ki Kirjasto,
-Hamkrkir: ref(38)
++Hamkrkir: ref(38)
 39: branchLoc(HAMKR, EI_KOHAAN) #Hamkrvar, Riihim?ki Varasto,
-Hamkrvar: ref(39)
++Hamkrvar: ref(39)
 40: branchLoc(HAMKR, EI_KOHAAN) #Hamkrark, Riihim?ki Arkisto,
-Hamkrark: ref(40)
++Hamkrark: ref(40)
 41: branchLoc(HAMKR, LEH) #Hamkrleh, Riihim?ki Lehdet,
-Hamkrleh: ref(41)
++Hamkrleh: ref(41)
 42: branchLoc(HAMKR, EI_KOHAAN,,) #Hamkropi, Riihim?ki Opinn?ytteet,
-Hamkropi: ref(42)
++Hamkropi: ref(42)
 43: branchLoc(HAMKR, STAN) #Hamkrstan, Riihim?ki Standardit,
-Hamkrstan: ref(43)
++Hamkrstan: ref(43)
 44: branchLoc(HAMKR, EI_KOHAAN) #Hamkritse, XXRiihim?ki Itseopiskelu,
-Hamkritse: ref(44)
++Hamkritse: ref(44)
 45: branchLoc(HAMKV, LAI) #Hamkvkir, Valkeakoski Kirjasto,
-Hamkvkir: ref(45)
++Hamkvkir: ref(45)
 46: branchLoc(HAMKV, REF) #Hamkvref, Valkeakoski K?sikirjasto,
-Hamkvref: ref(46)
++Hamkvref: ref(46)
 47: branchLoc(HAMKV, LEH) #Hamkvleh, Valkeakoski Lehdet,
-Hamkvleh: ref(47)
++Hamkvleh: ref(47)
 48: branchLoc(HAMKV, EI_KOHAAN) #Hamkvopi, Valkeakoski Opinn?ytteet,
-Hamkvopi: ref(48)
++Hamkvopi: ref(48)
 49: branchLoc(HAMKV, STAN) #Hamkvstan, Valkeakoski Standardit,
-Hamkvstan: ref(49)
++Hamkvstan: ref(49)
 50: branchLoc(HAMKV, EI_KOHAAN) #Hamkvark, Valkeakoski Arkisto,
-Hamkvark: ref(50)
++Hamkvark: ref(50)
 51: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkwkir, zzWetterhoff Kirjasto,
-Hamkwkir: ref(51)
++Hamkwkir: ref(51)
 52: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkwref, zzWetterhoff K?sikirjasto,
-Hamkwref: ref(52)
++Hamkwref: ref(52)
 53: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkwdia, xxWetterhoff Diat,
-Hamkwdia: ref(53)
++Hamkwdia: ref(53)
 54: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkwleh, zzWetterhoff Lehdet,
-Hamkwleh: ref(54)
++Hamkwleh: ref(54)
 55: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkwopi, zzWetterhoff Opinn?ytteet,
-Hamkwopi: ref(55)
++Hamkwopi: ref(55)
 56: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkwark, zzWetterhoff Arkisto,
-Hamkwark: ref(56)
++Hamkwark: ref(56)
 57: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkwstan, zzWetterhoff Standardit,
-Hamkwstan: ref(57)
++Hamkwstan: ref(57)
 58: branchLoc(HAMKO, EI_KOHAAN) #HAMKOLAINA, EVO LAINAUS,
-HAMKOLAINA: ref(58)
++HAMKOLAINA: ref(58)
 59: branchLoc(HAMKF, EI_KOHAAN) #HAMKFLAINA, FORSSA LAINAUS,
-HAMKFLAINA: ref(59)
++HAMKFLAINA: ref(59)
 60: branchLoc(HAMKA, EI_KOHAAN) #HAMKALAINA, VISAM?KI LAINAUS,
-HAMKALAINA: ref(60)
++HAMKALAINA: ref(60)
 61: branchLoc(HAMKL, EI_KOHAAN) #HAMKLLAINA, LEPAA LAINAUS,
-HAMKLLAINA: ref(61)
++HAMKLLAINA: ref(61)
 62: branchLoc(HAMKM, EI_KOHAAN) #HAMKMLAINA, MUSTIALA LAINAUS,
-HAMKMLAINA: ref(62)
++HAMKMLAINA: ref(62)
 63: branchLoc(HAMKR, EI_KOHAAN) #HAMKRLAINA, RIIHIM?KI LAINAUS,
-HAMKRLAINA: ref(63)
++HAMKRLAINA: ref(63)
 64: branchLoc(HAMKV, EI_KOHAAN) #HAMKVLAINA, VALKEAKOSKI LAINAUS,
-HAMKVLAINA: ref(64)
++HAMKVLAINA: ref(64)
 65: branchLoc(EI_KOHAAN, EI_KOHAAN) #HAMKWLAINA, WETTERHOFF LAINAUS,
-HAMKWLAINA: ref(65)
++HAMKWLAINA: ref(65)
 66: branchLoc(EI_KOHAAN, EI_KOHAAN) #HAMKSELF, ITSEPALVELULAINAUS,
-HAMKSELF: ref(66)
++HAMKSELF: ref(66)
 67: branchLoc(EI_KOHAAN, EI_KOHAAN) #HAMKALUETT, HAMK LUETTELOINTI,
-HAMKALUETT: ref(67)
++HAMKALUETT: ref(67)
 68: branchLoc(EI_KOHAAN, EI_KOHAAN) #TOIMLUETT, TOIMIPISTE LUETTELOINTI,
-TOIMLUETT: ref(68)
++TOIMLUETT: ref(68)
 69: branchLoc(EI_KOHAAN, EI_KOHAAN) #HAMKHANKI, HAMK HANKINTA,
-HAMKHANKI: ref(69)
++HAMKHANKI: ref(69)
 70: branchLoc(EI_KOHAAN, EI_KOHAAN) #HAMKOPAC, OPAC,
-HAMKOPAC: ref(70)
++HAMKOPAC: ref(70)
 71: branchLoc(HAMKO, EI_KOHAAN) #Hamkopois, Evo Poistot,
-Hamkopois: ref(71)
++Hamkopois: ref(71)
 72: branchLoc(HAMKF, EI_KOHAAN) #Hamkfpois, Forssa Poistot,
-Hamkfpois: ref(72)
++Hamkfpois: ref(72)
 73: branchLoc(HAMKA, EI_KOHAAN) #Hamkapois, zzEI K?YTET?,
-Hamkapois: ref(73)
++Hamkapois: ref(73)
 74: branchLoc(HAMKL, EI_KOHAAN) #Hamklpois, Lepaa Poistot,
-Hamklpois: ref(74)
++Hamklpois: ref(74)
 75: branchLoc(HAMKM, EI_KOHAAN) #Hamkmpois, Mustiala Poistot,
-Hamkmpois: ref(75)
++Hamkmpois: ref(75)
 76: branchLoc(HAMKR, EI_KOHAAN) #Hamkrpois, Riihim?ki Poistot,
-Hamkrpois: ref(76)
++Hamkrpois: ref(76)
 77: branchLoc(HAMKV, EI_KOHAAN) #Hamkvpois, Valkeakoski Poistot,
-Hamkvpois: ref(77)
++Hamkvpois: ref(77)
 78: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkwpois, Wetterhoff Poistot,
-Hamkwpois: ref(78)
++Hamkwpois: ref(78)
 79: branchLoc(HAMKA, EI_KOHAAN) #Hamkaraksa, Lahdensivu selvitett?vi?,
-Hamkaraksa: ref(79)
++Hamkaraksa: ref(79)
 80: branchLoc(HAMKO, EI_KOHAAN) #HAMKOSELF, EVO IP_LAINAUS,
-HAMKOSELF: ref(80)
++HAMKOSELF: ref(80)
 81: branchLoc(HAMKF, EI_KOHAAN) #HAMKFSELF, FORSSA IP_LAINAUS,
-HAMKFSELF: ref(81)
++HAMKFSELF: ref(81)
 82: branchLoc(HAMKL, EI_KOHAAN) #HAMKLSELF, LEPAA IP_LAINAUS,
-HAMKLSELF: ref(82)
++HAMKLSELF: ref(82)
 83: branchLoc(HAMKM, EI_KOHAAN) #HAMKMSELF, MUSTIALA IP_LAINAUS,
-HAMKMSELF: ref(83)
++HAMKMSELF: ref(83)
 84: branchLoc(HAMKR, EI_KOHAAN) #HAMKRSELF, RIIHIM?KI IP_LAINAUS,
-HAMKRSELF: ref(84)
++HAMKRSELF: ref(84)
 85: branchLoc(HAMKV, EI_KOHAAN) #HAMKVSELF, VALKEAKOSKI IP_LAINAUS,
-HAMKVSELF: ref(85)
++HAMKVSELF: ref(85)
 86: branchLoc(EI_KOHAAN, EI_KOHAAN) #HAMKWSELF, WETTERHOFF IP_LAINAUS,
-HAMKWSELF: ref(86)
++HAMKWSELF: ref(86)
 87: branchLoc(HAMKO, REF) #Hamkoref, Evo K?sikirjasto,
-Hamkoref: ref(87)
++Hamkoref: ref(87)
 88: branchLoc(HAMKH, VL) #Hamkvl, Virkak?ytt? - lainat, #uusi kirjasto KOHAssa Henkilökunnan kokoelma, Hamkh - hyllypaikka_location vl (virkalaina)
-Hamkvl: ref(88)
++Hamkvl: ref(88)
 89: branchLoc(HAMKH, VS) #Hamkvs, Virkak?ytt? -sijainnit, #uusi kirjasto KOHAssa Henkilökunnan kokoelma, Hamkh ja hyllypaikka_location vs (virkasijainti)
-Hamkvs: ref(89)
++Hamkvs: ref(89)
 90: branchLoc(HAMK, WWW) #Hamkwww, HAMK Verkkoaineisto,
-Hamkwww: ref(90)
++Hamkwww: ref(90)
 91: branchLoc(HAMKL, EI_KOHAAN) #Hamklark, LepaaArkisto,
-Hamklark: ref(91)
++Hamklark: ref(91)
 92: branchLoc(HAMKV, EI_KOHAAN) #Hamkvkurs, Valkeakoski kurssikirjat,
-Hamkvkurs: ref(92)
++Hamkvkurs: ref(92)
 93: branchLoc(HAMKM, EI_KOHAAN) #Hamkmkurs, Mustiala kurssiaineisto,
-Hamkmkurs: ref(93)
++Hamkmkurs: ref(93)
 94: branchLoc(HAMKL, EI_KOHAAN) #Hamklkurs, Lepaa kurssikirjat,
-Hamklkurs: ref(94)
++Hamklkurs: ref(94)
 95: branchLoc(HAMKM, EI_KOHAAN) #Hamkmstan, Mustiala Standardit,
-Hamkmstan: ref(95)
++Hamkmstan: ref(95)
 96: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkjulrek, HAMKin julkaisurekisteri,
-Hamkjulrek: ref(96)
++Hamkjulrek: ref(96)
 97: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkbkir, XXLahdensivu Kirjasto,
-Hamkbkir: ref(97)
++Hamkbkir: ref(97)
 99: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkbleh, XXLahdensivu Lehdet,
-Hamkbleh: ref(99)
++Hamkbleh: ref(99)
 100: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkbopi, Lahdensivu Opinn?ytteet,
-Hamkbopi: ref(100)
++Hamkbopi: ref(100)
 101: branchLoc(EI_KOHAAN, EI_KOHAAN) #HAMKBLAINA, XXAINOLA-SOTE,
-HAMKBLAINA: ref(101)
++HAMKBLAINA: ref(101)
 102: branchLoc(EI_KOHAAN, EI_KOHAAN) #HAMKBSELF, LAHDENSIVU IP_LAINAUS,
-HAMKBSELF: ref(102)
++HAMKBSELF: ref(102)
 103: branchLoc(HAMKA, EI_KOHAAN) #Hamkakurs, Visam?ki kurssikirjat,
-Hamkakurs: ref(103)
++Hamkakurs: ref(103)
 104: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkbkurs, XXLahdensivu kurssiain,
-Hamkbkurs: ref(104)
++Hamkbkurs: ref(104)
 105: branchLoc(HAMKR, EI_KOHAAN) #Hamkrkurs, Riihim?ki kurssikirjat,
-Hamkrkurs: ref(105)
++Hamkrkurs: ref(105)
 106: branchLoc(HAMKA, EI_KOHAAN) #Hamkalex, Visam?ki Sanomalehdet,
-Hamkalex: ref(106)
++Hamkalex: ref(106)
 107: branchLoc(EI_KOHAAN, EI_KOHAAN) #Hamkblex, Lahdensivu Sanomalehdet,
-Hamkblex: ref(107)
++Hamkblex: ref(107)
 108: branchLoc(HAMKF, EI_KOHAAN) #Hamkflex, Forssa Sanomalehdet,
-Hamkflex: ref(108)
++Hamkflex: ref(108)
 109: branchLoc(HAMKL, EI_KOHAAN) #Hamkllex, Lepaa Sanomalehdet,
-Hamkllex: ref(109)
++Hamkllex: ref(109)
 110: branchLoc(HAMKM, EI_KOHAAN) #Hamkmlex, Mustiala Sanomalehdet,
-Hamkmlex: ref(110)
++Hamkmlex: ref(110)
 111: branchLoc(HAMKO, EI_KOHAAN) #Hamkolex, Evo Sanomalehdet,
-Hamkolex: ref(111)
++Hamkolex: ref(111)
 112: branchLoc(HAMKR, EI_KOHAAN) #Hamkrlex, Riihim?ki Sanomalehdet,
-Hamkrlex: ref(112)
++Hamkrlex: ref(112)
 113: branchLoc(HAMKV, EI_KOHAAN) #Hamkvlex, Valkeakoski Sanomalehdet,
-Hamkvlex: ref(113)
++Hamkvlex: ref(113)
 114: branchLoc(HAMKM, MUS) #Hamkmmus, Mustiala Museokokoelma #kirjasto Mustiala, hyllypaikka museo
-Hamkmmus: ref(114)
++Hamkmmus: ref(114)
 115: branchLoc(HAMKV, EI_KOHAAN) #Hamkvvar, Valkeakoski Varasto,
-Hamkvvar: ref(115)
++Hamkvvar: ref(115)
 116: branchLoc(HAMKO, EI_KOHAAN) #Hamkoesi, Evo Esineet,
-Hamkoesi: ref(116)
++Hamkoesi: ref(116)
 117: branchLoc(HAMK, ARK) #Hamksark, HAMK Opinn?ytety?arkisto,
-Hamksark: ref(117)
++Hamksark: ref(117)
 118: branchLoc(HAMK, WWN) #Hamkwwwn, Tietokannat Vanaicatissa,
-Hamkwwwn: ref(118)
++Hamkwwwn: ref(118)
 119: branchLoc(HAMKO, MUS) #Hamkomus, Evo Museo, #kirjasto Evo, hyllypaikka museo
-Hamkomus: ref(119)
++Hamkomus: ref(119)
 120: branchLoc(EI_KOHAAN, EI_KOHAAN) #MAKSU, Verkkomaksaminen,
-MAKSU: ref(120)
++MAKSU: ref(120)
 _DEFAULT_: branchLoc(HAMK, KONVERSIO, ERROR, ERROR) #By default, print a warning and use defaults )

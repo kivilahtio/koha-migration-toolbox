@@ -119,4 +119,19 @@ sub translate($s, $kohaObject, $voyagerObject, $builder, $val, @otherArgs) {
   die "Don't know what to do with val '$val'. Program should never enter here...";
 }
 
+=head2 translateByCode
+
+The same subroutine call as translate() but using the code-string as a translation table lookup key, instead of the numeric id.
+
+As the code can be the same as the id, we need to prepend + to the translation table code keys to clearly distinguish them from the duplicate id-values.
+
+This subroutine transparently deals with this, so you don't have to.
+
+=cut
+
+sub translateByCode {
+  $_[4] = '+'.$_[4]; #Prepend + to the lookup key
+  return translate(@_);
+}
+
 return 1;

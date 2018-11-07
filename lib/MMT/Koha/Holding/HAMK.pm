@@ -66,6 +66,7 @@ sub transform($s, $xmlPtr, $b) {
 
 sub transform852($s, $xmlPtr, $b) {
   # Force ISIL-code to 852$a
+  MMT::Config::organizationISILCode() or die "MMT::Config::organizationISILCode() is undefined! Set it in the config/main.yml";
   MMT::MARC::Regex->subfield($xmlPtr, '852', 'a', MMT::Config::organizationISILCode(), {first => 1}) or MMT::Exception::Delete->throw(error => "Unable to set the 852\$a for record:\n$$xmlPtr");
 
   # Transform 852$b using the location transformation table, set relevant subfields
@@ -74,7 +75,7 @@ sub transform852($s, $xmlPtr, $b) {
     $log->warn($s->logId().' - Missing 852$b. Cannot translate locations.');
   }
   else {
-    my $blcsin = $b->{LocationId}->translate($s, undef, $b, $sfb);
+    my $blcsin = $b->{LocationId}->translateByCode($s, undef, $b, $sfb);
     # Put branch to the first instance of $b
     MMT::MARC::Regex->subfield($xmlPtr, '852', 'b', $blcsin->{branch}, {after => 'a'});
     # Put permanent_location to the first instance of $c
