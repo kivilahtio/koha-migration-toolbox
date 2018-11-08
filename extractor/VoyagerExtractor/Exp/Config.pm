@@ -21,6 +21,7 @@ use warnings;
 use strict;
 
 #External modules
+use Cwd;
 
 =head2 NAME
 
@@ -45,7 +46,7 @@ sub LoadConfig($) {
 
   $config->{dbname} = $config->{username};
   $config->{exportDir} = '/tmp/'.$config->{dbname} unless $config->{exportDir};
-  print "Exporting to '".$config->{exportDir}."'\n";
+  print "Exporting to '".Cwd::realpath($config->{exportDir})."'\n";
   mkdir($config->{exportDir}, 0744) or die "Couldn't create the exportDir='".$config->{exportDir}."': $!"
     unless -e $config->{exportDir};
 }
