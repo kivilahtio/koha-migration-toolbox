@@ -59,9 +59,6 @@ sub new($class, $params) {
   $self->_loadTranslationTables();
   $self->{tester} = MMT::Tester->new(MMT::Config::testDir.'/'.$self->{type}.'.yaml');
 
-  my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-  $self->{now} = sprintf("%04d-%02d-%02dT%02d:%02d:%02d", $year+1900, $mon+1, $mday, $hour, $min, $sec);
-
   return $self;
 }
 
@@ -72,6 +69,10 @@ sub new($class, $params) {
 =cut
 
 sub now($s) {
+  unless ($s->{now}) {
+    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+    $s->{now} = sprintf("%04d-%02d-%02dT%02d:%02d:%02d", $year+1900, $mon+1, $mday, $hour, $min, $sec);
+  }
   return $s->{now};
 }
 

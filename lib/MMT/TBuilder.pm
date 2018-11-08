@@ -80,9 +80,6 @@ sub new($class, $params) {
   MMT::Builder::_loadTranslationTables($s);
   $s->{tester} = MMT::Tester->new(MMT::Config::testDir.'/'.$s->{type}.'.yaml');
 
-  my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-  $s->{now} = sprintf("%04d-%02d-%02dT%02d:%02d:%02d", $year+1900, $mon+1, $mday, $hour, $min, $sec);
-
   #prepare reader
   $s->{inputFile} =~ /\.(\w+)?$/;
   $s->{fileType} = $1;
@@ -118,6 +115,10 @@ sub new($class, $params) {
 =cut
 
 sub now($s) {
+  unless ($s->{now}) {
+    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+    $s->{now} = sprintf("%04d-%02d-%02dT%02d:%02d:%02d", $year+1900, $mon+1, $mday, $hour, $min, $sec);
+  }
   return $s->{now};
 }
 
