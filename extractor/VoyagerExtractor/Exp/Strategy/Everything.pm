@@ -64,7 +64,7 @@ sub exportAllTables($) {
   my $tables = $sth->fetchall_arrayref({}) || confess $dbh->errstr;
 
   for my $tableInfo (@$tables) {
-    if ($excludedTables && $excludedTables =~ m!\Q$tableInfo->{TABLE_NAME}\E!i) {
+    if ($excludedTables && $tableInfo->{TABLE_NAME} =~ m!$excludedTables!i) { #Ignore case here because the Orcale table names are sporadically UC and lc in different contexts.
       warn "Skipping table '".$tableInfo->{TABLE_NAME}."' because it matches one of the given excluded tables '$excludedTables'";
       next;
     }

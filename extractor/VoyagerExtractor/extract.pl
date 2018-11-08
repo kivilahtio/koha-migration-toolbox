@@ -12,8 +12,10 @@ use Exp::Config;
 my $config = 'config.pl';
 my $noanonymize = 0;
 my ($help, $verbose, $exportEverything, $exportBoundRecords, $exportBibliographicRecords, $exportAuthoritiesRecords, $exportHoldingsRecords, $exportByWaterStyle);
-my $excludedTables = 'BIB_USAGE_LOG OPAC_SEARCH_LOG';
+my $excludedTables = '(BIB_USAGE_LOG|OPAC_SEARCH_LOG)';
+my $includedTables;
 my $exportWithPrecision = 0;
+
 
 sub print_usage {
   (my $basename = $0) =~ s|.*/||;
@@ -27,24 +29,22 @@ Usage:
   --noanonymize           Do not anonymize confidential and personally identifiable information? Used when going live.
                           Anonymizes by default.
   -e, --everything        Exports all DB tables as is.
-  --exclude               String of table names, case insensitively.
-                          Defaults to 'BIB_USAGE_LOG OPAC_SEARCH_LOG'
-                          Exclude the given tables
+  --exclude=REGEXP        - When exporting --everything, excludes the given tables.
+                            String of table names, case insensitively.
+                            Defaults to 'BIB_USAGE_LOG OPAC_SEARCH_LOG'
+                          - When exporting with --precision, excludes the given exportable filenames.
+  --include=REGEXP        - When exporting with --precision, exports only the filenames that match the given regexp.
+                            Used to test changes to extract SQL. Not useful when going live.
   -b, --bound             Exports bound MFHD records as MARC21 XML.
   -B, --bib               Exports bibliographic records as MARC21 XML.
   -A, --auth              Exports authorities records as MARC21 XML.
   -H, --holdings          Exports holdings records as MARC21 XML.
   --bywater               Export everything but MARC using ByWater export sql statements
-  --precision=1|REGEXP    Defaults '$exportWithPrecision'.
+  --precision=MODULE      Defaults to '$exportWithPrecision'.
                           Export with precision everything but MARC.
-                          Parameter is a boolean or a regexp:
-                            Boolean (true): When you want to run the whole Precise extract strategy.
-                            Regexp: Used to select only a desired subset of filenames queries from
-                                    the HASH in \%Exp::Strategy::Precision::queries.
-                                    Used to test changes to extract SQL. Not useful when going live.
-                          Parameter is mandatory if option given, but the
-                          parameter is used only to limit the precision
-  -c, --config=PATH       Default '$config'
+                          Parameter is the Exp::Strategy::Precision -export module name,
+                          eg. HAMK
+  -c, --config=PATH       Defaults to '$config'
                           PATH to the DB connection config.
   -h, --help              Show this help
   -v, --verbose           Show debug information
@@ -52,7 +52,10 @@ Usage:
 Examples:
 
   Dump all tables except some nasty ones
-  $0 --everything --except BIB_USAGE_LOG OPAC_SEARCH_LOG -v
+  $0 --everything --exclude (BIB_USAGE_LOG|OPAC_SEARCH_LOG) -v
+
+  Export Helka-DB with precision, export only filenames starting with 02, but exclude the given file
+  $0 --precision Helka --exclude 02a-item_notes.csv --include ^02
 
 USAGE
 }
@@ -61,6 +64,7 @@ GetOptions(
     'noanonymize'   => \$noanonymize,
     'e|everything'  => \$exportEverything,
     'exclude:s'     => \$excludedTables,
+    'include:s'     => \$includedTables,
     'b|bound'       => \$exportBoundRecords,
     'B|bib'         => \$exportBibliographicRecords,
     'A|auth'        => \$exportAuthoritiesRecords,
@@ -90,7 +94,7 @@ if ($exportEverything) {
 
 if ($exportWithPrecision) {
   require Exp::Strategy::Precision;
-  Exp::Strategy::Precision::extract($exportWithPrecision);
+  Exp::Strategy::Precision::extract($exportWithPrecision, $excludedTables, $includedTables);
 }
 
 my $boundRecordIds;
