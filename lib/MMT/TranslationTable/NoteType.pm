@@ -27,15 +27,14 @@ sub new($class) {
 
 sub popUp($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tableParams, $transParams) {
   if (defined($transParams->[0]->{note})) {
-    $kohaObject->{popup_message} = { message => $transParams->[0]->{note} };
-    $kohaObject->{popup_message}->{branchcode} = $builder->{Branchcodes}->translate($kohaObject, $voyagerObject, $builder, '_DEFAULT_');
-
-    if ($transParams->[0]->{modify_date}) {
-      $kohaObject->{popup_message}->{message_date} = $transParams->[0]->{modify_date};
-    }
-    else {
+    unless ($transParams->[0]->{modify_date}) {
       $log->debug($kohaObject->logId()." - Given patron_note '".$transParams->[0]->{patron_note_id}."' is missing the note's message_date|MODIFY_DATE?");
     }
+    $kohaObject->_addPopUpNote($builder,
+                  $transParams->[0]->{note},
+                  $builder->{Branchcodes}->translate($kohaObject, $voyagerObject, $builder, '_DEFAULT_'),
+                  $transParams->[0]->{modify_date}
+    );
   }
   else {
     $log->warn($kohaObject->logId()." - Given patron_note '".$transParams->[0]->{patron_note_id}."' is missing the note itself?");

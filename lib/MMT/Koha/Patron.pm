@@ -538,6 +538,26 @@ sub _getActiveOrLatestBarcodeRow($s, $patronGroupsBarcodes) {
   return $patronGroupsBarcodes->[0]; #Extractor should ORDER BY so the newest entry is first.
 }
 
+sub _addPopUpNote($s, $b, $message, $branchcode, $message_date) {
+  die "Trying to add a popup note, but the message is missing" unless ($message);
+  $branchcode = $b->{Branchcodes}->translate($s, {}, $b, '_DEFAULT_') unless ($branchcode);
+  die "Trying to add a popup note, but no branchcode given and a _DEFAULT_ branch is missing in Branchcodes translation table" unless ($branchcode);
+  $message_date = $b->now() unless ($message_date);
+
+  unless ($s->{popup_message}) { # Add a new note
+    $s->{popup_message} = {
+      message => $message,
+      branchcode => $branchcode,
+      message_date => $message_date,
+    };
+  }
+  else { # merge with an existing one
+    $s->{popup_message}->{message}     .= ' | '.$message;
+    $s->{popup_message}->{branchcode}   = $branchcode unless ($s->{popup_message}->{branchcode});
+    $s->{popup_message}->{message_date} = $message_date unless ($s->{popup_message}->{message_date});
+  }
+}
+
 =head2 _exportSsn
 
 Writes the given ssn and patron_id to the export file
