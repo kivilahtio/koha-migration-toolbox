@@ -362,7 +362,7 @@ sub setPhones($s, $o, $b) {
         $log->warn($s->logId()." - $notification");
         $s->concatenate($notification => 'borrowernotes');
         $s->concatenate("Kirjastojärjestelmävaihdon yhteydessä havaittu, että puhelinnumero '$number' ei ole Suomen viestintäministeriön asettaman mallin mukainen. Ota yhteyttä kirjastoosi asian korjaamiseksi." => 'opacnote');
-        return undef;
+        next;
       }
       given ($match->{phone_desc}) {
         when ('Primary') {
