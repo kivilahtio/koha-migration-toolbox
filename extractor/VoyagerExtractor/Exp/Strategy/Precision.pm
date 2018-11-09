@@ -235,25 +235,40 @@ Dynamically load the required module for SQL queries.
 
 sub dynaLoadQueries($) {
   my ($module) = @_;
-  my $fullPackage = __PACKAGE__.'::'.$module;
-  eval {
-    (my $requirablePackageName = $fullPackage) =~ s|::|/|g;
-    require $requirablePackageName . '.pm';
-    #If there is no crash, the module exists and is whitelisted
-  };
-  die "Coudln't load the Precision extraction module '$module': $@" if ($@);
+  my $fullPackage = _fullPrecisionModulePackageName($module);
 
   my $queries = eval "\\\%${fullPackage}::queries"; #What I am trying to say is: return \%Exp::Strategy::Precision::HAMK::queries;
   die "Couldn't find the correct queries from module '$module'" unless ($queries);
   return $queries;
 }
 
+sub dynaLoadExtensions($) {
+  my ($module) = @_;
+  my $fullPackage = _fullPrecisionModulePackageName($module);
+  if (my $sub = $fullPackage->can('extensions')) {
+    warn "INFO: Running Extensions for module '$fullPackage'";
+    $sub->();
+  }
+  else {
+    warn "INFO: Module '$fullPackage' doesn't have any special extensions";
+  }
+}
+
+sub _fullPrecisionModulePackageName($) {
+  my $fullPackage = __PACKAGE__.'::'.$_[0];
+  eval {
+    (my $requirablePackageName = $fullPackage) =~ s|::|/|g; #While we're at it, make sure the package is loaded.
+    require $requirablePackageName . '.pm';                 #require requires the file only once.
+    #If there is no crash, the module exists and is whitelisted
+  };
+  die "Coudln't load the Precision extraction module '$_[0]': $@" if ($@);
+  return $fullPackage;
+}
+
 sub extract($$$) {
   my ($precisionModule, $exclusionRegexp, $inclusionRegexp) = @_;
 
   my $queries = dynaLoadQueries($precisionModule);
-  my $dbh = Exp::DB::dbh();
-
   foreach my $filename (sort keys %$queries) {
     if ($inclusionRegexp && $filename !~ /$inclusionRegexp/) {                   #select the desired datasets to extract.
       print "Excluding filename='$filename' as it doesn't match the selection regexp=/$inclusionRegexp/\n";
@@ -263,49 +278,57 @@ sub extract($$$) {
       print "Excluding filename='$filename' as it matches the exclusion regexp=/$exclusionRegexp/\n";
       next;
     }
-    print "Extracting '$filename' with precision!\n";
-
-    my $query          = $queries->{$filename}{sql};
-    my $anonRules      = $queries->{$filename}{anonymize};
-    my $uniqueKeyIndex = $queries->{$filename}{uniqueKey};
-    %uniqueColumnVerifier = (); #Reset for every query
-
-    if ($filename eq "serials_mfhd.csv") {
-      extractSerialsMFHD($filename);
-      next;
-    }
-
-    my $sth=$dbh->prepare($query) || die("Preparing query '$filename' failed: ".$dbh->errstr);
-    $sth->execute() || die("Executing query '$filename' failed: ".$dbh->errstr);
-
-    my $i=0;
-    open(my $out, ">:encoding(UTF-8)", Exp::Config::exportPath($filename)) or die("Can't open output file '".Exp::Config::exportPath($filename)."': $!");
-
-    my ($subquery, $colNames) = pickCorrectSubquery($query, $filename);
-    my $columnEncodings = getColumnEncodings($colNames); #Columns come from multiple tables via JOINs and can have distinct encodings.
-    my %columnToIndexLookup; while(my ($i, $v) = each(@$colNames)) {$v =~ s/^.+\.//; $columnToIndexLookup{$v} = $i}
-    #Lookup has the column names only, table names are trimmed
-
-    print $out createHeaderRow($colNames)."\n";
-
-    while (my @line = $sth->fetchrow_array()) {
-      $i++;
-      Exp::Encoding::decodeToPerlInternalEncoding(\@line, $columnEncodings);
-      Exp::Encoding::Repair::repair($filename, \@line, \%columnToIndexLookup);
-
-      deduplicateUniqueKey($uniqueKeyIndex, $colNames, \@line);
-
-      Exp::Anonymize::anonymize(\@line, $anonRules, \%columnToIndexLookup) if ($anonymize);
-
-      print "."    unless ($i % 10);
-      print "\r$i          " unless ($i % 100);
-
-      writeCsvRow($out, \@line);
-    }
-
-    close $out;
-    print "\n\n$i records exported\n";
+    doQuery($filename, $queries);
   }
+
+  dynaLoadExtensions($precisionModule);
+}
+
+sub doQuery($$) {
+  my ($filename, $queries) = @_;
+  print "Extracting '$filename' with precision!\n";
+
+  my $query          = $queries->{$filename}{sql};
+  my $anonRules      = $queries->{$filename}{anonymize};
+  my $uniqueKeyIndex = $queries->{$filename}{uniqueKey};
+  %uniqueColumnVerifier = (); #Reset for every query
+
+  if ($filename eq "serials_mfhd.csv") {
+    extractSerialsMFHD($filename);
+    next;
+  }
+
+  my $dbh = Exp::DB::dbh();
+  my $sth=$dbh->prepare($query) || die("Preparing query '$filename' failed: ".$dbh->errstr);
+  $sth->execute() || die("Executing query '$filename' failed: ".$dbh->errstr);
+
+  my $i=0;
+  open(my $out, ">:encoding(UTF-8)", Exp::Config::exportPath($filename)) or die("Can't open output file '".Exp::Config::exportPath($filename)."': $!");
+
+  my ($subquery, $colNames) = pickCorrectSubquery($query, $filename);
+  my $columnEncodings = getColumnEncodings($colNames); #Columns come from multiple tables via JOINs and can have distinct encodings.
+  my %columnToIndexLookup; while(my ($i, $v) = each(@$colNames)) {$v =~ s/^.+\.//; $columnToIndexLookup{$v} = $i}
+  #Lookup has the column names only, table names are trimmed
+
+  print $out createHeaderRow($colNames)."\n";
+
+  while (my @line = $sth->fetchrow_array()) {
+    $i++;
+    Exp::Encoding::decodeToPerlInternalEncoding(\@line, $columnEncodings);
+    Exp::Encoding::Repair::repair($filename, \@line, \%columnToIndexLookup);
+
+    deduplicateUniqueKey($uniqueKeyIndex, $colNames, \@line);
+
+    Exp::Anonymize::anonymize(\@line, $anonRules, \%columnToIndexLookup) if ($anonymize);
+
+    print "."    unless ($i % 10);
+    print "\r$i          " unless ($i % 100);
+
+    writeCsvRow($out, \@line);
+  }
+
+  close $out;
+  print "\n\n$i records exported\n";
 }
 
 return 1;
