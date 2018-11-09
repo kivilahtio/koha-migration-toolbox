@@ -11,7 +11,7 @@ use Exp::Config;
 # Getting parameters
 my $config = 'config.pl';
 my $noanonymize = 0;
-my ($help, $verbose, $exportEverything, $exportBoundRecords, $exportBibliographicRecords, $exportAuthoritiesRecords, $exportHoldingsRecords, $exportByWaterStyle);
+my ($help, $verbose, $exportEverything, $exportBoundRecords, $exportBibliographicRecords, $exportAuthoritiesRecords, $exportHoldingsRecords, $exportByWaterStyle, $runQuery);
 my $excludedTables = '(BIB_USAGE_LOG|OPAC_SEARCH_LOG)';
 my $includedTables;
 my $exportWithPrecision = 0;
@@ -44,6 +44,9 @@ Usage:
                           Export with precision everything but MARC.
                           Parameter is the Exp::Strategy::Precision -export module name,
                           eg. HAMK
+  -r --runq               Run a query. Outputs invalid .csv to STDOUT.
+                          SQL as the parameter value, or a path to file containing the SQL.
+                          Used to test SQL.
   -c, --config=PATH       Defaults to '$config'
                           PATH to the DB connection config.
   -h, --help              Show this help
@@ -71,6 +74,7 @@ GetOptions(
     'H|holdings'    => \$exportHoldingsRecords,
     'bywater'       => \$exportByWaterStyle,
     'p|precision:s' => \$exportWithPrecision,
+    'r|runq:s'      => \$runQuery,
     'c|config=s'    => \$config,
     'h|help'        => \$help,
     'v|verbose'     => \$verbose,
@@ -122,3 +126,20 @@ if ($exportByWaterStyle) {
   require Exp::Strategy::ByWaterExport;
 }
 
+if ($runQuery) {
+  if (-e $runQuery) {
+    warn "INFO: Treating parameter \$runQuery='$runQuery' as a file to slurp the SQL from";
+    open(my $FH, '<:encoding(UTF-8)', $runQuery) or die "Opening query file '$runQuery' failed: $!";
+    local $/ = undef;
+    $runQuery = <$FH>;
+    close($FH);
+  }
+  require Exp::DB;
+  my $dbh = Exp::DB::dbh();
+  warn "INFO: Starting DB query"; my $start = time;
+  my $res = $dbh->selectall_arrayref($runQuery) || die("Executing query '$runQuery' failed: ".$dbh->errstr);
+  warn "INFO: Ending DB query, runtime ".(time - $start)."s";
+  warn "INFO: Dumping results"; $start = time;
+  print join(',', @$_)."\n" for @$res; #For now this is intended only for testing SQL, nothing more. It is faster for me to make a simple SQL interface, than start fiddling with orcale cli tools on Solaris.
+  warn "INFO: Dump complete, runtime ".(time - $start)."s";
+}
