@@ -357,11 +357,11 @@ sub setPhones($s, $o, $b) {
         $log->warn($s->logId().' - '.$msg);
       }
 
-      unless (MMT::Validator::checkIsValidFinnishPhoneNumber($number)) {
+      unless (MMT::Validator::checkIsValidFinnishPhoneNumber($number) || MMT::Validator::checkIsValidInternationalPhoneNumber($number)) {
         my $notification = "Finnish phone number validation failed for number '$number'. opacnote generated.";
         $log->warn($s->logId()." - $notification");
         $s->concatenate($notification => 'borrowernotes');
-        $s->concatenate("Kirjastojärjestelmävaihdon yhteydessä havaittu, että puhelinnumero '$number' ei ole Suomen viestintäministeriön asettaman mallin mukainen. Ota yhteyttä kirjastoosi asian korjaamiseksi." => 'opacnote');
+        $s->concatenate("Kirjastojärjestelmävaihdon yhteydessä on havaittu, että puhelinnumero '$number' on mahdollisesti virheellinen. Ota yhteyttä kirjastoosi asian korjaamiseksi." => 'opacnote');
         next;
       }
       given ($match->{phone_desc}) {
