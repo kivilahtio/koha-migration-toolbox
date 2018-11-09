@@ -141,13 +141,13 @@ sub _translateLocationId($s, $o, $b) {
   }
   #In theory, there could be multiple locations for one subscription/component, but the extract-phase unique key deduplication should take care of that.
   elsif (@$subscriptionLocations > 1) { #Doesn't hurt to be a bit defensive sometimes.
-    $log->warn($log->logId()." has multiple subscription locations to choose from? Defaulting to the first one.");
+    $log->warn($s->logId()." has multiple subscription locations to choose from? Defaulting to the first one.");
   }
 
   if ($subscriptionLocations && $subscriptionLocations->[0]) {
     $locationId = $subscriptionLocations->[0]->{location_id};
     unless ($locationId) {
-      $log->error($log->logId()." has a location, but the location is missing attribute 'location_id'? Using defaults.");
+      $log->error($s->logId()." has a location, but the location is missing attribute 'location_id'? Using defaults.");
       $locationId = '_DEFAULT_';
     }
   }
