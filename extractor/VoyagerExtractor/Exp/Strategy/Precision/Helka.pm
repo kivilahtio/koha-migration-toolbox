@@ -51,7 +51,94 @@ my $helkaNLFLocationIDs = "2,3,4,5,6,7,8,9,51,52,148,158,173,211,231,234,238,245
 #@author Ari Ahlqvist @ NatLibFi
 my $activeSince = '2016-01-01';
 my $helkaNLFActivePatronsSubquery = "
-";
+select distinct id
+from
+(
+    select p.patron_id as id
+    from helkadb.patron p, helkadb.circ_transactions ct, helkadb.item i, helkadb.location l
+    where p.patron_id = ct.patron_id
+    and ct.item_id = i.item_id
+    and i.perm_location = l.location_id
+    and l.location_code between '100' and '139'
+    and ct.charge_date >= '$activeSince'
+
+union all
+
+    select p.patron_id as id
+    from helkadb.patron p, helkadb.circ_trans_archive cta, helkadb.item i, helkadb.location l
+    where p.patron_id = cta.patron_id
+    and cta.item_id = i.item_id
+    and i.perm_location = l.location_id
+    and l.location_code between '100' and '139'
+    and (cta.charge_date >= '$activeSince' OR cta.discharge_date >= '$activeSince')
+
+union all
+
+    select p.patron_id as id
+    from helkadb.patron p, helkadb.circ_transactions ct, helkadb.renew_transactions rt, helkadb.item i, helkadb.location l
+    where p.patron_id = ct.patron_id
+    and ct.circ_transaction_id = rt.circ_transaction_id
+    and ct.item_id = i.item_id
+    and i.perm_location = l.location_id
+    and l.location_code between '100' and '139'
+    and rt.renew_date >= '$activeSince'
+
+union all
+
+    select p.patron_id as id
+    from helkadb.patron p, helkadb.circ_trans_archive cta, helkadb.renew_trans_archive rta, helkadb.item i, helkadb.location l
+    where p.patron_id = cta.patron_id
+    and cta.circ_transaction_id = rta.circ_transaction_id
+    and cta.item_id = i.item_id
+    and i.perm_location = l.location_id
+    and l.location_code between '100' and '139'
+    and rta.renew_date >= '$activeSince'
+
+union all
+
+    select p.patron_id as id
+    from helkadb.patron p, helkadb.hold_recall hr, helkadb.item i, helkadb.hold_recall_items hri, helkadb.location l
+    where p.patron_id = hr.patron_id
+    and hr.hold_recall_id = hri.hold_recall_id
+    and hri.item_id = i.item_id
+    and i.perm_location = l.location_id
+    and l.location_code between '100' and '139'
+    and hr.create_date >= '$activeSince'
+
+union all
+
+    select p.patron_id as id
+    from helkadb.patron p, helkadb.hold_recall_archive hra, helkadb.item i, helkadb.hold_recall_items hri, helkadb.location l
+    where p.patron_id = hra.patron_id
+    and hra.hold_recall_id = hri.hold_recall_id
+    and hri.item_id = i.item_id
+    and i.perm_location = l.location_id
+    and l.location_code between '100' and '139'
+    and hra.create_date >= '$activeSince'
+
+union all
+
+    select p.patron_id as id
+    from helkadb.patron p, helkadb.call_slip cs, helkadb.item i, helkadb.location l
+    where p.patron_id = cs.patron_id
+    and cs.item_id = i.item_id
+    and i.perm_location = l.location_id
+    and l.location_code between '100' and '139'
+    and cs.date_requested >= '$activeSince'
+
+union all
+
+    select p.patron_id as id
+    from helkadb.patron p, helkadb.call_slip_archive csa, helkadb.item i, helkadb.location l
+    where p.patron_id = csa.patron_id
+    and csa.item_id = i.item_id
+    and i.perm_location = l.location_id
+    and l.location_code between '100' and '139'
+    and csa.date_requested >= '$activeSince'
+
+)
+
+order by id";
 
 our %queries = (
   "00-suppress_in_opac_map.csv" => {
