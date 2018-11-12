@@ -412,6 +412,7 @@ sub setStatisticExtAttribute($s, $o, $b) {
     }
   }
   else {
+    $s->_addPopUpNote("Tarkista asiakkaan tilastointiryhmä.","main");
     $log->warn("Patron '".$s->logId()."' has no statistical category.");
   }
 }
