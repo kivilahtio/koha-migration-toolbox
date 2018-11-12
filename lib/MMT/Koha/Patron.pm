@@ -412,8 +412,8 @@ sub setStatisticExtAttribute($s, $o, $b) {
     }
   }
   else {
-    $s->_addPopUpNote("Tarkista asiakkaan tilastointiryhmä.","main");
-    $log->warn("Patron '".$s->logId()."' has no statistical category.");
+    $s->_addPopUpNote($b,"Tarkista asiakkaan tilastointiryhmä.");
+    $log->warn("Patron '".$s->logId()."' has no statistical category. Popup note added.");
   }
 }
 sub setUserid($s, $o, $b) {
