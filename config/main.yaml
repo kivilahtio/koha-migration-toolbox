@@ -40,6 +40,10 @@ organizationISILCode: FI-Hamk
 # Set the Patron home library to this value for all patrons. Leave empty to use the LocationId-translation table.
 patronHomeLibrary:
 
+# Which strategy to use to validate phone numbers
+# See MMT::Validator::Phone for available strategies
+phoneNumberValidationStrategy: HAMK
+
 #############################
 ### 3) Data loading phase ###
 ## Exported DB rows are mangled into Koha-objects

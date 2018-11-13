@@ -6,6 +6,7 @@ use MMT::Pragmas;
 use Email::Valid;
 
 #Local modules
+use MMT::Validator::Phone;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
 #Inheritance
@@ -346,37 +347,22 @@ sub setPhones($s, $o, $b) {
   if ($patron_phones) {
     foreach my $match (@$patron_phones) {
 
-      #Drop any non-numberal characters first
-      #https://tiketti.koha-suomi.fi:83/issues/3301
-      my $number = $match->{phone_number};
-      $number =~ s/[^+0-9]//gsm;
-      my $strippedCharactersCount = length($match->{phone_number}) - length($number);
-      if ($strippedCharactersCount >= 3) { #Dont complain about every small mistake. Expect large differences to have some special type of information embedded which the librarians might want to manually verify.
-        my $msg = "Messy phone number '".$match->{phone_number}."' trimmed as '$number'.";
-        $s->concatenate($msg => 'borrowernotes');
-        $log->warn($s->logId().' - '.$msg);
-      }
+      my ($newNumber, $letItPass) = MMT::Validator::Phone::validate($s, $o, $b, $match->{phone_number});
+      next unless $letItPass;
 
-      unless (MMT::Validator::checkIsValidFinnishPhoneNumber($number) || MMT::Validator::checkIsValidInternationalPhoneNumber($number)) {
-        my $notification = "Finnish phone number validation failed for number '$number'. opacnote generated.";
-        $log->warn($s->logId()." - $notification");
-        $s->concatenate($notification => 'borrowernotes');
-        $s->concatenate("Kirjastojärjestelmävaihdon yhteydessä on havaittu, että puhelinnumero '$number' on mahdollisesti virheellinen. Ota yhteyttä kirjastoosi asian korjaamiseksi." => 'opacnote');
-        next;
-      }
       given ($match->{phone_desc}) {
         when ('Primary') {
-          $s->{phone} = $number;
+          $s->{phone} = $newNumber;
         }
         when ('Other') {
-          $s->{phonepro} = $number;
+          $s->{phonepro} = $newNumber;
         }
         when ('Fax') {
-          $s->{fax} = $number;
+          $s->{fax} = $newNumber;
         }
         when ('Mobile') {
-          $s->{mobile} = $number;
-          $s->{smsalertnumber} = $number;
+          $s->{mobile} = $newNumber;
+          $s->{smsalertnumber} = $newNumber;
         }
       }
     }

@@ -54,6 +54,9 @@ sub exportPipelineScript() {
 sub importPipelineScript() {
   return $config->{importPipelineScript};
 }
+sub phoneNumberValidationStrategy() {
+  return $config->{phoneNumberValidationStrategy};
+}
 sub patronHomeLibrary() {
   return $config->{patronHomeLibrary};
 }
