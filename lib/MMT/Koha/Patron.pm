@@ -525,8 +525,7 @@ sub _getActiveOrLatestBarcodeRow($s, $patronGroupsBarcodes) {
   return $patronGroupsBarcodes->[0]; #Extractor should ORDER BY so the newest entry is first.
 }
 
-sub _addPopUpNote {
-  my ($s, $b, $message, $branchcode, $message_date) = @_;
+sub _addPopUpNote($s, $b, $message, $branchcode=undef, $message_date=undef) {
   $log->logdie("Trying to add a popup note, but the message is missing") unless ($message);
   $branchcode = $b->{Branchcodes}->translate($s, {}, $b, '_DEFAULT_') unless ($branchcode);
   $log->logdie("Trying to add a popup note, but no branchcode given and a _DEFAULT_ branch is missing in Branchcodes translation table") unless ($branchcode);
