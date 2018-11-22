@@ -145,7 +145,7 @@ sub strategy_JYU($kohaObject, $voyagerObject, $builder, $phoneCandidate) {
   }
 
   # regexp pattern form https://www.regextester.com/97440
-  unless ($phoneCandidateTrimmed =~ m/^(([+][(]?[0-9]{1,3}[)]?)|([(]?[0-9]{4}[)]?))\s*[)]?[-\s\.]?[(]?[0-9]{1,3}[)]?([-\s\.]?[0-9]{3})([-\s\.]?[0-9]{3,4})\d$/) {
+  unless ($phoneCandidateTrimmed =~ m/^(([+][(]?[0-9]{1,3}[)]?)|([(]?[0-9]{4}[)]?))\s*[)]?[-\s\.]?[(]?[0-9]{1,3}[)]?([-\s\.]?[0-9]{3})([-\s\.]?[0-9]{3,4})\d$/ || _isValidFinnishPhoneNumber($phoneCandidateTrimmed)) {
     my $notification = "JYU phone number validation failed for number '$phoneCandidateTrimmed'. opacnote generated.";
     $log->warn($kohaObject->logId()." - $notification");
     $kohaObject->concatenate($notification => 'borrowernotes');
