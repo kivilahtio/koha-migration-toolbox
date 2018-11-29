@@ -39,12 +39,13 @@ sub transform($s, $xmlPtr, $b) {
   unless ($holding_id) {
     MMT::Exception::Delete->throw(error => "Missing field 001 with record:\n$$xmlPtr\n!!");
   }
-  $s->{id} = $holding_id; #Make sure the id is set, so further logging can be done.
+  $s->{holding_id} = $holding_id; #Make sure the id is set, so further logging can be done.
 
   my $bib_id = MMT::MARC::Regex->controlfield($xmlPtr, '004');
   unless ($bib_id) {
     MMT::Exception::Delete->throw(error => "Missing field 004 with record:\n$$xmlPtr\n!!");
   }
+  $s->{biblionumber} = $bib_id; #This might be useful for various translation tables
 
   MMT::MARC::Regex->controlfield($xmlPtr, '003', MMT::Config::organizationISILCode(), {after => '001'});
 

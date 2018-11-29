@@ -35,6 +35,35 @@ Export all kinds of data from Voyager using the given precision SQL.
 =cut
 
 our %queries = (
+  "00-bib_sub_frequency.csv" => {
+    uniqueKey => 0,
+    sql =>
+      "SELECT    line_item.bib_id, frequency.freq_increment, frequency.freq_calc_type            \n".
+      "FROM      line_item                                                                       \n".
+      "LEFT JOIN subscription ON (subscription.line_item_id = line_item.line_item_id)            \n".
+      "LEFT JOIN component ON (component.subscription_id = subscription.subscription_id)         \n".
+      "LEFT JOIN component_pattern ON (component_pattern.component_id = component.component_id)  \n".
+      "LEFT JOIN frequency ON (frequency.frequency_code = component_pattern.frequency_code)      \n".
+      "WHERE     line_item.line_item_id = ( SELECT MAX(flatli.line_item_id)                      \n". #There might be biblios with subscriptions with multiple different frequencies.
+      "                                     FROM   line_item flatli                              \n". #Flatten such duplicate frequencies to pick the value from the newest order.
+      "                                     WHERE  flatli.bib_id = line_item.bib_id              \n".
+      "                                   )                                                      \n".
+      "",
+  },
+  "00-bib_text.csv" => {
+    uniqueKey => 0,
+    sql =>
+      "SELECT    bib_text.bib_id, bib_text.begin_pub_date                  \n".
+      "FROM      bib_text                                                  \n".
+      "",
+  },
+  "00-mfhd_master.csv" => {
+    uniqueKey => 0,
+    sql =>
+      "SELECT    mfhd_master.mfhd_id, mfhd_master.display_call_no                                 \n".
+      "FROM      mfhd_master                                                                      \n".
+      "",
+  },
   "00-suppress_in_opac_map.csv" => {
     encoding => "iso-8859-1",
     uniqueKey => -1,

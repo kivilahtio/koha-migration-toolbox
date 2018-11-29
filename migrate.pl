@@ -14,7 +14,7 @@ use Getopt::OO;
 use IPC::Cmd;
 
 #Local modules
-my $log = Log::Log4perl->get_logger(__PACKAGE__);
+my Log::Log4perl $log = Log::Log4perl->get_logger(__PACKAGE__);
 use MMT::Extractor;
 use MMT::Loader;
 use MMT::Builder;
@@ -73,6 +73,9 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
         inputFile => 'holdings.marcxml',
         outputFile => 'holdings.marcxml',
         repositories => [
+          {name => 'BibSubFrequency',   file => '00-bib_sub_frequency.csv',    keys => ['bib_id']}, #This is actually the newest subscription/component's publication frequency.
+          {name => 'BibText',           file => '00-bib_text.csv',             keys => ['bib_id']},
+          {name => 'MFHDMaster',        file => '00-mfhd_master.csv',          keys => ['mfhd_id']},
           {name => 'SuppressInOpacMap', file => '00-suppress_in_opac_map.csv', keys => ['bib_id', 'mfhd_id', 'location_id']},
         ],
         translationTables => [
@@ -91,10 +94,13 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
         type => 'Item',
         inputFile => '02-items.csv',
         repositories => [
+          {name => 'BibSubFrequency',file => '00-bib_sub_frequency.csv',      keys => ['bib_id']}, #This is actually the newest subscription/component's publication frequency.
+          {name => 'MFHDMaster',     file => '00-mfhd_master.csv',            keys => ['mfhd_id']},
           {name => 'ItemNotes',      file => '02a-item_notes.csv',            keys => ['item_id']},
           {name => 'ItemStats',      file => '02b-item_stats.csv',            keys => ['item_id']},
           {name => 'ItemStatuses',   file => '02-item_status.csv',            keys => ['item_id']},
           {name => "LastBorrowDate", file => '02-items_last_borrow_date.csv', keys => ['item_id']},
+          {name => 'BibText',        file => '00-bib_text.csv',               keys => ['bib_id']},
         ],
         translationTables => [
           {name => 'LocationId'},

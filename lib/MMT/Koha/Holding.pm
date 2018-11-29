@@ -68,7 +68,7 @@ sub logId($s) {
 }
 
 sub id($s) {
-  return $s->{id};
+  return $s->{holding_id};
 }
 
 sub serialize($s) {

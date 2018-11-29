@@ -14,7 +14,7 @@ use Thread::Queue;
 use MMT::Builder;
 use MMT::Cache;
 use MMT::Tester;
-my $log = Log::Log4perl->get_logger(__PACKAGE__);
+my Log::Log4perl $log = Log::Log4perl->get_logger(__PACKAGE__);
 
 #Add a bit of type-safety
 #use fields qw(inputFile outputFile type); # use fields doesn't work with subroutine signatures...
@@ -84,10 +84,7 @@ sub new($class, $params) {
   $s->{inputFile} =~ /\.(\w+)?$/;
   $s->{fileType} = $1;
   if ($s->{fileType} eq 'csv') {
-    $s->{csv} = Text::CSV->new({ binary => 1, sep_char => ',', auto_diag => 9 });
-    open($s->{inFH}, '<:encoding(UTF-8)', $s->{inputFile}) or $log->logdie("Loading file '".$s->{inputFile}."' failed: $!");
-    $s->{csv}->column_names(  $s->{csv}->getline( $s->{inFH} )  );
-    $log->info("Loading file '".$s->{inputFile}."', identified columns '".join(',', $s->{csv}->column_names())."'");
+    $s->openCsvFile();
     $s->{next} = $s->getTextIterator();
   }
   elsif ($s->{fileType} eq 'marcxml') {
@@ -217,7 +214,7 @@ sub task($s, $textPtr) {
 
     if ($o->{DUPLICATE}) {
       $log->debug("Duplicate entry skipped at input file line '$.'");
-      next;
+      return;
     }
   }
   else {
@@ -291,7 +288,7 @@ sub _purgeOutputBuffer($s) {
 
 =cut
 
-sub getTextIterator($s, $input_record_separator) {
+sub getTextIterator($s, $input_record_separator=undef) {
   local $INPUT_RECORD_SEPARATOR = $input_record_separator if defined $input_record_separator; #Let perl split text for us in proper chunks
   open($s->{inFH}, '<:encoding(UTF-8)', $s->{inputFile}) or die("Opening the file '$s->{inputFile}' for iteration failed: $!")
     unless $s->{inFH};
@@ -308,6 +305,18 @@ sub getTextIterator($s, $input_record_separator) {
     return $textPtr;
   };
   return $_i;
+}
+
+=head2 openCsvFile
+
+=cut
+
+sub openCsvFile($s) {
+  $s->{csv} = Text::CSV->new({ binary => 1, sep_char => ',', auto_diag => 9 });
+  open($s->{inFH}, '<:encoding(UTF-8)', $s->{inputFile}) or $log->logdie("Loading file '".$s->{inputFile}."' failed: $!");
+  $s->{csv}->column_names(  $s->{csv}->getline( $s->{inFH} )  );
+  $log->info("Loading file '".$s->{inputFile}."', identified columns '".join(',', $s->{csv}->column_names())."'");
+  return $s->{csv}; #Have a meaningful truthy return value
 }
 
 =head2 getMarcFileIterator
