@@ -246,6 +246,13 @@ sub subfield {
 
     _getPadding($xmlPtr) unless defined($_p); #Padding is needed only now, so avoid calculating it until necessary
 
+    #Prepend a subfield
+    if ($position->{first}) {
+      $field = "\n$_p$_p<subfield code=\"$sfCode\">$content</subfield>" . $field;
+      $$xmlPtr =~ s!\Q$oldField\E!$field!sm;
+      return 'first';
+    }
+
     #Append a subfield after some other
     if ($position->{after}) {
       if ($field =~ s!
