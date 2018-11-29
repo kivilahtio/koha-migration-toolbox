@@ -1517,7 +1517,7 @@ sub nvolk_marc212oai_marc($) {
   my $clean_up = ( $record =~ /[\x00-\x08\x0B\x0C\x0E-\x1C]/ ? 1 : 0 );
   my $clean_up2 = ( $record =~ /[<>&]/ ? 1 : 0 );
 
-  my $output = "<record xmlns=\"http://www.loc.gov/MARC21/slim\">\n<leader>$leader</leader>\n";
+  my $output = "<record xmlns=\"http://www.loc.gov/MARC21/slim\">\n  <leader>$leader</leader>\n";
 
   my $id = '???'; # marc21_record_get_field($record, '001', undef);
 
@@ -1538,7 +1538,7 @@ sub nvolk_marc212oai_marc($) {
 	$content = html_escapes($content);
 	$clean_up = 1;
       }
-      $output .= "<controlfield tag=\"$tag\">$content</controlfield>\n";
+      $output .= "  <controlfield tag=\"$tag\">$content</controlfield>\n";
     }
     else {
       my $sep = substr($content, 2, 1);
@@ -1568,7 +1568,7 @@ sub nvolk_marc212oai_marc($) {
 	      if ( $clean_up2 ) {
 		$sf_data = html_escapes($sf_data);
 	      }
-	      $subfield_contents .= " <subfield code=\"$sf_code\">".$sf_data."</subfield>\n";
+	      $subfield_contents .= "    <subfield code=\"$sf_code\">".$sf_data."</subfield>\n";
 	    }
 	    else {
 	      $clean_up = 1;
@@ -1577,9 +1577,9 @@ sub nvolk_marc212oai_marc($) {
 	  }
 	}
 	if ( length($subfield_contents) ) {
-	  $output .= "<datafield tag=\"$tag\" ind1=\"$i1\" ind2=\"$i2\">\n" .
+	  $output .= "  <datafield tag=\"$tag\" ind1=\"$i1\" ind2=\"$i2\">\n" .
 	    $subfield_contents .
-	    "</datafield>\n";
+	    "  </datafield>\n";
 	}
       }
       else {
