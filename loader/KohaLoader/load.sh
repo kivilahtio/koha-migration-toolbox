@@ -157,9 +157,13 @@ function cleanPastMigrationWorkspace {
 }
 
 function fullReindex {
+    flush="$1"
+    if [ -z "$flush" ]; then
+        flush="-d"
+    fi
     #Make a full Zebra reindex.
     #Zebra is no longer used $KOHA_PATH/misc/migration_tools/rebuild_zebra.pl -b -a -r -x -v &> $WORKING_DIR/rebuild_zebra.log
-    $KOHA_PATH/misc/search_tools/rebuild_elastic_search.pl &> $WORKING_DIR/rebuild_elasticsearch.log
+    $KOHA_PATH/misc/search_tools/rebuild_elastic_search.pl $flush &> $WORKING_DIR/rebuild_elasticsearch.log
 }
 
 if [ "$OP" == "backup" ]
@@ -223,7 +227,7 @@ then
 
     migrateBulkScripts
 
-    fullReindex
+    fullReindex flush
 
     exit
 
