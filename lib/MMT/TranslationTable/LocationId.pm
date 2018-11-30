@@ -93,49 +93,48 @@ sub _statisticsLibrary($publicationYear, $subscriptionFrequencyIncrement, $subsc
     $location = '2.K';
     $itemtype = 'MC';
   }
-  elsif ($callNumber =~ m!^Arkisto TE!) { #Erikoiskokoelma, Lutherin aineisto
+  elsif ($callNumber =~ m!^Arkisto TE !) { #Erikoiskokoelma, Lutherin aineisto
     $location = 'VARA';
   }
-  elsif ($callNumber =~ m!^Aik! || $callNumber =~ m!\(Aik\)!) { #Lehdet. Kuluva ja kaksi edellistä vuotta lehtihyllyissä, sitä vanhemmat varastossa (*-lehdet kaikki lehtihyllyissä) 1. krs
-    $location = 'LUK' if $publicationYear >= 2016;
-    $location = 'VARA' unless $location;
+  elsif ($callNumber =~ m!^Aik ! || $callNumber =~ m!\(Aik\)!) { #Lehdet. Kuluva ja kaksi edellistä vuotta lehtihyllyissä, sitä vanhemmat varastossa (*-lehdet kaikki lehtihyllyissä) 1. krs
+    #2018-11-30 painovuosierottelu koskee nykyisin enää vain monoja, eli Tietokirjat, joiden signum on numeroalkuinen (1-3 numeroa)
+    $location = 'VARA';
     $itemtype = 'SR';
   }
-  elsif ($callNumber =~ m!^FI R!) { #Kotimaisia tilastoja painovuodesta riippumatta, REF
+  elsif ($callNumber =~ m!^FI R !) { #Kotimaisia tilastoja painovuodesta riippumatta, REF
     $location = 'LUK';
   }
-  elsif ($callNumber =~ m!^FI!) {
-    #Kotimaiset tilastot hyllyluokittain, kuukausi- ja neljännesvuosijulkaisut 2002-
-    $location = '2.K' if ($subscriptionFrequencyIncrementInDays && $subscriptionFrequencyIncrementInDays < 365 && $publicationYear >= 2002);
-
-    #Kotimaiset tilastot hyllyluokittain, vuosijulkaisut 1995-2009
-    $location = '2.K' if not($location) && $publicationYear >= 1995;
-
-    #Varastoon vanhemmat aineistot
-    $location = 'VARB' unless $location;
-  }
-  elsif ($callNumber =~ m!^INT!) { #Kansainväliset (kv) tilastot hyllyluokittain 2005- => Lainataan (2.K)
-    $location = '2.K' if $publicationYear >= 2005;
-    $location = 'VARS' unless $location;
-  }
-  elsif ($callNumber =~ m!^R!) { #Hakuteokset avohyllyssä
-    $location = 'LUK';
-  }
-  elsif ($callNumber =~ m!^K!) { #Varastoihin menevät ... Kaikissa tietokirjoissa paikkamerkintä K (K 330)  #Varastoon siirrettäessä alkuperäisen hyllyluokkatunnuksen eteen on lisätty kirjain ”K”
+  elsif ($callNumber =~ m!^FI !) {
+    #2018-11-30 FI-alkuiset signumit listassa: MUUTOS SIJAINTIIN. Niiden kaikkien sijainti pitää olla VARB (eikä 2.K kuten osassa on)
     $location = 'VARB';
   }
-  elsif ($callNumber =~ m!^\d!) { #Monografiat avohyllyissä hyllyluokittain, painovuosi 1990-2009 -> 2.K
-    $location = '2.K';
-  }
-  elsif ($callNumber =~ m!^(?:IS|NO|SE)!) { #Islanti, Norjan vuosikirjat, Ruotsi
+  elsif ($callNumber =~ m!INT \d+\.\d+ !) { #INT-alkuiset +blankko+numeroita, joissa piste välissä (kuten INT 2.5) on aina VARS
     $location = 'VARS';
   }
-  elsif ($callNumber =~ m!^(?:DK|RU)!) { #Muiden pohjoismaiden tilastot hyllyluokittain -2004  #6.krs iso varasto
+  elsif ($callNumber =~ m!^INT !) { #Kansainväliset (kv) tilastot hyllyluokittain 2005- => Lainataan (2.K)
+    #2018-11-30 painovuosierottelu koskee nykyisin enää vain monoja, eli Tietokirjat, joiden signum on numeroalkuinen (1-3 numeroa)
+    $location = 'VARS';
+  }
+  elsif ($callNumber =~ m!^R \d{1,3}(?:/\d+)? !) { #Hakuteokset avohyllyssä
+    $location = 'LUK';
+  }
+  elsif ($callNumber =~ m!^K \d{1,3}(?:/\d+)? !) { #2018-11-30 kun hyllyluokan alussa on yksi K-kirjain -  K+blankko+numeroita (numeroita voi olla 1-3 kpl) - kuten K 36 Sosiaali- ja terveysministeriön - paikka on silloin aina VARB
+    #Varastoihin menevät ... Kaikissa tietokirjoissa paikkamerkintä K (K 330)  #Varastoon siirrettäessä alkuperäisen hyllyluokkatunnuksen eteen on lisätty kirjain ”K”
+    $location = 'VARB';
+  }
+  elsif ($callNumber =~ m!^\d{1,3} !) { #painovuosierottelu koskee nykyisin enää vain monoja, eli Tietokirjat, joiden signum on numeroalkuinen (1-3 numeroa), kuten 02 Hupaniittu (painovuosi 2012) joka menee 2.K. Kun siis hyllyluokka alkaa numerolla (numeroita voi olla 1-3 kpl peräkkäin) – kuten 001 Hesmondhalgh
+    #paikka voi olla joko VARB tai 2.K. riippuen painovuodesta (2010- 2.K.  ja sitä vanhemmat VARB). Tämä ei näy olevan aina oikein listassa.
+    $location = '2.K' if $publicationYear >= 2010;
+    $location = 'VARB' unless $location;
+  }
+  elsif ($callNumber =~ m!^(?:IS|NO|SE) !) { #Islanti, Norjan vuosikirjat, Ruotsi
+    $location = 'VARS';
+  }
+  elsif ($callNumber =~ m!^RUSSICA !) { #RUSSICA menee aina VARA
     $location = 'VARA';
   }
-  elsif ($callNumber =~ m!^\w{2} !) { #Maittaiset vuosikirjat hyllyluokittain -2004  #Maiden vuosikirjat
-    $location = 'LUK' if $publicationYear >= 2004;
-    $location = 'VARA' unless $location;
+  elsif ($callNumber =~ m!^[A-Z]{2} !) { #2018-11-30 Ideana pitäisi olla siis, että kaikki muut kaksikirjaimiset signumit (paitsi ei IS, NO, SE, jotka menee VARS, ja FI joka menee VARB) menevät VARA. Näitä 2-kirjaimisia maakoodeja on runsas 30.
+    $location = 'VARA';
   }
   else {
     $location = 'KONVERSIO';
