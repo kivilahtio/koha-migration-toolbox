@@ -83,7 +83,7 @@ for (my $i=0 ; $i<@data ; $i++) {
     print $outFH "$data[$i]\n";
   }
   else {
-    printf $outFH "%-120s => %s\n", $data[$i], join(',', map {$_ || ''} @{$results[$i-1]});
+    printf $outFH "%-120s , %s\r\n", $data[$i], join(',', map {$_ || ''} @{$results[$i-1]});
   }
 }
 ok(close($outFH),
