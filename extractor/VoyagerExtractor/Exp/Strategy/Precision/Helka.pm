@@ -140,9 +140,9 @@ our %queries = (
     encoding => "iso-8859-1",
     uniqueKey => -1,
     sql =>
-      "SELECT    bib_heading.bib_id, NULL as mfhd_id, NULL as location_id, \n".
-      "          bib_heading.suppress_in_opac                              \n".
-      "FROM      bib_heading                                               \n".
+      "SELECT    bib_master.bib_id, NULL as mfhd_id, NULL as location_id,  \n".
+      "          bib_master.suppress_in_opac                               \n".
+      "FROM      bib_master                                                \n".
       "WHERE     suppress_in_opac = 'Y'                                    \n".
       "                                                                    \n".
       "UNION                                                               \n".
