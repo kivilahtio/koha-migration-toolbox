@@ -120,7 +120,7 @@ function migrateBulkScripts {
 
     ./bulkPatronImport.pl --defaultAdmin "$DEFAULT_ADMIN" &> $WORKING_DIR/bulkPatronImport.log
     ./bulkPatronImport.pl --messagingPreferencesOnly &> $WORKING_DIR/bulkPatronImportMessagingDefaults.log & #This is forked on the background
-    ./bulkPatronImport.pl --uploadSSNKeysOnly &> $WORKING_DIR/bulkPatronImportSSNKeys.log & #This is forked on the background
+#    ./bulkPatronImport.pl --uploadSSNKeysOnly &> $WORKING_DIR/bulkPatronImportSSNKeys.log & #This is forked on the background
 
     ./bulkCheckoutImport.pl -file $DATA_SOURCE_DIR/Issue.migrateme \
         --inConversionTable $WORKING_DIR/itemnumberConversionTable \
