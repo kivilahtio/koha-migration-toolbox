@@ -3,7 +3,7 @@
 echo ""
 echo "Installing Perl dependencies"
 echo "----------------------------"
-sudo cpanm --installdeps .
+cpanm --installdeps .
 
 # Set parameter defaults
 OP=""
