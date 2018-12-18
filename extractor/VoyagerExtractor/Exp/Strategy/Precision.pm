@@ -63,7 +63,8 @@ sub extractSerialsMFHD($) {
      FROM      mfhd_data
      LEFT JOIN serials_vw ON (mfhd_data.mfhd_id = serials_vw.mfhd_id)
      WHERE     serials_vw.mfhd_id IS NOT NULL
-     GROUP BY  mfhd_data.mfhd_id, mfhd_data.seqnum, mfhd_data.record_segment",
+     GROUP BY  mfhd_data.mfhd_id, mfhd_data.seqnum, mfhd_data.record_segment
+     ORDER BY  mfhd_data.mfhd_id, mfhd_data.seqnum",
     sub { #Logic from https://github.com/GeekRuthie/koha-migration-toolbox/blob/master/migration/Voyager/serials_subscriptions_loader.pl#L122
       my ($FH, $id, $record_ptr) = @_;
 
