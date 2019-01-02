@@ -418,7 +418,7 @@ sub setSsn($s, $o, $b) {
   if ($s->{ssn}) {
     if (eval { MMT::Validator::checkIsValidFinnishSSN($s->{ssn}) }) {
       $s->_exportSsn($s->{borrowernumber}, $s->{ssn});
-      $s->{ssn} = 'via Hetula'; #This ssn is valid, and is transported to Hetula.
+#      $s->{ssn} = 'via Hetula'; #This ssn is valid, and is transported to Hetula.
     }
     else {
       #HAMK-3339 - Leave non-valid ssns in Koha.
