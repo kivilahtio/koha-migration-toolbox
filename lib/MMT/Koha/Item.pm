@@ -35,6 +35,7 @@ sub build($self, $o, $b) {
   $self->set(perm_location        => 'homebranch',         $o, $b);
   $self->set(price                => 'price',              $o, $b);
   $self->setDatelastborrowed                              ($o, $b);
+  $self->setDatelastseen                                  ($o, $b);
   $self->setStatuses                                      ($o, $b);
   #  \$self->setNotforloan
   #   \$self->setDamaged
@@ -118,6 +119,14 @@ sub setDatelastborrowed($s, $o, $b) {
   my $lastBorrowDates = $b->{LastBorrowDate}->get($o);
   if ($lastBorrowDates) {
     $s->{datelastborrowed} = $lastBorrowDates->[0]->{last_borrow_date};
+  }
+  #It is ok for the Item to not have datelastborrowed
+}
+sub setDatelastseen($s, $o, $b) {
+  my $lastBorrowDates = $b->{LastBorrowDate}->get($o);
+  $s->{datelastseen} = undef;
+  if ($lastBorrowDates) {
+    $s->{datelastseen} = $lastBorrowDates->[0]->{last_borrow_date};
   }
   #It is ok for the Item to not have datelastborrowed
 }
