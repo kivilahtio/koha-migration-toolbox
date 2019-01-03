@@ -27,8 +27,8 @@ sub new($class) {
 
 sub branchLoc($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tableParams, $transParams) {
   return {
-    branch => uc($tableParams->[0]),
-    location => uc($tableParams->[1]),
+    branch => uc($tableParams->[0] || ''),
+    location => uc($tableParams->[1] || ''),
     collectionCode => $tableParams->[2],
     sub_location => $tableParams->[3],
     itemtype => $tableParams->[4],

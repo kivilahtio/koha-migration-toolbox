@@ -139,6 +139,7 @@ function migrateBulkScripts {
         --serialFile $DATA_SOURCE_DIR/Serial.migrateme \
         --suConversionTable $WORKING_DIR/subscriptionidConversionTable \
         --bnConversionTable $WORKING_DIR/biblionumberConversionTable \
+        --inConversionTable $WORKING_DIR/itemnumberConversionTable \
         &> $WORKING_DIR/bulkSubscriptionImport.log
 
     ./bulkBranchtransfersImport.pl -file $DATA_SOURCE_DIR/Branchtransfer.migrateme \

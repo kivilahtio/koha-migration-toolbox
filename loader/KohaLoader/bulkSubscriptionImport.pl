@@ -6,6 +6,7 @@ $|=1;
 binmode(STDOUT, ":encoding(UTF-8)");
 binmode(STDIN, ":encoding(UTF-8)");
 
+use Data::Printer;
 use Getopt::Long;
 use Log::Log4perl qw(:easy);
 
@@ -13,18 +14,21 @@ use C4::Context;
 
 use Bulk::ConversionTable::SubscriptionidConversionTable;
 use Bulk::ConversionTable::BiblionumberConversionTable;
+use Bulk::ConversionTable::ItemnumberConversionTable;
 
 my ($subscriptionFile, $serialFile);
 our $verbosity = 3;
 my $subscriptionidConversionTableFile = 'subscriptionidConversionTable';
 my $subscriptionidConversionTable;
 my $biblionumberConversionTable = 'biblionumberConversionTable';
+my $itemnumberConversionTable = 'itemnumberConversionTable';
 
 GetOptions(
     'subscriptionFile:s'       => \$subscriptionFile,
     'serialFile:s'             => \$serialFile,
     'suConversionTable:s'      => \$subscriptionidConversionTableFile,
     'b|bnConversionTable:s'    => \$biblionumberConversionTable,
+    'i|inConversionTable:s'    => \$itemnumberConversionTable,
     'v|verbosity:i'            => \$verbosity,
 );
 
@@ -37,7 +41,8 @@ SYNOPSIS
   perl bulkSubscriptionImport.pl --subscriptionFile /home/koha/pielinen/subs.migrateme \
     --serialFile /file/path.csv -v $verbosity \
     --suConversionTable $subscriptionidConversionTableFile \
-    --bnConversionTable $biblionumberConversionTable
+    --bnConversionTable $biblionumberConversionTable \
+    --inConversionTable $itemnumberConversionTable
 
 
 DESCRIPTION
@@ -55,6 +60,10 @@ DESCRIPTION
     --bnConversionTable filePath
           Defaults to $biblionumberConversionTable
           Where to get the converted biblionumbers.
+
+    --inConversionTable filePath
+          Defaults to $itemnumberConversionTable
+          Where to get the converted itemnumbers.
 
     -v level
           Verbose output to the STDOUT,
@@ -101,6 +110,17 @@ sub migrate_serial($s) {
     $ser_insert_sth->execute($s->{biblionumber},$s->{subscriptionid},$s->{status},      $s->{planneddate}, $s->{publisheddate},
                              $s->{serialseq},   $s->{serialseq_x},   $s->{serialseq_y}, $s->{serialseq_z})
       or die "INSERT:ing Serial failed: ".$ser_insert_sth->errstr();
+    $s->{serialid} = $ser_insert_sth->{mysql_insertid} // $ser_insert_sth->last_insert_id() // die("Couldn't get the last_insert_id from a newly created serial ".np($s));
+
+    migrate_serialitems($s) if $s->{itemnumber};
+}
+
+my $seritems_insert_sth = $dbh->prepare("INSERT INTO serialitems
+                                (itemnumber, serialid)
+                                VALUES (?,?)");
+sub migrate_serialitems($s) {
+    $seritems_insert_sth->execute($s->{itemnumber},$s->{serialid})
+      or die "INSERT:ing Serialitem failed: ".$seritems_insert_sth->errstr();
 }
 
 sub validateAndConvertSubscriptionKeys($s) {
@@ -130,6 +150,15 @@ sub validateAndConvertSerialKeys($s) {
         return undef;
     }
 
+    if ($s->{itemnumber}) { #Not all serials have attached Items
+        my $newItemnumber = $itemnumberConversionTable->fetch($s->{itemnumber});
+        unless ($newItemnumber) {
+            WARN "$errId has no new itemnumber in the itemnumberConversionTable!";
+            return undef;
+        }
+        $s->{itemnumber} = $newItemnumber;
+    }
+
     $s->{biblionumber} = $newBiblionumber;
     $s->{subscriptionid} = $newSubscriptionid;
     return $s;
@@ -149,6 +178,8 @@ INFO "Opening SubscriptionidConversionTable '$subscriptionidConversionTableFile'
 $subscriptionidConversionTable = Bulk::ConversionTable::SubscriptionidConversionTable->new($subscriptionidConversionTableFile, 'write');
 INFO "Opening BiblionumberConversionTable '$biblionumberConversionTable' for reading";
 $biblionumberConversionTable = Bulk::ConversionTable::BiblionumberConversionTable->new($biblionumberConversionTable, 'read');
+INFO "Opening ItemnumberConversionTable '$itemnumberConversionTable' for reading";
+$itemnumberConversionTable = Bulk::ConversionTable::ItemnumberConversionTable->new($itemnumberConversionTable, 'read');
 
 my $fh = Bulk::Util::openFile($subscriptionFile);
 my $i = 0;

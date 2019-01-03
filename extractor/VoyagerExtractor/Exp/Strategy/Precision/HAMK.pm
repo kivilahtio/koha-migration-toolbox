@@ -34,6 +34,8 @@ Export all kinds of data from Voyager using the given precision SQL.
 
 =cut
 
+my $nowYear = 1900 + (localtime)[5];
+
 our %queries = (
   "00-bib_sub_frequency.csv" => {
     uniqueKey => 0,
@@ -376,24 +378,30 @@ our %queries = (
        ORDER BY  issues_received.component_id ASC, issues_received.location_id ASC",
   },
 
-  #No data in the Voyager subscription about into which branches it orders serials?
-  #Only received serials have location-information.
-  #Currently ignore predictions, because migrating predictions most certainly will be very slow/tedious vs benefits.
+  #Migrate only the serial numbers (predicted or received) up until the end of the current year. As the Koha's serials-module takes over then.
+  #TODO: Cannot know how many physical serial magazines are expected to be received for non-received serial numbers.
+  #      So serial issues that need to be received after going live, need to be added as supplements as there is only one item/magazine in Koha subscription ready to be received.
   "21-ser_issues.csv" => {
-    uniqueKey => [0, 1],
+    #uniqueKey => [0, 1, 3], #as item_id can be null or 0, this causes a lot of false positive warnings, so just disable uniqueness checks.
+    uniqueKey => -1,
     sql =>
       "SELECT    serial_issues.issue_id, serial_issues.component_id,
-                 line_item.bib_id,
+                 line_item.bib_id, issues_received.item_id,
                  serial_issues.enumchron, serial_issues.lvl1, serial_issues.lvl2, serial_issues.lvl3,
                  serial_issues.lvl4, serial_issues.lvl5, serial_issues.lvl6, serial_issues.alt_lvl1,
                  serial_issues.alt_lvl2, serial_issues.chron1, serial_issues.chron2, serial_issues.chron3,
                  serial_issues.chron4, serial_issues.alt_chron,
-                 serial_issues.expected_date, serial_issues.receipt_date, serial_issues.received
+                 serial_issues.expected_date, serial_issues.receipt_date, serial_issues.received,
+
+                 issues_received.location_id as received_location_id, issues_received.receipt_date as received_receipt_date,
+                 issues_received.opac_suppressed, issues_received.note as received_note, issues_received.collapsed
        FROM      serial_issues
        LEFT JOIN component       ON (component.component_id = serial_issues.component_id)
        LEFT JOIN subscription    ON (subscription.subscription_id = component.subscription_id)
        LEFT JOIN line_item       ON (subscription.line_item_id = line_item.line_item_id)
-       ORDER BY  serial_issues.issue_id ASC",
+       LEFT JOIN issues_received ON (issues_received.issue_id = serial_issues.issue_id AND issues_received.component_id = serial_issues.component_id)
+       WHERE     EXTRACT(YEAR FROM serial_issues.expected_date) <= $nowYear
+       ORDER BY  serial_issues.component_id ASC, serial_issues.issue_id ASC",
   },
 
   #Extract MFHD only for serials, so the location and subscription history can be extracted.

@@ -85,8 +85,7 @@ sub setStartdate($s, $o, $b) {
 
   unless ($s->{startdate}) {
     #Voyager seems to have so very few subsription.start_date -values that it is better to default it
-    #DB default is NULL.
-    #Do nothing...
+    $s->{startdate} = '2000-01-01'; #Koha must have a koha.subscription.startdate
   }
 }
 sub setStatus($s, $o, $b) {
@@ -94,11 +93,7 @@ sub setStatus($s, $o, $b) {
 }
 sub setLocation($s, $o, $b) {
   my $branchcodeLocationCcode = _translateLocationId(@_);
-  $s->{location} = $branchcodeLocationCcode->{location};
-
-  unless ($s->{location}) {
-    MMT::Exception::Delete->throw($s->logId()."' has no location. Set a default in the TranslationTable rules!");
-  }
+  $s->{location} = $branchcodeLocationCcode->{location}; #There may or may not be a location, this depends on the translation table rules
 }
 sub setBranchcode($s, $o, $b) {
   my $branchcodeLocationCcode = _translateLocationId(@_);
@@ -123,8 +118,7 @@ sub setEnddate($s, $o, $b) {
 
   unless ($s->{enddate}) {
     #Voyager seems to have so very few component_pattern.end_date -values that it is better to default it
-    #DB default is NULL.
-    #Do nothing...
+    $s->{enddate} = '2018-12-31';
   }
 }
 sub setClosed($s, $o, $b) {
@@ -136,7 +130,7 @@ sub _translateLocationId($s, $o, $b) {
   my $locationId;
 
   if (not($subscriptionLocations)) {
-    $log->warn($s->logId()." has no location?");
+    $log->warn($s->logId()." has no location in Voyager?");
     $locationId = '_DEFAULT_';
   }
   #In theory, there could be multiple locations for one subscription/component, but the extract-phase unique key deduplication should take care of that.

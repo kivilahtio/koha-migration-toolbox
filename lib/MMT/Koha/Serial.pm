@@ -34,6 +34,7 @@ sub build($self, $o, $b) {
   #  \$self->setBiblionumber    ($o, $b); #line_item.bib_id,
   #   \$self->setSubscriptionid  ($o, $b); #component.subscription_id,
   #    \$self->setSerialid        ($o, $b); #s.serial_id
+  $self->setItemnumber         ($o, $b);
   $self->setEnumerations       ($o, $b); #s.enumchron, s.lvl1, s.lvl2, s.lvl3, s.lvl4, s.lvl5, s.lvl6, s.alt_lvl1, s.alt_lvl2, s.chron1, s.chron2, s.chron3, s.chron4, s.alt_chron,
   #  \$self->setSerialseq       ($o, $b);
   #   \$self->setSerialseq_x     ($o, $b);
@@ -57,13 +58,20 @@ sub logId($s) {
   return 'Serial: '.$s->id();
 }
 
+sub setItemnumber($s, $o, $b) { #This is used to populate the koha.serialitems -link
+  $s->sourceKeyExists($o, 'item_id');
+  $s->{itemnumber} = $o->{item_id} || undef; #item_id can also be 0 or '', just normalize it to undef
+}
+
+#In Koha, the planneddate is the date the serial is expected to arrive to the library.
 sub setPlanneddate($s, $o, $b) {
-  $s->{planneddate} = $o->{receipt_date};
+  $s->{planneddate} = $o->{expected_date};
 
   unless ($s->{planneddate}) {
-    MMT::Exception::Delete->throw($s->logId()."' has no receipt_date||expected_date/planneddate.");
+    MMT::Exception::Delete->throw($s->logId()."' has no expected_date/planneddate.");
   }
 }
+#In Koha the publisheddate is the date the serial is actually printed. Voyager has no such distinction, so reuse expected_date.
 sub setPublisheddate($s, $o, $b) {
   $s->{publisheddate} = $o->{expected_date};
   unless ($s->{publisheddate}) {
