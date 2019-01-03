@@ -126,7 +126,7 @@ our %queries = (
       #
       # Pick last checkin location normally from the old issues table.
       #
-      "SELECT * FROM                                                                                 \n".
+      "SELECT item_id, max(last_borrow_date) as last_borrow_date FROM                                \n".
       "(                                                                                             \n".
       "SELECT    circ_trans_archive.item_id, max(circ_trans_archive.charge_date) as last_borrow_date \n".
       "FROM      circ_trans_archive                                                                  \n".
@@ -146,6 +146,7 @@ our %queries = (
       "WHERE     hold_recall_items.hold_recall_status = 2    \n". # 2 = 'Pending'. In Voyager-speak this is a hold which is waiting for pickup.
       "                                                      \n".
       ")                                                                                             \n".
+      "GROUP BY item_id                                                                              \n".
       "ORDER BY  item_id ASC                                                                         \n".
       "",
   },
