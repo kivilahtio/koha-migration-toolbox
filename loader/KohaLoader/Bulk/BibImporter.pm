@@ -186,8 +186,10 @@ sub worker($s) {
 
     ($operation, $statusOfOperation, $newBiblionumber, $legacyBiblionumber) = Bulk::BibImporter::BoundRecord::migrate($s, $record, $recordXmlPtr);
     if ($operation) {
-      my %bid2 :shared = (old => $legacyBiblionumber, new => $matchedBiblionumber // $newBiblionumber // 0, op => $operation, status => $statusOfOperation);
-      $bnConversionQueue->enqueue(\%bid2);
+      if ($statusOfOperation eq 'OK') { #TODO: This ugly hack hides errors from the conversionTable, but is necessary to prevent from subsequent thread from attempting to create the same bound parent record many times, leading to errors, and overloading the initial correct insertion
+        my %bid2 :shared = (old => $legacyBiblionumber, new => $matchedBiblionumber // $newBiblionumber // 0, op => $operation, status => $statusOfOperation);
+        $bnConversionQueue->enqueue(\%bid2);
+      }
     }
   }
   };
