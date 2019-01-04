@@ -56,6 +56,9 @@ sub _createBoundBibParentRecord($s, $boundBibRecord, $parentBiblionumber) {
       $parent->field('245')->update(a => $title) : #This is clearly distinguished as a temporary placeholder that needs to be manually fixed.
       $parent->insert_fields_ordered(MARC::Field->new('245', 'a' => $title));
 
+  my @link_fields = $parent->field('773');
+  $parent->delete_fields(@link_fields);
+
   return Bulk::BibImporter::addRecordFast($s, $parent, \$parent->as_xml_record('MARC21'), $parentBiblionumber);
 }
 
