@@ -24,6 +24,8 @@ binmode( STDOUT, ":encoding(UTF-8)" );
 binmode( STDIN,  ":encoding(UTF-8)" );
 $|=1;
 
+use Data::Dumper;
+
 =head2 NAME
 
 Exp::Strategy::Precision::HAMK - Precisely export what is needed for HAMK. (Except MARC)
@@ -35,6 +37,7 @@ Export all kinds of data from Voyager using the given precision SQL.
 =cut
 
 my $nowYear = 1900 + (localtime)[5];
+my $boundBibsStartId = 2000000;
 
 our %queries = (
   "00-bib_sub_frequency.csv" => {
@@ -65,6 +68,33 @@ our %queries = (
       "SELECT    mfhd_master.mfhd_id, mfhd_master.display_call_no                                 \n".
       "FROM      mfhd_master                                                                      \n".
       "",
+  },
+  "00c-bound_bibs-bib_to_parent.csv" => {
+    uniqueKey => -1,
+    columnNames => ['bib_item.bound_bib_id', 'bib_item.bound_parent_bib_id'], #Cannot parse the extractable column names or aliases for this SQL reasonably without using external SQL parsing libraries.
+    sql =>
+      "SELECT    bound_bib_ids,                                                                   \n".
+      "          (SELECT MAX(bib_id) FROM bib_master) + 10000 +                                   \n". # - Reserve bib_ids for the soon-to-be-created bound bib parent records.
+      "              ROW_NUMBER() OVER (ORDER BY bound_bib_ids                                    \n". #   Pick the latest used bib_id in the DB, add a safety buffer of 10000
+      "          ) as new_parent_bib_id                                                           \n". #   and add 1 for each deduplicated biblio group.
+      "FROM      (SELECT    LISTAGG(bib_item.bib_id, ',') WITHIN GROUP (ORDER BY bib_item.bib_id) \n". # - GROUP_CONCAT bib_ids that share the same item,
+      "                         as bound_bib_ids                                                  \n". #   this returns duplicate bib_id-group-rows for each bound item
+      "           FROM      bib_item                                                              \n".
+      "           LEFT JOIN ( SELECT   bib_item.item_id, COUNT(bib_item.bib_id) as bibs_count     \n". # - Select the count of linked biblios for this item
+      "                       FROM     bib_item                                                   \n".
+      "                       GROUP BY bib_item.item_id                                           \n".
+      "                     ) multi_bibious ON (multi_bibious.item_id = bib_item.item_id)         \n".
+      "           WHERE     multi_bibious.bibs_count > 1                                          \n". # - Only include items/bibs that are bound
+      "           GROUP BY  bib_item.item_id                                                      \n". # - First layer of flattening, concatenate all bib_id's this item links to
+      "          )                                                                                \n".
+      "GROUP BY bound_bib_ids                                                                     \n". # - Flatten duplicate bib_id-groups, now we have a group of bibs that need a parent bound record only once for all items they have
+      "",
+    postprocessor => sub {
+      my ($row) = @_;
+      my @bib_ids = split(',',$row->[0]);         # Split the bound_bib_ids-list
+      @bib_ids = map {[$_, $row->[1]]} @bib_ids;  # Make new rows from each bib_id and append the reserved bound parent record bib_id
+      return \@bib_ids;
+    },
   },
   "00-suppress_in_opac_map.csv" => {
     encoding => "iso-8859-1",

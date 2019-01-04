@@ -81,7 +81,7 @@ sub build($self, $o, $b) {
   #$self->set(? => circulation_level, $o, $b);
   #$self->set(? => reserve_level, $o, $b);
 
-  $self->dropBoundItem                                    ($o, $b);
+  $self->doBoundItem                                      ($o, $b);
 }
 
 sub id {
@@ -272,13 +272,21 @@ sub setStatuses($s, $o, $b) {
   }
 }
 
-sub dropBoundItem($s, $o, $b) {
-  $s->sourceKeyExists($o, 'bibs_count');
-  $s->sourceKeyExists($o, 'holdings_count');
+=head2 doBoundItem
 
-  if ($o->{bibs_count} > 1 || $o->{holdings_count} > 1) {
-    MMT::Exception::Delete->throw(error => $s->logId()." - Looks like an Item for a bound Record. Has '".$o->{bibs_count}."' linked biblios and '".$o->{holdings_count}."' linked holdings");
-  }
+Move this Item under the bound bib's parent record.
+Executes only if this Item's biblio is a bound record and has a bound parent record.
+
+=cut
+
+sub doBoundItem($s, $o, $b) {
+  my $boundParent = $b->{BoundBibParent}->get($o->{bib_id});
+  return unless $boundParent;
+
+  $boundParent = $boundParent->[0]->{bound_parent_bib_id};
+  die($s->logId()." - Bound parent biblionumber '$boundParent' is not a valid digit?") unless ($boundParent =~ /^\d+$/);
+  $log->info($s->logId()." is a part of a bound record with '".$o->{bibs_count}."' linked biblios and '".$o->{holdings_count}."' linked holdings. Moving it under the bound parent record '$boundParent'");
+  $s->{biblionumber} = $boundParent;
 }
 
 return 1;

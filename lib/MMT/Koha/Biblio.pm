@@ -38,6 +38,7 @@ sub build($s, $xmlPtr, $b) {
   MMT::MARC::Regex->controlfield($xmlPtr, '003', MMT::Config::organizationISILCode(), {after => '001'});
 
   $s->isSuppressInOPAC($xmlPtr, $b);
+  $s->linkBoundRecord($xmlPtr, $b);
 
   $s->{xmlPtr} = $xmlPtr;
   return $s;
@@ -70,6 +71,32 @@ sub isSuppressInOPAC($s, $xmlPtr, $b) {
 
     MMT::MARC::Regex->datafield($xmlPtr, '942', 'n', $suppressInOpac);
   }
+}
+
+=head2 linkBoundRecord
+
+Link this Bib under the bound bib's parent record.
+Executes only if this Bib is a bound record.
+
+Bound parent record is transparently created if missing in the Loader, because due to the Perl's multi-threading nature of share-nothing, communicating the creation
+of the bound parent bib is very difficult and communicating between processes is extra slow.
+It is much easier to just spam the DB during loading to check if the bound parent record already exists or not.
+
+=cut
+
+sub linkBoundRecord($s, $xmlPtr, $b) {
+  my $boundParent = $b->{BoundBibParent}->get($s->id());
+  return unless $boundParent;
+
+  $boundParent = $boundParent->[0]->{bound_parent_bib_id};
+  die($s->logId()." - Bound parent biblionumber '$boundParent' is not a valid digit?") unless ($boundParent =~ /^\d+$/);
+
+  $log->info($s->logId()." is a part of a bound record. Linking it under the reserved bound parent record biblionumber '$boundParent'");
+  if (my $f773w = MMT::MARC::Regex->datafield($xmlPtr, '773', 'w')) {
+    $log->warn($s->logId()." already has Field '773\$w'with value '$f773w'. This is overwritten with '$boundParent'. Sorry."); #TODO: Try to figure out a good solution if we encounter bound bibs which are also component parts.
+  }
+  MMT::MARC::Regex->datafield($xmlPtr, '773', 'w', $boundParent); #Overwrites any existing field 773
+  MMT::MARC::Regex->subfield($xmlPtr, '773', 'i', 'Bound biblio');
 }
 
 ###########################################################################################

@@ -38,6 +38,7 @@ use C4::Biblio;
 
 #Local modules
 use Bulk::ConversionTable::BiblionumberConversionTable;
+use Bulk::BibImporter::BoundRecord;
 
 
 # Distribute jobs to workers via this structure since a shared file handle can no longer be reliably accessed from threads even when using locks
@@ -182,6 +183,12 @@ sub worker($s) {
 
     my %bid :shared = (old => $legacyBiblionumber, new => $matchedBiblionumber // $newBiblionumber // 0, op => $operation, status => $statusOfOperation);
     $bnConversionQueue->enqueue(\%bid);
+
+    ($operation, $statusOfOperation, $newBiblionumber, $legacyBiblionumber) = Bulk::BibImporter::BoundRecord::migrate($s, $record, $recordXmlPtr);
+    if ($operation) {
+      my %bid2 :shared = (old => $legacyBiblionumber, new => $matchedBiblionumber // $newBiblionumber // 0, op => $operation, status => $statusOfOperation);
+      $bnConversionQueue->enqueue(\%bid2);
+    }
   }
   };
   if ($@) {

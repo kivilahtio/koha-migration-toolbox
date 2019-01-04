@@ -152,7 +152,7 @@ sub datafield {
   #Replace an existing field
   if ($$xmlPtr =~ s!
               (<datafield\s+tag="$fCode".*?>).+?</datafield>
-              !$content</datafield>!smx) {
+              !$1\n$_p$_p$content\n$_p</datafield>!smx) {
     return 'replace';
   }
 

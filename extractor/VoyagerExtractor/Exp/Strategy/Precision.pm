@@ -27,6 +27,7 @@ $|=1;
 #External modules
 use Carp;
 use DBI;
+use Data::Dumper;
 
 #Local modules
 use Exp::nvolk_marc21;
@@ -153,12 +154,12 @@ sub pickCorrectSubquery($$) {
 sub extractQuerySelectColumns($) {
   my ($query) = @_;
   my $header_row = $query;
-  $header_row =~ s/\s+/\t/g;
-  $header_row =~ s/,\t/,/g;
-  $header_row =~ tr/A-Z/a-z/;
-  $header_row =~ s/\w+\((.+?)\)/$1/;          #Trim column functions such as max()
-  $header_row =~ s/\.\w+\s+AS\s+(\w+)/\.$1/gi; #Simplify column aliasing... renew_transactions.renew_date AS last_renew_date -> renew_transactions.last_renew_date
-  $header_row =~ s/(\w+)\s+AS\s+(\w+)/$1\.$2/gi; #Simplify column aliasing... null AS last_renew_date -> null.last_renew_date
+  $header_row =~ s/\s+/\t/gs;
+  $header_row =~ s/,\t/,/gs;
+  $header_row =~ tr/A-Z/a-z/s;
+  $header_row =~ s/\w+\((.+?)\)/$1/s;          #Trim column functions such as max()
+  $header_row =~ s/\.\w+\s+AS\s+(\w+)/\.$1/gis; #Simplify column aliasing... renew_transactions.renew_date AS last_renew_date -> renew_transactions.last_renew_date
+  $header_row =~ s/(\w+)\s+AS\s+(\w+)/$1\.$2/gis; #Simplify column aliasing... null AS last_renew_date -> null.last_renew_date
   return undef if $header_row eq '*';
   my @cols = split(',', $header_row);
   return \@cols;
@@ -305,7 +306,15 @@ sub doQuery($$) {
   my $i=0;
   open(my $out, ">:encoding(UTF-8)", Exp::Config::exportPath($filename)) or die("Can't open output file '".Exp::Config::exportPath($filename)."': $!");
 
-  my ($subquery, $colNames) = pickCorrectSubquery($query, $filename);
+  my ($subquery, $colNames);
+  if ($queries->{$filename}{columnNames}) {
+    $colNames = $queries->{$filename}{columnNames};
+    print "Explicit column names '@$colNames'\n";
+  }
+  else {
+    ($subquery, $colNames) = pickCorrectSubquery($query, $filename);
+  }
+  
   my $columnEncodings = getColumnEncodings($colNames); #Columns come from multiple tables via JOINs and can have distinct encodings.
   my %columnToIndexLookup; while(my ($i, $v) = each(@$colNames)) {$v =~ s/^.+\.//; $columnToIndexLookup{$v} = $i}
   #Lookup has the column names only, table names are trimmed
@@ -313,18 +322,30 @@ sub doQuery($$) {
   print $out createHeaderRow($colNames)."\n";
 
   while (my @line = $sth->fetchrow_array()) {
-    $i++;
-    Exp::Encoding::decodeToPerlInternalEncoding(\@line, $columnEncodings);
-    Exp::Encoding::Repair::repair($filename, \@line, \%columnToIndexLookup);
+    my $line = \@line;
 
-    deduplicateUniqueKey($uniqueKeyIndex, $colNames, \@line);
+    Exp::Encoding::decodeToPerlInternalEncoding($line, $columnEncodings);
+    Exp::Encoding::Repair::repair($filename, $line, \%columnToIndexLookup);
 
-    Exp::Anonymize::anonymize(\@line, $anonRules, \%columnToIndexLookup) if ($anonymize);
+    deduplicateUniqueKey($uniqueKeyIndex, $colNames, $line);
+
+    Exp::Anonymize::anonymize($line, $anonRules, \%columnToIndexLookup) if ($anonymize);
+
+    $line = $queries->{$filename}{postprocessor}->($line) if $queries->{$filename}{postprocessor};
 
     print "."    unless ($i % 10);
     print "\r$i          " unless ($i % 100);
 
-    writeCsvRow($out, \@line);
+    if (ref($line->[0]) eq 'ARRAY') {
+      for (@$line) {
+        writeCsvRow($out, $_);
+        $i++;
+      }
+    }
+    else {
+      writeCsvRow($out, $line);
+      $i++;
+    }
   }
 
   close $out;

@@ -57,7 +57,8 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
         inputFile => 'biblios.marcxml',
         outputFile => 'biblios.marcxml',
         repositories => [
-          {name => 'SuppressInOpacMap', file => '00-suppress_in_opac_map.csv', keys => ['bib_id', 'mfhd_id', 'location_id']},
+          {name => 'SuppressInOpacMap', file => '00-suppress_in_opac_map.csv',      keys => ['bib_id', 'mfhd_id', 'location_id']},
+          {name => 'BoundBibParent',    file => '00c-bound_bibs-bib_to_parent.csv', keys => ['bound_bib_id']},
         ],
       });
       $builder->build();
@@ -101,6 +102,7 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
           {name => 'ItemStatuses',   file => '02-item_status.csv',            keys => ['item_id']},
           {name => "LastBorrowDate", file => '02-items_last_borrow_date.csv', keys => ['item_id']},
           {name => 'BibText',        file => '00-bib_text.csv',               keys => ['bib_id']},
+          {name => 'BoundBibParent', file => '00c-bound_bibs-bib_to_parent.csv', keys => ['bound_bib_id']},
         ],
         translationTables => [
           {name => 'LocationId'},
