@@ -53,6 +53,8 @@ sub transform($s, $xmlPtr, $b) {
 
   isSuppressInOPAC($s, $xmlPtr, $b, $holding_id);
 
+  linkBoundRecord($s, $xmlPtr, $b);
+
   return $holding_id;
 }
 
@@ -106,6 +108,27 @@ sub isSuppressInOPAC($s, $xmlPtr, $b, $holding_id) {
 
     MMT::MARC::Regex->subfield($xmlPtr, '942', 'n', $suppressInOpac, {last => 1});
   }
+}
+
+=head2 linkBoundRecord
+
+Link this Holding under the bound bib's parent record.
+Executes only if this Holding is a bound record.
+Bound parent record is transparently created if missing in the Loader, because due to the Perl's multi-threading nature of share-nothing, communicating the creation
+of the bound parent bib is very difficult and communicating between processes is extra slow.
+It is much easier to just spam the DB during loading to check if the bound parent record already exists or not.
+
+=cut
+
+sub linkBoundRecord($s, $xmlPtr, $b) {
+  my $boundParent = $b->{BoundBibParent}->get($s->id());
+  return unless $boundParent;
+
+  $boundParent = $boundParent->[0]->{bound_parent_bib_id};
+  die($s->logId()." - Bound parent biblionumber '$boundParent' is not a valid digit?") unless ($boundParent =~ /^\d+$/);
+
+  $log->info($s->logId()." is a part of a bound record. Linking it under the reserved bound parent record biblionumber '$boundParent'");
+  MMT::MARC::Regex->controlfield($xmlPtr, '004', $boundParent);
 }
 
 return 1;

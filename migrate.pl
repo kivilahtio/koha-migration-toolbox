@@ -78,6 +78,7 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
           {name => 'BibText',           file => '00-bib_text.csv',             keys => ['bib_id']},
           {name => 'MFHDMaster',        file => '00-mfhd_master.csv',          keys => ['mfhd_id']},
           {name => 'SuppressInOpacMap', file => '00-suppress_in_opac_map.csv', keys => ['bib_id', 'mfhd_id', 'location_id']},
+          {name => 'BoundBibParent',    file => '00c-bound_bibs-bib_to_parent.csv', keys => ['bound_bib_id']},
         ],
         translationTables => [
           {name => 'LocationId'},
