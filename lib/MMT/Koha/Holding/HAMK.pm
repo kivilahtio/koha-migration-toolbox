@@ -121,7 +121,8 @@ It is much easier to just spam the DB during loading to check if the bound paren
 =cut
 
 sub linkBoundRecord($s, $xmlPtr, $b) {
-  my $boundParent = $b->{BoundBibParent}->get($s->id());
+  my $biblionumber = MMT::MARC::Regex->controlfield($xmlPtr, '004');
+  my $boundParent = $b->{BoundBibParent}->get($biblionumber);
   return unless $boundParent;
 
   $boundParent = $boundParent->[0]->{bound_parent_bib_id};
