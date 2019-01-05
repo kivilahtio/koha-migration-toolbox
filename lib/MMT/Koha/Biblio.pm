@@ -97,6 +97,7 @@ sub linkBoundRecord($s, $xmlPtr, $b) {
   }
   MMT::MARC::Regex->datafield($xmlPtr, '773', 'w', $boundParent); #Overwrites any existing field 773
   MMT::MARC::Regex->subfield($xmlPtr, '773', 'i', 'Bound biblio');
+  MMT::MARC::Regex->subfield($xmlPtr, '773', 't', 'Bound biblio parent record');
 }
 
 ###########################################################################################
