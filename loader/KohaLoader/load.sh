@@ -15,7 +15,11 @@ DEFAULT_ADMIN=""
 
 test ! -e "$KOHA_CONF" && echo "\$KOHA_CONF=$KOHA_CONF doesn't exist. Aborting!" exit 2
 KOHA_DB=$(xmllint --xpath "yazgfs/config/database/text()" $KOHA_CONF)
+KOHA_DB_USER=$(xmllint --xpath "yazgfs/config/user/text()" $KOHA_CONF)
+KOHA_DB_PASS=$(xmllint --xpath "yazgfs/config/pass/text()" $KOHA_CONF)
 test -z "$KOHA_DB" && echo "\$KOHA_DB is unknown. Couldn't parse it from \$KOHA_CONF=$KOHA_CONF. Aborting!" exit 3
+test -z "$KOHA_DB_USER" && echo "\$KOHA_DB_USER is unknown. Couldn't parse it from \$KOHA_CONF=$KOHA_CONF. Aborting!" exit 3
+test -z "$KOHA_DB_PASS" && echo "\$KOHA_DB_PASS is unknown. Couldn't parse it from \$KOHA_CONF=$KOHA_CONF. Aborting!" exit 3
 
 ## getopt --long
 OPTS=`getopt -o o::d::w::cpa:: --long operation::,data-source::,working-dir::,confirm,preserve-ids,default-admin:: --name "$(basename "$0")" -- "$@"`
@@ -157,6 +161,11 @@ function cleanPastMigrationWorkspace {
     rm $WORKING_DIR/marc.matchlog $WORKING_DIR/marc.manualmatching
 }
 
+function flushDataFromDB {
+    #Empty all previously migrated data, except configurations. You don't want this when merging records :)
+    mysql --user="$KOHA_DB_USER" --password="$KOHA_DB_PASS" "$KOHA_DB" < bulkEmptyMigratedTables.sql
+}
+
 function fullReindex {
     flush="$1"
     if [ -z "$flush" ]; then
@@ -220,14 +229,12 @@ then
 
     cleanPastMigrationWorkspace
 
-    #Kill the search indexes when doing bare migrations. Remember to not kill indexes when merging migrations :)
-    rm -r /home/koha/koha-dev/var/lib/zebradb/biblios/*
-    rm -r /home/koha/koha-dev/var/lib/zebradb/authorities/*
     #Empty all previously migrated data, except configurations. You don't want this when merging records :)
-    mysql $KOHA_DB < bulkEmptyMigratedTables.sql
+    flushDataFromDB
 
     migrateBulkScripts
 
+    #Kill the search indexes when doing bare migrations. Remember to not kill indexes when merging migrations :)
     fullReindex flush
 
     exit
