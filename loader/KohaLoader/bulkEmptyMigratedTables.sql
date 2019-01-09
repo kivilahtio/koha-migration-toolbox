@@ -50,7 +50,7 @@ TRUNCATE biblioitems;
 TRUNCATE borrower_attributes;
 TRUNCATE borrower_debarments;
 TRUNCATE borrower_files;
-TRUNCATE borrower_message_preferences;
+DELETE FROM borrower_message_preferences WHERE borrowernumber IS NOT NULL; --Defaults are with NULL
 TRUNCATE borrower_message_transport_preferences;
 TRUNCATE borrower_modifications;
 TRUNCATE borrower_password_recovery;
