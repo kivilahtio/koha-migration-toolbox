@@ -33,10 +33,8 @@ my @results;
 
 while (my $data = $csv->getline_hr( $inFH )) {
   my $s = MMT::Koha::Serial->new();
-  $s->{_id} = $data->{component_id}.','.$data->{issue_id};
-  $s->{_enumchron} = $data->{enumchron};
   MMT::Koha::Serial::Enumerations::enumThenChron($s, $data, {});
-  push(@results, $s);
+  push(@results, [$s->{serialseq_x}, $s->{serialseq_y}, $s->{serialseq_z}]);
 }
 
 ok(@results,
@@ -59,13 +57,13 @@ subtest "Then the locations and itemtypes are translated as expected", sub {
 };
 
 open(my $outFH, '>:encoding(UTF-8)', $resultsFile) or die("Couldn't open '$resultsFile' for writing: $!");
-for (my $i=0 ; $i<@results ; $i++) {
-  my $s = $results[$i];
+my @data = File::Slurp::read_file($dataFile, {chomp => 1});
+for (my $i=0 ; $i<@data ; $i++) {
   if ($i == 0) { #First row is the header row
-    print $outFH "$s\n";
+    print $outFH "$data[$i]\n";
   }
   else {
-    printf $outFH "%-10s, [%-30s], '%s' '%s' '%s'\n", $s->{_id}, $s->{_enumchron}, ($s->{serialseq_x} || ''), ($s->{serialseq_y} || ''), ($s->{serialseq_z} || '');
+    printf $outFH "%s\n            %s\n", $data[$i], join(',', map {$_ ? "'$_'" : "''"} @{$results[$i-1]});
   }
 }
 ok(close($outFH),

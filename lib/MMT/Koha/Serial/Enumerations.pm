@@ -52,6 +52,7 @@ sub chronOrEnumOrdered($s, $o, $b) {
 
 sub parseEnumchron($s, $o, $b) {
   $s->sourceKeyExists($o, 'enumchron');
+  $log->trace($s->logId()." - Extracting digits from enumchron '".$o->{enumchron}."'");
 
   my @digits = $o->{enumchron} =~ /(\d+)/gsm;
 
@@ -66,7 +67,7 @@ sub enumThenChron($s, $o, $b) {
   my $xyzI = 0; #Iterate serialseq_[xyz]
   my @xyz;
   for my $k (@enumChronColsOrderIfEnumFirst) {
-    if (defined($o->{$k}) && $o->{$k} =~ /^\d+$/ && $o->{$k} >= 0) { #Is digit and not negative
+    if ($o->{$k} && $o->{$k} =~ /^\d+$/) { #Is digit and not negative
       $xyz[$xyzI] = ($xyz[$xyzI]) ? $xyz[$xyzI].' '.$o->{$k} : $o->{$k};
       if ($xyzI < 2) { $xyzI++ }
     }
@@ -82,8 +83,7 @@ sub enumThenChron($s, $o, $b) {
   }
   $s->{serialseq}   = $o->{enumchron};
 
-  #my @vals = map {$o->{$_} // ''} @enumChronColsOrderIfEnumFirst;
-  #$log->debug(sprintf("%-5s, %-20s - %-20s - %6s, %6s, %6s, %6s, %6s, %6s, %10s, %10s, %10s, %10s, %10s, %10s, %10s", $s->{subscriptionid}, join(':', @xyz), $o->{enumchron}, @vals));
+  $log->trace($s->logId()." - enumchron '".$o->{enumchron}."' turned into x='".($s->{serialseq_x} || 'undef')."', y='".($s->{serialseq_y} || 'undef')."', z='".($s->{serialseq_z} || 'undef')."'") if $log->is_trace();
 }
 
 return 1;
