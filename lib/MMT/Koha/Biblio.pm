@@ -40,6 +40,10 @@ sub build($s, $xmlPtr, $b) {
   $s->isSuppressInOPAC($xmlPtr, $b);
   $s->linkBoundRecord($xmlPtr, $b);
 
+  if ($$xmlPtr =~ s!<subfield code="9">([^0-9]+)</subfield>!!gsm) {
+    $log->info($s->logId().". Subfield \$9 = '$1' dropped. \$9 must be a number!");
+  }
+
   $s->{xmlPtr} = $xmlPtr;
   return $s;
 }
