@@ -18,14 +18,14 @@ fi
 MMT_CODE=`dirname $0` #Where this installer resides, resides the code to execute
 test $MMT_CODE == "." && MMT_CODE=`pwd`
 CONFIG_MAIN="$MMT_HOME/config/main.yaml"
-VOYAGER_EXPORT_DIR="$MMT_HOME/VoyagerExports"
-KOHA_IMPORT_DIR="$MMT_HOME/KohaImports"
+VOYAGER_EXPORT_DIR="VoyagerExports"
+KOHA_IMPORT_DIR="KohaImports"
 LOG_DIR="$MMT_HOME/logs"
 TEST_DIR="$MMT_HOME/tests"
 EXTRACTOR_DIR="$MMT_CODE/extractor"
-EXTRACTOR_PIPELINE_SCRIPT="voyagerToTransformer_fetchDataViaSSHJumpHost.sh"
+EXTRACTOR_PIPELINE_SCRIPT="voyagerToTransformer.sh"
 LOADER_DIR="$MMT_CODE/loader"
-LOADER_PIPELINE_SCRIPT="transformerToKoha_loadDataViaSSHJumpHosts.sh"
+LOADER_PIPELINE_SCRIPT="transformerToKoha.sh"
 PIPELINE_SCRIPTS="$MMT_HOME/secret"
 
 cd $MMT_CODE #Make sure we are in the source directory
@@ -35,41 +35,28 @@ test $? != 0 && echo "Couldn't cd to app source code directory '$MMT_CODE', fail
 echo "Installing Perl dependencies to the program dir '$MMT_CODE'"
 cpanm -L extlib --installdeps .
 # Ubuntu 18 fails on one of the dependencies, unless --force is used...
-test $? != 0 && echo "Perl dependencies install failed with error code '$?'. Using force." && cpanm -L extlib --force --installdeps .
-test $? != 0 && echo "Perl dependencies install failed with error code '$?'. Force did not help." && exit 9
+if [ $? != 0 ]
+then
+  echo "Perl dependencies install failed with error code '$?'. Using force." && cpanm -L extlib --force --installdeps .
+  test $? != 0 && echo "Perl dependencies install failed with error code '$?'. Force did not help." && exit 9
+fi
 
 
 echo "Configuring application home to '$MMT_HOME'"
-mkdir -p $MMT_HOME           || exit 11
-mkdir -p $VOYAGER_EXPORT_DIR || exit 11
-mkdir -p $KOHA_IMPORT_DIR    || exit 11
-mkdir -p $LOG_DIR            || exit 11
-mkdir -p $TEST_DIR           || exit 11
-mkdir -p $PIPELINE_SCRIPTS   || exit 11
-cp -r config $MMT_HOME/      || exit 11
-cp -r tests $MMT_HOME/       || exit 11
+mkdir -p $MMT_HOME                     || exit 11
+mkdir -p $MMT_HOME/$VOYAGER_EXPORT_DIR || exit 11
+mkdir -p $MMT_HOME/$KOHA_IMPORT_DIR    || exit 11
+mkdir -p $LOG_DIR                      || exit 11
+mkdir -p $TEST_DIR                     || exit 11
+mkdir -p $PIPELINE_SCRIPTS             || exit 11
+cp -r config $MMT_HOME/                || exit 11
+cp -r tests $MMT_HOME/                 || exit 11
 cp config/seed.gitignore $MMT_HOME/.gitignore || exit 11
 cp $EXTRACTOR_DIR/$EXTRACTOR_PIPELINE_SCRIPT $PIPELINE_SCRIPTS/ || exit 12
 cp $LOADER_DIR/$LOADER_PIPELINE_SCRIPT $PIPELINE_SCRIPTS/ || exit 12
-perl -pi -e "s|^exportPipelineScript.+$|exportPipelineScript: '$PIPELINE_SCRIPTS/$EXTRACTOR_PIPELINE_SCRIPT'|" $CONFIG_MAIN
-perl -pi -e "s|^importPipelineScript.+$|importPipelineScript: '$PIPELINE_SCRIPTS/$LOADER_PIPELINE_SCRIPT'|"    $CONFIG_MAIN
-perl -pi -e "s|^voyagerExportDir.+$|voyagerExportDir: '$VOYAGER_EXPORT_DIR'|" $CONFIG_MAIN
-perl -pi -e "s|^kohaImportDir.+$|kohaImportDir: '$KOHA_IMPORT_DIR'|" $CONFIG_MAIN
 
 
 echo "Persisting environment variables"
-function setConf {
-  name="$1"
-  val="$2"
-  dest="$3"
-  if [[ `grep -P "$name" $dest` ]]
-  then
-    perl -pi.bak -e "s|^.*$name.+$|$name: $val|" $dest
-  else
-    echo "$name: $val" >> $dest
-  fi
-}
-
 export MMT_HOME=$MMT_HOME
 export MMT_CODE=$MMT_CODE
 if [[ `grep -P 'MMT_HOME' $HOME/.bashrc` ]]
@@ -85,24 +72,15 @@ else
   echo "export MMT_CODE=$MMT_CODE" >> $HOME/.bashrc
 fi
 
-setConf "voyagerExportDir" "$VOYAGER_EXPORT_DIR" $CONFIG_MAIN
-setConf "kohaImportDir"    "$KOHA_IMPORT_DIR"    $CONFIG_MAIN
 
 cat <<STEPS
 -----------------------
 Awesome! MMT installed!
 -----------------------
+Working directory is '$MMT_HOME'.
 Now you need to do some manual steps.
 
 1)
-  Firstly the Voyager extract scripts need to be deployed.
-  You can do so by copying the whole $EXTRACTOR_DIR/VoyagerExtractor/* to your
-  Voyager DB server, for ex.
-    scp -r $EXTRACTOR_DIR/VoyagerExtractor username@voyager-server:~/
-  See the $EXTRACTOR_DIR/VoyagerExtractor/README for installation information
-
-
-2)
   A extract-phase connection script needs to be created and configured to make a
   connection to the Voyager DB server and extract data.
   You can find examples in $EXTRACTOR_DIR
@@ -113,15 +91,7 @@ Now you need to do some manual steps.
 
   A default script is placed for you into a default position.
 
-3)
-  Then the Koha load scripts need to be deployed.
-  You can do so by copying the whole $LOADER_DIR/KohaLoader/* to your
-  Voyager DB server, for ex.
-    scp -r $LOADER_DIR/KohaLoader username@koha-server:~/
-  See the $LOADER_DIR/KohaLoader/README for installation information
-
-
-4)
+2)
   A load-phase (import) connection script needs to be created and configured to
   make a connection to the Koha application server and load data in.
   You can find examples in $LOADER_DIR
@@ -132,8 +102,7 @@ Now you need to do some manual steps.
 
   A default script is placed for you into a default position.
 
-
-5)
+3)
   You probably want to version control your MMT configuration at '$MMT_HOME'
   A default .gitignore has been provided.
 

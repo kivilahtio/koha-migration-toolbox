@@ -2,7 +2,7 @@
 
 ## IN THIS FILE
 ##
-## Makes a ssh-connection from the transformation server via a jump host to the Koha application server
+## Makes a ssh-connection from the transformation server to the Koha application server
 ## Loads the transformed data in
 ##
 ## This is an example implementation of the data extraction pipeline automation.

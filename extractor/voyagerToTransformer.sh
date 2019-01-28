@@ -2,7 +2,7 @@
 
 ## IN THIS FILE
 ##
-## Makes a ssh-connection from the transformation-server via a jump host to the VoyagerDB-server
+## Makes a ssh-connection from the transformation-server to the VoyagerDB-server
 ## Runs the extract.pl to take DB dumps
 ## zip the .csv-files and pulls them to the Transform-phase of the DB migration.
 ##
@@ -12,7 +12,6 @@
 which sshpass
 test $? != 0 && echo "sshpass is not installed. Install it with 'apt install sshpass'" && exit 10
 
-# Comment JUMP_HOST if you are not using one.
 VOYAGERDB="xxxdb"
 VOYAGERDB_SERVER="user@voyagerserver.fi"
 SSH_PASSWORD="password"

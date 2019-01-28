@@ -28,13 +28,13 @@ sub mainConfigFile() {
   return $ENV{MMT_HOME}.'/config/main.yaml';
 }
 sub voyagerExportDir() {
-  return $config->{voyagerExportDir};
+  return $ENV{MMT_HOME}.'/'.$config->{voyagerExportDir};
 }
 sub holdingsTransformationModule() {
   return $config->{holdingsTransformationModule};
 }
 sub kohaImportDir() {
-  return $config->{kohaImportDir};
+  return $ENV{MMT_HOME}.'/'.$config->{kohaImportDir};
 }
 sub log4perlConfig() {
   return $ENV{MMT_HOME}.'/config/log4perl.conf';
@@ -49,10 +49,10 @@ sub testDir() {
   return $ENV{MMT_HOME}.'/tests';
 }
 sub exportPipelineScript() {
-  return $config->{exportPipelineScript};
+  return $ENV{MMT_HOME}.'/secret/'.$config->{exportPipelineScript};
 }
 sub importPipelineScript() {
-  return $config->{importPipelineScript};
+  return $ENV{MMT_HOME}.'/secret/'.$config->{importPipelineScript};
 }
 sub phoneNumberValidationStrategy() {
   return $config->{phoneNumberValidationStrategy};
