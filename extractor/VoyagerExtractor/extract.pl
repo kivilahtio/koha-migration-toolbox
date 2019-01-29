@@ -140,6 +140,6 @@ if ($runQuery) {
   my $res = $dbh->selectall_arrayref($runQuery) || die("Executing query '$runQuery' failed: ".$dbh->errstr);
   warn "INFO: Ending DB query, runtime ".(time - $start)."s";
   warn "INFO: Dumping results"; $start = time;
-  print join(',', @$_)."\n" for @$res; #For now this is intended only for testing SQL, nothing more. It is faster for me to make a simple SQL interface, than start fiddling with orcale cli tools on Solaris.
+  print join(',', map {$_ // ''} @$_)."\n" for @$res; #For now this is intended only for testing SQL, nothing more. It is faster for me to make a simple SQL interface, than start fiddling with orcale cli tools on Solaris.
   warn "INFO: Dump complete, runtime ".(time - $start)."s";
 }
