@@ -344,15 +344,57 @@ our %queries = (
   "12-current_circ.csv" => {
     uniqueKey => 0,
     sql =>
-      "SELECT    circ_transactions.circ_transaction_id, \n".
-      "          circ_transactions.patron_id, patron_barcode.patron_barcode, \n".
-      "          circ_transactions.item_id, item_barcode.item_barcode, \n".
-      "          circ_transactions.charge_date,circ_transactions.current_due_date, \n".
-      "          circ_transactions.renewal_count, circ_transactions.charge_location \n".
-      "FROM      circ_transactions \n".
-      "JOIN      patron             ON (circ_transactions.patron_id=patron.patron_id) \n".
+      "SELECT    circ_transactions.circ_transaction_id,                                       \n".
+      "          circ_transactions.patron_id, patron_barcode.patron_barcode,                  \n".
+      "          circ_transactions.item_id, item_barcode.item_barcode,                        \n".
+      "          circ_transactions.charge_date, circ_transactions.current_due_date,           \n".
+      "          circ_transactions.renewal_count, circ_transactions.charge_location,          \n".
+      "          item_barcode.barcode_status, patron_barcode.barcode_status                   \n". #barcode statuses are not needed, but are helpful in debugging and understanding duplications
+      "FROM      circ_transactions                                                            \n".
+      "JOIN      patron             ON (circ_transactions.patron_id=patron.patron_id)         \n".
       "LEFT JOIN patron_barcode     ON (circ_transactions.patron_id=patron_barcode.patron_id) \n".
-      "LEFT JOIN item_barcode       ON (circ_transactions.item_id=item_barcode.item_id) \n",
+      "LEFT JOIN item_barcode       ON (circ_transactions.item_id=item_barcode.item_id)       \n".
+      "WHERE     item_barcode.item_barcode = (                                                \n". #Pick only one barcode
+      "              SELECT ib_union.item_barcode FROM (                                      \n". #Preferably the active one
+      "                  SELECT   ib.item_barcode                                             \n".
+      "                  FROM     item_barcode ib                                             \n".
+      "                  WHERE    ib.item_id = circ_transactions.item_id                      \n".
+      "                     AND   ib.barcode_status = 1                                       \n".
+      "                  UNION                                                                \n".
+      "                  SELECT   ib.item_barcode                                             \n". #But if unavailable pick the most recent one
+      "                  FROM     item_barcode ib                                             \n".
+      "                  WHERE    ib.item_id = circ_transactions.item_id                      \n".
+      "                     AND   ib.item_id != (                                             \n". #the same item can have barcodes with multiple statuses,
+      "                               SELECT ib2.item_id                                      \n". #including 1 == 'Available'
+      "                               FROM   item_barcode ib2                                 \n". #Make sure we include alternative statuses only
+      "                               WHERE  ib2.item_id = circ_transactions.item_id          \n". #if no barcode is 'Available'
+      "                                  AND ib2.barcode_status = 1                           \n". #without this, barcodes having multiple statuses cause duplicate rows
+      "                           )                                                           \n".
+      "                  FETCH FIRST 1 ROWS ONLY                                              \n".
+      "              ) ib_union                                                               \n".
+      "              FETCH FIRST 1 ROWS ONLY                                                  \n".
+      "          )                                                                            \n".
+      "      AND patron_barcode.patron_barcode = (                                            \n". #Pick only one barcode
+      "              SELECT pb_union.patron_barcode FROM (                                    \n". #Preferably the active one
+      "                  SELECT   pb.patron_barcode                                           \n".
+      "                  FROM     patron_barcode pb                                           \n".
+      "                  WHERE    pb.patron_id = circ_transactions.patron_id                  \n".
+      "                     AND   pb.barcode_status = 1                                       \n".
+      "                  UNION                                                                \n".
+      "                  SELECT   pb.patron_barcode                                           \n". #But if unavailable pick the most recent one
+      "                  FROM     patron_barcode pb                                           \n".
+      "                  WHERE    pb.patron_id = circ_transactions.patron_id                  \n".
+      "                     AND   pb.patron_id != (                                           \n". #the same patron can have barcodes with multiple statuses,
+      "                               SELECT pb2.patron_id                                    \n". #including 1 == 'Available'.
+      "                               FROM   patron_barcode pb2                               \n". #Make sure we include alternative statuses only
+      "                               WHERE  pb2.patron_id = circ_transactions.patron_id      \n". #if no barcode is 'Available'.
+      "                                  AND pb2.barcode_status = 1                           \n". #Without this, barcodes having multiple statuses cause duplicate rows.
+      "                           )                                                           \n". #However - There is nothing I can do, if the Patron has the same
+      "                  FETCH FIRST 1 ROWS ONLY                                              \n". #barcode with different statuses, as those cannot be distinguished.
+      "              ) pb_union                                                               \n". #These duplicates are caught by the deduplication mechanism
+      "              FETCH FIRST 1 ROWS ONLY                                                  \n". #and cause deduplication warnings.
+      "          )                                                                            \n".
+      "                                                                                       \n",
   },
   "12a-current_circ_last_renew_date.csv" => { #Same as 02-items_last_borrow_date.csv
     uniqueKey => 0,
