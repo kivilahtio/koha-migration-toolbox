@@ -26,6 +26,10 @@ voyagerExportDir: 'VoyagerExports'
 # Enable multithreading by defining workers.
 workers: 0
 
+# Load ssns to Hetula instead of storing them in Koha as plain text.
+# Boolean value
+useHetula: false
+
 # Holdings transformation strategy to use.
 # The way holdings records are used in various databases vary, hence one transformation set of rules wont work for all source databases.
 holdingsTransformationModule: HAMK

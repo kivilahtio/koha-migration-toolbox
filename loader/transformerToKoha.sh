@@ -19,9 +19,14 @@ HETULA_CREDS_FILE_IN_TRANSFORMER="$MMT_HOME/KohaImports/$HETULA_CREDENTIALS_FILE
 
 test -z "$MMT_HOME" && echo "Environmental variable MMT_HOME is not defined!" && exit 5
 
-test ! -e $HETULA_CREDS_FILE_IN_TRANSFORMER && echo "Hetula credentials file '$HETULA_CREDS_FILE_IN_TRANSFORMER' is missing! You must manually create it. See 'hetula-client --help' within your Koha-installation for more information." && exit 6
-test 1 -ge $(wc -l <$HETULA_CREDS_FILE_IN_TRANSFORMER) && echo "Hetula credentials file '$HETULA_CREDS_FILE_IN_TRANSFORMER' is too small! Atleast the username and password must be defined there. See 'hetula-client --help' within your Koha-installation for more information." && exit 6
-chmod 600 $HETULA_CREDS_FILE_IN_TRANSFORMER #Protect it if you forgot :)
+# Warn about Hetula credentials file missing, but do not demand it. Ssns migration phase can be easily continued after failure as it is not a critical-path task
+if [ ! -e $HETULA_CREDS_FILE_IN_TRANSFORMER ]
+then
+  echo "Hetula credentials file '$HETULA_CREDS_FILE_IN_TRANSFORMER' is missing! If you want to load ssns to Hetula, you must manually create it. See 'hetula-client --help' within your Koha-installation for more information."
+else
+  test 1 -ge $(wc -l <$HETULA_CREDS_FILE_IN_TRANSFORMER) && echo "Hetula credentials file '$HETULA_CREDS_FILE_IN_TRANSFORMER' is too small! Atleast the username and password must be defined there. See 'hetula-client --help' within your Koha-installation for more information." && exit 6
+  chmod 600 $HETULA_CREDS_FILE_IN_TRANSFORMER #Protect it if you forgot :)
+fi
 
 echo "Deploy the loader program"
 scp -r loader/KohaLoader $KOHA_HOST:$KOHA_HOME/

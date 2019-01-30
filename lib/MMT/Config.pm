@@ -18,6 +18,10 @@ MMT::Config - Manage app-wide config
 
 our $config;
 
+#
+# Introduce configuration options as subroutines, to exchange one-time typing effort for compile-time error checking.
+#
+
 sub defaultReplacementPrice() {
   return $config->{defaultReplacementPrice};
 }
@@ -65,6 +69,9 @@ sub workers() {
 }
 sub organizationISILCode() {
   return $config->{organizationISILCode};
+}
+sub useHetula() {
+  return $config->{useHetula};
 }
 
 

@@ -417,8 +417,13 @@ sub setSsn($s, $o, $b) {
   $s->{ssn} = $o->{institution_id}; #For some reason ssn is here
   if ($s->{ssn}) {
     if (eval { MMT::Validator::checkIsValidFinnishSSN($s->{ssn}) }) {
-      $s->_exportSsn($s->{borrowernumber}, $s->{ssn});
-      $s->{ssn} = 'via Hetula'; #This ssn is valid, and is transported to Hetula.
+      if (MMT::Config::useHetula()) {
+        $s->_exportSsn($s->{borrowernumber}, $s->{ssn});
+        $s->{ssn} = 'via Hetula'; #This ssn is valid, and is transported to Hetula.
+      }
+      else {
+        #We let the ssn pass on unhindered to Koha
+      }
     }
     else {
       #HAMK-3339 - Leave non-valid ssns in Koha.

@@ -129,6 +129,10 @@ if ($args{messagingPreferencesOnly}) {
     exit 0;
 }
 if ($args{uploadSSNKeysOnly}) {
+    unless (-s $args{uploadSSNKeysFile}) {
+        print "SSNs file '".$args{uploadSSNKeysFile}."' is empty. Skipping loading to Hetula.\n";
+        exit 0;
+    }
     $patronImporter->uploadSSNKeys();
     exit 0;
 }
