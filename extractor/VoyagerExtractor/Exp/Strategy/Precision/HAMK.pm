@@ -127,8 +127,9 @@ our %queries = (
       "          mfhd_item.mfhd_id, multi_holdacious.holdings_count,                                    \n".
       "          item_vw.barcode, item.perm_location, item.temp_location,                               \n".
       "          item.item_type_id, item.temp_item_type_id,                                             \n".
-      "          item_vw.enumeration, item_vw.chronology, item_vw.historical_charges, item_vw.call_no,  \n".
-      "          item_vw.call_no_type,                                                                  \n".
+      "          mfhd_item_conversion.enumeration, mfhd_item_conversion.chronology,                     \n".
+      "          item_vw.historical_charges,                                                            \n".
+      "          item_vw.call_no, item_vw.call_no_type,                                                 \n".
       "          item.price, item.copy_number, item.pieces                                              \n".
       "FROM      item_vw                                                                                \n".
       "LEFT JOIN item               ON (item_vw.item_id = item.item_id)                                 \n".
@@ -150,6 +151,10 @@ our %queries = (
       "            FROM     bib_item                                                                    \n".
       "            GROUP BY bib_item.item_id                                                            \n".
       "          ) multi_bibious ON (multi_bibious.item_id = item_vw.item_id)                           \n".
+      "LEFT JOIN ( SELECT mfhd_item.item_id, mfhd_item.chron as chronology,                             \n".
+      "                   mfhd_item.item_enum as enumeration                                            \n".
+      "            FROM mfhd_item                                                                       \n".
+      "          ) mfhd_item_conversion ON (mfhd_item_conversion.item_id = item_vw.item_id)                                 \n".
       "",
   },
   "02-items_last_borrow_date.csv" => { #This needs to be separate from the 02-items.csv, because otherwise Oracle drops Item-rows with last_borrow_date == NULL, even if charge_date is NULL in both the comparator and the comparatee.
