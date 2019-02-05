@@ -65,7 +65,7 @@ sub statisticsLibrary($s, $kohaObject, $voyagerObject, $builder, $originalValue,
 
   return {
     branch         => uc($tableParams->[0]),
-    location       => uc($location || $tableParams->[1]),
+    location       => uc($tableParams->[1] || $location),
     collectionCode => $tableParams->[2],
     sub_location   => $tableParams->[3],
     itemtype       => $itemtype || $tableParams->[4],
