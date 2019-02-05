@@ -93,10 +93,10 @@ sub _statisticsLibrary($publicationYear, $subscriptionFrequencyIncrement, $subsc
     $location = '2.K';
     $itemtype = 'MC';
   }
-  elsif ($callNumber =~ m!^Arkisto TE !) { #Erikoiskokoelma, Lutherin aineisto
+  elsif ($callNumber =~ m!^Arkisto TE ! || $callNumber =~ m!^Arkisto Te !) { #Erikoiskokoelma, Lutherin aineisto
     $location = 'VARA';
   }
-  elsif ($callNumber =~ m!^Aik ! || $callNumber =~ m!\(Aik\)!) { #Lehdet. Kuluva ja kaksi edellistä vuotta lehtihyllyissä, sitä vanhemmat varastossa (*-lehdet kaikki lehtihyllyissä) 1. krs
+  elsif ($callNumber =~ m!^Aik ! || $callNumber =~ m!\(Aik\)! || $callNumber =~ m!^Aik, !) { #Lehdet. Kuluva ja kaksi edellistä vuotta lehtihyllyissä, sitä vanhemmat varastossa (*-lehdet kaikki lehtihyllyissä) 1. krs
     #2018-11-30 painovuosierottelu koskee nykyisin enää vain monoja, eli Tietokirjat, joiden signum on numeroalkuinen (1-3 numeroa)
     $location = 'VARA';
     $itemtype = 'SR';
@@ -118,7 +118,7 @@ sub _statisticsLibrary($publicationYear, $subscriptionFrequencyIncrement, $subsc
   elsif ($callNumber =~ m!^R \d{1,3}(?:/\d+)? !) { #Hakuteokset avohyllyssä
     $location = 'LUK';
   }
-  elsif ($callNumber =~ m!^K \d{1,3}(?:/\d+)? !) { #2018-11-30 kun hyllyluokan alussa on yksi K-kirjain -  K+blankko+numeroita (numeroita voi olla 1-3 kpl) - kuten K 36 Sosiaali- ja terveysministeriön - paikka on silloin aina VARB
+  elsif ($callNumber =~ m!^K \d{1,3}(?:/\d+)? ! || $callNumber =~ m!^K \d{1,3}(?:/\d+)?$!) { #2018-11-30 kun hyllyluokan alussa on yksi K-kirjain -  K+blankko+numeroita (numeroita voi olla 1-3 kpl) - kuten K 36 Sosiaali- ja terveysministeriön - paikka on silloin aina VARB
     #Varastoihin menevät ... Kaikissa tietokirjoissa paikkamerkintä K (K 330)  #Varastoon siirrettäessä alkuperäisen hyllyluokkatunnuksen eteen on lisätty kirjain ”K”
     $location = 'VARB';
   }
@@ -135,6 +135,9 @@ sub _statisticsLibrary($publicationYear, $subscriptionFrequencyIncrement, $subsc
   }
   elsif ($callNumber =~ m!^[A-Z]{2} !) { #2018-11-30 Ideana pitäisi olla siis, että kaikki muut kaksikirjaimiset signumit (paitsi ei IS, NO, SE, jotka menee VARS, ja FI joka menee VARB) menevät VARA. Näitä 2-kirjaimisia maakoodeja on runsas 30.
     $location = 'VARA';
+  }
+  elsif ($callNumber =~ m!^Virk !) { # Verkkoaineistot
+    $location = 'VIRK';
   }
   else {
     $location = 'KONVERSIO';
