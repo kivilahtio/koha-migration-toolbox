@@ -57,8 +57,13 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
         inputFile => 'biblios.marcxml',
         outputFile => 'biblios.marcxml',
         repositories => [
-          {name => 'SuppressInOpacMap', file => '00-suppress_in_opac_map.csv',      keys => ['bib_id', 'mfhd_id', 'location_id']},
-          {name => 'BoundBibParent',    file => '00c-bound_bibs-bib_to_parent.csv', keys => ['bound_bib_id']},
+          {name => 'SuppressInOpacMap', file => '00-suppress_in_opac_map.csv',       keys => ['bib_id', 'mfhd_id', 'location_id']},
+          {name => 'BibLinkRelationsBySource', file => '00b-bib_link_relations.csv', keys => ['source_bibid']}, # Load the repo by the parent biblionumber, so we adjust child keys to target the parent the Koha-way
+          {name => 'BibLinkRelationsByDest',   file => '00b-bib_link_relations.csv', keys => ['dest_bibid']}, # Some link types are only indexed from parent to child. The link MARC Fields are typically in the child. Have a reverse lookup cache for that.
+          {name => 'BoundBibParent',    file => '00c-bound_bibs-bib_to_parent.csv',  keys => ['bound_bib_id']},
+        ],
+        translationTables => [
+          {name => 'BibLinkTypes'},
         ],
       });
       $builder->build();

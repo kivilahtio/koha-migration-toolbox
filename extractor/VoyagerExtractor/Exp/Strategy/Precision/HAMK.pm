@@ -69,6 +69,40 @@ our %queries = (
       "FROM      mfhd_master                                                                      \n".
       "",
   },
+  # Extract all bibliographic links from Voyager.
+  # This creates a list of parent and child biblio ids, link types and other supplementary details needed to debug and cross-check data validity
+  "00b-bib_link_relations.csv" => {
+    uniqueKey => -1,
+    columnNames => [qw( dup_detection_profile.dup_profile_code dup_profile_fields.searchcode
+                        dup_profile_fields.searchtarget dup_profile_fields.seqnum
+                        bib_index.source_bibid bib_index.source_index bib_index.source_heading
+                        bib_index.dest_bibid bib_index.dest_index bib_index.dest_heading )],
+    sql =>
+    "SELECT    ddp.dup_profile_code,                                                              \n".
+    "          dpf.searchcode,                                                                    \n".
+    "          TRIM(dpf.fieldoverride || UPPER(dpf.subfieldoverride)) as searchtarget,            \n".
+    "          dpf.seqnum,                                                                        \n".
+    "          bi_parent.bib_id as source_bibid, bi_parent.index_code as source_index,            \n".
+    "          bi_parent.normal_heading as source_heading,                                        \n".
+    "          bi_child.bib_id as dest_bibid, bi_child.index_code as dest_index,                  \n".
+    "          bi_child.normal_heading as dest_heading                                            \n".
+    "FROM      dup_profile_fields dpf                                                             \n".
+    "LEFT JOIN dup_detection_profile ddp ON (ddp.dup_profile_id = dpf.dup_profile_id)             \n".
+    "LEFT JOIN bib_index bi_parent ON (bi_parent.index_code =                                     \n". #Get the parent biblio matching the linking subfield-pair
+    "                                  (CASE dpf.searchcode                                       \n".
+    "                                   WHEN 'BBID' THEN '001A'                                   \n". #Deal with a index naming quirk
+#    "                                   WHEN 'ATID' THEN '001A'                                   \n". #This prolly points to voyager.auth_index, but authorities are out of scope for now.
+    "                                   ELSE dpf.searchcode END                                   \n".
+    "                                  )                                                          \n".
+    "                                 )                                                           \n".
+    "LEFT JOIN bib_index bi_child  ON (TRIM(dpf.fieldoverride || UPPER(dpf.subfieldoverride)) =   \n". #Get the child records of the parent for all of the linking options
+    "                                  bi_child.index_code                                        \n".
+    "                                  AND                                                        \n".
+    "                                  bi_parent.normal_heading = bi_child.normal_heading         \n".
+    "                                 )                                                           \n".
+    "WHERE     bi_child.bib_id IS NOT NULL                                                        \n". #And return only links that match a child
+    "",
+  },
   "00c-bound_bibs-bib_to_parent.csv" => {
     uniqueKey => -1,
     columnNames => ['bib_item.bound_bib_id', 'bib_item.bound_parent_bib_id'], #Cannot parse the extractable column names or aliases for this SQL reasonably without using external SQL parsing libraries.

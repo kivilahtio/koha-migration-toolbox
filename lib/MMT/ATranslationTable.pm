@@ -103,7 +103,7 @@ sub translate($s, $kohaObject, $voyagerObject, $builder, $val, @otherArgs) {
   if ($kohaVal eq '$DELETE') {
     MMT::Exception::Delete->throw("Marked for deletion in '".$s->{_params}->{file}."'. Translatable value='$val'");
   }
-  elsif ($kohaVal =~ $re_isSubroutineCall) {
+  elsif (not(ref($kohaVal)) && $kohaVal =~ $re_isSubroutineCall) {
     my $method = $1;
     my @params = ($kohaObject, $voyagerObject, $builder, $val, [split(/\s*,\s*/, $2)], (@otherArgs ? \@otherArgs : []));
 

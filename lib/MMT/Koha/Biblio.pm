@@ -39,6 +39,7 @@ sub build($s, $xmlPtr, $b) {
 
   $s->isSuppressInOPAC($xmlPtr, $b);
   $s->linkBoundRecord($xmlPtr, $b);
+  $s->translateLinks($xmlPtr, $b);
 
   if ($$xmlPtr =~ s!<subfield code="9">([^0-9]+)</subfield>!!gsm) {
     $log->trace($s->logId().". Subfield \$9 = '$1' dropped. \$9 must be a number!") if $log->is_trace();
@@ -102,6 +103,96 @@ sub linkBoundRecord($s, $xmlPtr, $b) {
   MMT::MARC::Regex->datafield($xmlPtr, '773', 'w', $boundParent); #Overwrites any existing field 773
   MMT::MARC::Regex->subfield($xmlPtr, '773', 'i', 'Bound biblio');
   MMT::MARC::Regex->subfield($xmlPtr, '773', 't', 'Bound biblio parent record');
+}
+
+=head2 translateLinks
+
+Voyager has multiple possible linking types, such as
+  HOST      - component part link from host to child
+  COMP      - component part link from child to host
+  ISSNPREC  - serial biblio's previous number
+  ISSNSUCC  - serial biblio's next number
+for the exhaustive list, see. voyager.dup_detection_profile
+
+Koha currently only supports one link type,
+component part 773w -> host 001
+
+Extractor provides a list/repository of parent-to-child bib_ids.
+
+Here we check if the biblio at hand is something we can link in Koha and enforces a proper Koha-linkage.
+
+=cut
+
+sub translateLinks($s, $xmlPtr, $b) {
+  my $linksBySource = $b->{BibLinkRelationsBySource}->get($s->id()); #Use biblionumber to get all the relations starting from this record
+  my $linksByDest = $b->{BibLinkRelationsByDest}->get($s->id());   #Use biblionumber to get all the relations ending at this record
+
+  return unless ($linksBySource || $linksByDest);
+
+  $log->debug($s->logId()." - Found '".($linksBySource ? scalar(@$linksBySource) : 0)."' links by source, '".($linksByDest ? scalar(@$linksByDest) : 0)."' links by destination") if $log->is_debug();
+
+  # A bib can have multiple instances of a link pointing to different targets.
+  # Keep track of how many times a certain type of link is used for to track the n-th MARC Field repetition the link refers to.
+  #   This is presuming the biblio link indexes are indexed in the order the Fields are present in the MARC Record.
+  my %linkFieldIndex;
+
+  for my $link (@$linksBySource) {
+    my $linkConfig = $b->{BibLinkTypes}->translate($s, $xmlPtr, $b, $link->{dup_profile_code});
+    next unless $linkConfig->{do};
+    next if $linkConfig->{reverseLookup};
+    $s->_linkFix($linkConfig, $link, $xmlPtr, \%linkFieldIndex);
+  }
+  for my $link (@$linksByDest) {
+    my $linkConfig = $b->{BibLinkTypes}->translate($s, $xmlPtr, $b, $link->{dup_profile_code});
+    next unless $linkConfig->{do};
+    next unless $linkConfig->{reverseLookup};
+    $s->_linkFix($linkConfig, $link, $xmlPtr, \%linkFieldIndex);
+  }
+}
+
+sub _linkFix($s, $linkConfig, $link, $xmlPtr, $linkFieldIndex) {
+  my $sourceFieldCode         = ($linkConfig->{reverseIndex}) ? substr($link->{dest_index}, 0, 3) : substr($link->{source_index}, 0, 3);
+  my $destinationBiblionumber = ($linkConfig->{reverseIds})   ? $link->{source_bibid}             : $link->{dest_bibid};
+
+  $log->trace($s->logId()." - _linkFix() :> \$linkConfig='".$link->{dup_profile_code}."', \$sourceFieldCode='$sourceFieldCode', \$destinationBiblionumber='$destinationBiblionumber'") if $log->is_trace();
+  $log->trace($s->logId().Data::Printer::np($link)) if $log->is_trace();
+
+  unless ($sourceFieldCode eq $linkConfig->{expectedSourceField}) {
+    $log->warn($s->logId()." - Voyager link type is '".$link->{dup_profile_code}."', but the source field '$sourceFieldCode' is not of the expected field code '".$linkConfig->{expectedSourceField}."'? This is atypical.");
+  }
+
+  if (my $fields = MMT::MARC::Regex->datafields($xmlPtr, $sourceFieldCode)) {
+    my $fieldIndex = $linkFieldIndex->{ $link->{dup_profile_code}.$sourceFieldCode }++ || 0; #Keep track of how many times a single link type for a specific field code has appeared, pick the correct Field for mutation, presuming 
+    my $targetField = $fields->[$fieldIndex];
+    if (@$fields > 1) {
+      $log->warn($s->logId()." - Multiple instances of repeated link field '$sourceFieldCode'. Picking Field index '$fieldIndex'. The link transformation might be inaccurate.") if $log->is_warn();
+    }
+
+    my $sfW = $targetField->subfield('w');
+    if ($sfW && ($sfW eq $destinationBiblionumber || $sfW =~ m!\(.+?\)$destinationBiblionumber!)) {
+      $log->trace($s->logId()." - Link validated, using \$linkConfig='".$link->{dup_profile_code}."', \$sourceFieldCode='$sourceFieldCode', \$destinationBiblionumber='$destinationBiblionumber'") if $log->is_trace();
+    }
+    elsif (! $sfW) {
+      $log->trace($s->logId()." - Voyager link type '".$link->{dup_profile_code}."' is missing 'w'. Autovivificating.") if $log->is_trace();
+    }
+    elsif ($sfW ne $destinationBiblionumber) {
+      $log->warn($s->logId()." - Voyager link type '".$link->{dup_profile_code}."' has a bad destination biblionumber '$sfW'. Should be '$destinationBiblionumber'. Fixing.") if $log->is_warn();
+    }
+
+    $targetField->subfield('w', _linkCreateSubfieldW($destinationBiblionumber));
+    MMT::MARC::Regex->replace($xmlPtr, $targetField);
+    $log->trace($s->logId()." - Replaced field '$sourceFieldCode' subfield 'w' with '"._linkCreateSubfieldW($destinationBiblionumber)."'") if $log->is_trace();
+  }
+  else {
+    $log->warn($s->logId()." - Linking MARC21 Field missing for Voyager link type '".$link->{dup_profile_code}."' to destination '$destinationBiblionumber'") if $log->is_warn();
+
+    MMT::MARC::Regex->subfield($xmlPtr, $sourceFieldCode, 'w', _linkCreateSubfieldW($destinationBiblionumber));
+    MMT::MARC::Regex->subfield($xmlPtr, $sourceFieldCode, 't', _linkCreateSubfieldW($destinationBiblionumber)); # subfield t is mandatory so we just put whatever is available here.
+    $log->trace($s->logId()." - Created field '$sourceFieldCode' subfield 'w' with '"._linkCreateSubfieldW($destinationBiblionumber)."'") if $log->is_trace();
+  }
+}
+sub _linkCreateSubfieldW($targetBiblionumber) {
+  return '('.MMT::Config::organizationISILCode().')'.$targetBiblionumber;
 }
 
 ###########################################################################################

@@ -1,0 +1,74 @@
+---
+
+##
+## IN THIS FILE
+##
+## This mapping table is used by the module MMT::TranslationTable::BibLinkTypes
+## it defines how the a specific biblio link type (COMP, HOST, ISSNPREC, ...) from file 00b-bib_link_relations.csv is interpreted.
+##
+## The link types sometimes refer from parent to child and sometimes the other way around. There are other complexities involved as well.
+## This mapping table provides instructions to handle the values specific to the migrated Voyager DB.
+##
+
+#
+# List the known/expected link types in
+# Voyager.dup_detection_profile LEFT JOIN dup_detection_fields
+#
+# LINK-TYPE
+#  @attribute do {Boolean} do or ignore this link type
+#  @attribute expectedSourceField {String} the source field is expected to be this. This is the MARC21 standard field for the given link type and should be followed if possible.
+#  @attribute reverseIndex {Boolean} source index used to determine which source field is validated, is reversed to be taken from the destination_index instead.
+#  @attribute reverseId {Boolean} source and destination biblionumbers are reversed, so the destination is the source biblio and the source is the actual value put to the biblio being handled.
+#  @attribute reverseLookup {Boolean} Use the reverse lookup table to handle this link type
+#
+
+#Component part 773$w to parent 001 && 003, This is what Koha supports atm. Make sure this child record has 773$w and it points to the correct record
+COMP:
+  do: 1
+  expectedSourceField: 773
+
+#Apparently the same type of component part linking, simply linking by ISBN. Add 773$w to the mix.
+ISBNCOMP:
+  do: 1
+  expectedSourceField: 773
+
+#Previous serial number. Add $w
+ISSNPREC:
+  do: 1
+  reverseLookup: 1
+  reverseIndex: 1
+  reverseIds: 1
+  expectedSourceField: 780
+
+#Next serial number. Add $w
+ISSNSUCC:
+  do: 1
+  reverseLookup: 1
+  reverseIndex: 1
+  reverseIds: 1
+  expectedSourceField: 785
+
+ISBDKONV:
+  do: 0
+DELETE:
+  do: 0
+GDC_BIB:
+  do: 0
+GDC_AUTH:
+  do: 0
+MFHD:
+  do: 0
+DUPOISTO:
+  do: 0
+AUTKONT:
+  do: 0
+BIBID:
+  do: 0
+HOST:
+  do: 0
+ALEPH:
+  do: 0
+ALEPH2:
+  do: 0
+
+_DEFAULT_: warning()
