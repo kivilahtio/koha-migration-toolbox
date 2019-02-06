@@ -6,6 +6,8 @@ use English;
 
 use Data::Printer;
 
+use MMT::MARC::Regex::Field;
+
 =head1 NAME
 
 MMT::MARC::Regex - Transform biblios using plain regular expressions
@@ -20,7 +22,7 @@ due to the slowness of needing to parse records into complex data structures.
 
 =cut
 
-my $_p; #The padding used in the incoming records.
+our $_p; #The padding used in the incoming records.
 
 sub _getPadding {
   my ($xmlPtr) = @_;
@@ -141,10 +143,11 @@ sub datafield {
   die "parameter \$fCode is undefined" unless defined($fCode);
 
   unless (defined($content)) {
-    unless ($$xmlPtr =~ m!<datafield tag="$fCode".*?>\s*?\n?(.*?)\s*</datafield>!sm) {
+    unless ($$xmlPtr =~ m!\n?(\s*<datafield tag="$fCode".*?>\s*?\n?.*?\s*</datafield>)!sm) {
       return undef;
     }
-    return $1;
+    my $field = $1; #Need to clone the magic variable, otherwise even the reference is lost.
+    return MMT::MARC::Regex::Field->new(\$field);
   }
 
   $content = "<subfield code=\"$sfCode\">$content</subfield>" if $sfCode;
@@ -180,6 +183,36 @@ sub datafield {
     return 'last';
   }
   die "Unable to set the field '$fCode' with content '$content' for record:\n$$xmlPtr\n!!";
+}
+
+sub datafields {
+  my ($self, $xmlPtr, $fCode) = @_;
+
+  unless ($fCode) {
+    if (my @fields = $$xmlPtr =~ m!
+      (                                               #Capture a datafield instance
+      $_p                                             #
+      <datafield                                      #
+        .*?                                           #
+      </datafield>                                    #
+      )                                               #Close capture
+    !smxg) {
+      @fields = map {MMT::MARC::Regex::Field->new($_)} @fields;
+      return \@fields;
+    }
+  }
+  if (my @fields = $$xmlPtr =~ m!
+    (                                               #Capture a datafield instance
+    $_p                                             #
+    <datafield\s+tag="$fCode"                       #
+      .*?                                           #
+    </datafield>                                    #
+    )                                               #Close capture
+  !smxg) {
+    @fields = map {my $f = $_; MMT::MARC::Regex::Field->new(\$f)} @fields;
+    return \@fields;
+  }
+  return undef;
 }
 
 =head2 subfield
@@ -288,6 +321,48 @@ sub subfield {
   }
 
   die "Unable to set the subfield '$fCode\$$sfCode' with content '$content' for record:\n$$xmlPtr\n!!";
+}
+
+=head2 replace
+
+ @param {String reference} The MARC XML String to mutate
+ @param {MMT::MARC::Regex::Field} Field whose contents to update to the MARCXML
+ @returns {String} 'replaced' if replace succeeded, undef if not
+
+=cut
+
+sub replace {
+  my ($self, $xmlPtr, $field) = @_;
+
+  if ($$xmlPtr =~ s!${$field->original()}!${$field->mutated()}!) {
+    return 'replaced';
+  }
+  return undef;
+}
+
+=head2 delete
+
+ @param {String reference} The MARC XML String to mutate
+ @param {String} The MARC Field code/tag to select. Picks the first repetition if multiple fields available.
+ @returns {String} 'deleted' or undef if deletion failed.
+
+=cut
+
+sub delete {
+  my ($self, $xmlPtr, $fCode) = @_;
+    die "parameter \$fCode is undefined" unless defined($fCode);
+
+  if ($$xmlPtr =~ s!
+    (                                                   #Capture group
+      \s*                                               #
+      <(:?data|control)field\s+tag="$fCode".+?>         #Find the correct datafield, capture the whole field
+        .*?                                             #
+      </(:?data|control)field>                          #Rewind until the end of this datafield
+      \s*                                               #
+    )                                                   #Terminate capture
+    !\n$_p!smx) { #Remove all traces of the field
+    return 'deleted';
+  }
 }
 
 return 1;
