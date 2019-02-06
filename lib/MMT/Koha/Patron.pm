@@ -4,6 +4,7 @@ use MMT::Pragmas;
 
 #External modules
 use Email::Valid;
+use DateTime;
 
 #Local modules
 use MMT::Validator::Phone;
@@ -230,11 +231,20 @@ sub setDateenrolled($s, $o, $b) {
   }
 }
 sub setDateexpiry($s, $o, $b) {
-  $s->{dateexpiry}   = $o->{expire_date};
+  $s->{dateexpiry} = $o->{expire_date};
   unless ($s->{dateexpiry}) {
-    my $notification = "Missing expiration date, expiring now";
-    $log->warn($s->logId()." - $notification");
-    $s->concatenate($notification => 'borrowernotes');
+    if (MMT::Config::patronAddExpiryYears > 0) {
+      my $expiry_date_if_not_none = DateTime->now()->add(
+							 years => MMT::Config::patronAddExpiryYears,
+							 days => int(rand(350)) # Don't expire all the same day
+							)->ymd();
+      $s->{dateexpiry} = $expiry_date_if_not_none;
+      $log->info($s->logId()." - setting expiration to" . $expiry_date_if_not_none);
+    } else {
+      my $notification = "Missing expiration date, expiring now";
+      $log->warn($s->logId()." - $notification");
+      $s->concatenate($notification => 'borrowernotes');
+    }
   }
 }
 sub setAddresses($s, $o, $b) {

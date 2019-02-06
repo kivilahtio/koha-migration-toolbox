@@ -73,6 +73,9 @@ sub organizationISILCode() {
 sub useHetula() {
   return $config->{useHetula};
 }
+sub patronAddExpiryYears() {
+  return $config->{patronAddExpiryYears};
+}
 
 
 #Check that the environment is properly configured
