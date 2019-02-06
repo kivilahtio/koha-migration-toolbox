@@ -41,7 +41,7 @@ sub build($s, $xmlPtr, $b) {
   $s->linkBoundRecord($xmlPtr, $b);
 
   if ($$xmlPtr =~ s!<subfield code="9">([^0-9]+)</subfield>!!gsm) {
-    $log->info($s->logId().". Subfield \$9 = '$1' dropped. \$9 must be a number!");
+    $log->trace($s->logId().". Subfield \$9 = '$1' dropped. \$9 must be a number!") if $log->is_trace();
   }
 
   $s->{xmlPtr} = $xmlPtr;
