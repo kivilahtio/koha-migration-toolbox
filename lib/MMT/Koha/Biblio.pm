@@ -162,10 +162,15 @@ sub _linkFix($s, $linkConfig, $link, $xmlPtr, $linkFieldIndex) {
   }
 
   if (my $fields = MMT::MARC::Regex->datafields($xmlPtr, $sourceFieldCode)) {
-    my $fieldIndex = $linkFieldIndex->{ $link->{dup_profile_code}.$sourceFieldCode }++ || 0; #Keep track of how many times a single link type for a specific field code has appeared, pick the correct Field for mutation, presuming 
+    my $fieldIndex = $linkFieldIndex->{ $link->{dup_profile_code}.$sourceFieldCode.$link->{seqnum} }++ || 0; #Keep track of how many times a single link type for a specific field code has appeared, pick the correct Field for mutation.
     my $targetField = $fields->[$fieldIndex];
     if (@$fields > 1) {
       $log->warn($s->logId()." - Multiple instances of repeated link field '$sourceFieldCode'. Picking Field index '$fieldIndex'. The link transformation might be inaccurate.") if $log->is_warn();
+    }
+    unless ($targetField) {
+      $log->warn($s->logId()." - Link field '$sourceFieldCode' repeated, but no matching Field index '$fieldIndex' exists?. Creating a new Field. The link transformation might be inaccurate.") if $log->is_warn();
+      $s->_linkCreateField($xmlPtr, $b, $sourceFieldCode, $destinationBiblionumber);
+      next;
     }
 
     my $sfW = $targetField->subfield('w');
@@ -186,13 +191,16 @@ sub _linkFix($s, $linkConfig, $link, $xmlPtr, $linkFieldIndex) {
   else {
     $log->warn($s->logId()." - Linking MARC21 Field missing for Voyager link type '".$link->{dup_profile_code}."' to destination '$destinationBiblionumber'") if $log->is_warn();
 
-    MMT::MARC::Regex->subfield($xmlPtr, $sourceFieldCode, 'w', _linkCreateSubfieldW($destinationBiblionumber));
-    MMT::MARC::Regex->subfield($xmlPtr, $sourceFieldCode, 't', _linkCreateSubfieldW($destinationBiblionumber)); # subfield t is mandatory so we just put whatever is available here.
-    $log->trace($s->logId()." - Created field '$sourceFieldCode' subfield 'w' with '"._linkCreateSubfieldW($destinationBiblionumber)."'") if $log->is_trace();
+    $s->_linkCreateField($xmlPtr, $b, $sourceFieldCode, $destinationBiblionumber);
   }
 }
 sub _linkCreateSubfieldW($targetBiblionumber) {
   return '('.MMT::Config::organizationISILCode().')'.$targetBiblionumber;
+}
+sub _linkCreateField($s, $xmlPtr, $b, $sourceFieldCode, $destinationBiblionumber) {
+  MMT::MARC::Regex->subfield($xmlPtr, $sourceFieldCode, 'w', _linkCreateSubfieldW($destinationBiblionumber));
+  MMT::MARC::Regex->subfield($xmlPtr, $sourceFieldCode, 't', _linkCreateSubfieldW($destinationBiblionumber)); # subfield t is mandatory so we just put whatever is available here.
+  $log->trace($s->logId()." - Created field '$sourceFieldCode' subfield 'w' with '"._linkCreateSubfieldW($destinationBiblionumber)."'") if $log->is_trace();
 }
 
 ###########################################################################################

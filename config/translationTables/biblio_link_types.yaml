@@ -27,6 +27,14 @@ COMP:
   do: 1
   expectedSourceField: 773
 
+#Host record 001 to component part 773w. Presumably the opposite of COMP-linkage, but for some reason there are
+HOST:
+  do: 1
+  reverseLookup: 1
+  reverseIndex: 1
+  reverseIds: 1
+  expectedSourceField: 773
+
 #Apparently the same type of component part linking, simply linking by ISBN. Add 773$w to the mix.
 ISBNCOMP:
   do: 1
@@ -63,8 +71,6 @@ DUPOISTO:
 AUTKONT:
   do: 0
 BIBID:
-  do: 0
-HOST:
   do: 0
 ALEPH:
   do: 0
