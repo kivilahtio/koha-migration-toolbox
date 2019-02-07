@@ -483,20 +483,7 @@ sub setStatuses($s, $o, $b) {
         $log->debug($s->logId()." has a debarment.");
       }
     }
-    if (exists $groupBarcode->{barcode_status_desc}) {
-      $s->{categorycode} = $groupBarcode->{patron_group_id};
-    }
-    else {
-      $log->fatal("Patron '".$s->logId()."' has a group/barcode/status -row, but it is missing the 'patron_group_id'-attribute. Is the extractor working as expected?");
-    }
   }
-
-  if (! $s->{categorycode}) {
-    ##TODO How to get categorycode then?
-    $log->warn("Patron '".$s->logId()."' has no categorycode?");
-    $s->{categorycode} = 'UNKNOWN';
-  }
-  $s->{categorycode} = $b->{PatronCategorycode}->translate(@_, $s->{categorycode});
 }
 
 sub _addExtendedPatronAttribute($s, $attributeName, $val, $isRepeatable) {
