@@ -138,13 +138,13 @@ sub translateLinks($s, $xmlPtr, $b) {
 
   for my $link (@$linksBySource) {
     my $linkConfig = $b->{BibLinkTypes}->translate($s, $xmlPtr, $b, $link->{dup_profile_code});
-    next unless $linkConfig->{do};
+    next unless $linkConfig && $linkConfig->{do};
     next if $linkConfig->{reverseLookup};
     $s->_linkFix($linkConfig, $link, $xmlPtr, \%linkFieldIndex);
   }
   for my $link (@$linksByDest) {
     my $linkConfig = $b->{BibLinkTypes}->translate($s, $xmlPtr, $b, $link->{dup_profile_code});
-    next unless $linkConfig->{do};
+    next unless $linkConfig && $linkConfig->{do};
     next unless $linkConfig->{reverseLookup};
     $s->_linkFix($linkConfig, $link, $xmlPtr, \%linkFieldIndex);
   }
