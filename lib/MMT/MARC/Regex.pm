@@ -334,7 +334,7 @@ sub subfield {
 sub replace {
   my ($self, $xmlPtr, $field) = @_;
 
-  if ($$xmlPtr =~ s!${$field->original()}!${$field->mutated()}!) {
+  if ($$xmlPtr =~ s!\Q${$field->original()}\E!${$field->mutated()}!) {
     return 'replaced';
   }
   return undef;
