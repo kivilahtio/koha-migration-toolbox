@@ -27,6 +27,7 @@ sub new($class) {
 
 sub warning($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tableParams, $transParams) {
   $log->fatal($kohaObject->logId()." has an unknown biblio link type '$originalValue'. You must update the contents of your translation table '$translationTableFile' to match Voyager configurations or fix the biblio.");
+  return undef; #Thank you implicit Perl
 }
 
 return 1;
