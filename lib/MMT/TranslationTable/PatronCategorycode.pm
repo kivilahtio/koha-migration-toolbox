@@ -38,4 +38,10 @@ sub warning($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tablePar
   $log->warn("No mapping for value '$originalValue'");
 }
 
+sub categoryAndBranch($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tableParams, $transParams) {
+  $kohaObject->{categorycode} = $tableParams->[0];
+  $kohaObject->{branchcode} = $tableParams->[1];
+  return $kohaObject->{categorycode};
+}
+
 return 1;

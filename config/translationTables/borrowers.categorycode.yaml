@@ -22,5 +22,6 @@
 4        : K
 5        : I
 6        : WD
+7        : categoryAndBranch(B, HAMKA)
 UNKNOWN  : $DELETE             #Patrons with group id of UNKNOWN, will be removed from the migration. UNKNOWN is given when no Patron has no patron_group_id
 _DEFAULT_: warning()           #Default value to use, if nothing matches. if this field is omitted, MMT simply warns and ignores the value.
