@@ -170,10 +170,6 @@ sub setPermanent_location($s, $o, $b) {
   my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{perm_location});
   $s->{permanent_location} = $branchcodeLocation->{location};
   $s->{ccode} = $branchcodeLocation->{collectionCode} if $branchcodeLocation->{collectionCode};
-
-  unless ($s->{permanent_location}) {
-    MMT::Exception::Delete->throw($s->logId()."' has no permanent_location! perm_location=".$o->{perm_location});
-  }
 }
 sub setLocation($s, $o, $b) {
   if ($o->{temp_location}) {
