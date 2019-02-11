@@ -12,8 +12,9 @@ return {
   sid => 'VERTA',
   host => '127.0.0.1',
   port => '1521',
-  username => 'ahmed',
-  password => 'ahne',
+  username => 'ro_ahmed',
+  password => 'ro_ahne',
+  schema => 'ahmed', #schema name to target the operations to
 
   #This should be 'Oracle' only, configured this way due to a limitation in IDE code analysis tools
   dbdriver => 'Oracle',

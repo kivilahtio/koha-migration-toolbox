@@ -44,8 +44,8 @@ sub LoadConfig($) {
     die "Configuration file '$filename' reading failed: $!" if ($!);
   }
 
-  $config->{dbname} = $config->{username};
-  $config->{exportDir} = '/tmp/'.$config->{dbname} unless $config->{exportDir};
+  $config->{schema} = $config->{username} unless $config->{schema};
+  $config->{exportDir} = '/tmp/'.$config->{schema} unless $config->{exportDir};
   print "Exporting to '".Cwd::realpath($config->{exportDir})."'\n";
   mkdir($config->{exportDir}, 0744) or die "Couldn't create the exportDir='".$config->{exportDir}."': $!"
     unless -e $config->{exportDir};

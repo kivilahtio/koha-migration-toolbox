@@ -40,7 +40,7 @@ use Exp::Config;
 
 sub printAllTableMetadata {
   my $dbh = Exp::DB::dbh();
-  my $sth = $dbh->column_info( '%', $Exp::DB::config->{dbname}, '%', '%' ) || confess $dbh->errstr;
+  my $sth = $dbh->column_info( '%', $Exp::DB::config->{schema}, '%', '%' ) || confess $dbh->errstr;
   my $t = $sth->fetchall_arrayref({}) || confess $dbh->errstr;
 
   for my $c (@$t) {
@@ -60,7 +60,7 @@ Exports all tables as .csv-files to
 sub exportAllTables($) {
   my ($excludedTables) = @_;
   my $dbh = Exp::DB::dbh();
-  my $sth = $dbh->table_info( '%', $Exp::DB::config->{dbname}, '%', 'TABLE' ) || confess $dbh->errstr;
+  my $sth = $dbh->table_info( '%', $Exp::DB::config->{schema}, '%', 'TABLE' ) || confess $dbh->errstr;
   my $tables = $sth->fetchall_arrayref({}) || confess $dbh->errstr;
 
   for my $tableInfo (@$tables) {
@@ -89,7 +89,7 @@ sub exportTable($) {
 
   open(my $FH, ">:raw", Exp::Config::exportPath($tableName.'.csv')) or die("Opening file '".Exp::Config::exportPath($tableName.'.csv')."' for full export failed: $!");
   warn "Exporting table $tableName\n";
-  my $sth = $dbh->column_info( '%', $Exp::DB::config->{dbname}, $tableName, '%' ) || confess $dbh->errstr;
+  my $sth = $dbh->column_info( '%', $Exp::DB::config->{schema}, $tableName, '%' ) || confess $dbh->errstr;
   my $columnInfos = $sth->fetchall_arrayref({}) || confess $dbh->errstr;
   my @columnNames = map {$_->{COLUMN_NAME}} @$columnInfos;
   warn "found columns ".join(",", @columnNames)."\n";
