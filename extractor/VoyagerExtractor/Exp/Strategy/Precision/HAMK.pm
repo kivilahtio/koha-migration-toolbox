@@ -75,17 +75,17 @@ our %queries = (
     uniqueKey => -1,
     columnNames => [qw( dup_detection_profile.dup_profile_code dup_profile_fields.searchcode
                         dup_profile_fields.searchtarget dup_profile_fields.seqnum
-                        bib_index.source_bibid bib_index.source_index bib_index.source_heading
-                        bib_index.dest_bibid bib_index.dest_index bib_index.dest_heading )],
+                        bib_index.source_bibid bib_index.source_index bib_index.source_heading bib_index.source_norm_heading
+                        bib_index.dest_bibid bib_index.dest_index bib_index.dest_heading bib_index.dest_norm_heading )],
     sql =>
     "SELECT    ddp.dup_profile_code,                                                              \n".
     "          dpf.searchcode,                                                                    \n".
     "          TRIM(dpf.fieldoverride || UPPER(dpf.subfieldoverride)) as searchtarget,            \n".
     "          dpf.seqnum,                                                                        \n".
     "          bi_parent.bib_id as source_bibid, bi_parent.index_code as source_index,            \n".
-    "          bi_parent.normal_heading as source_heading,                                        \n".
+    "          bi_parent.display_heading as source_heading, bi_parent.normal_heading as source_norm_heading, \n".
     "          bi_child.bib_id as dest_bibid, bi_child.index_code as dest_index,                  \n".
-    "          bi_child.normal_heading as dest_heading                                            \n".
+    "          bi_child.display_heading as dest_heading, bi_child.normal_heading as dest_norm_heading \n".
     "FROM      dup_profile_fields dpf                                                             \n".
     "LEFT JOIN dup_detection_profile ddp ON (ddp.dup_profile_id = dpf.dup_profile_id)             \n".
     "LEFT JOIN bib_index bi_parent ON (bi_parent.index_code =                                     \n". #Get the parent biblio matching the linking subfield-pair
