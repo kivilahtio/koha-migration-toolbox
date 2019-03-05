@@ -24,6 +24,7 @@ binmode( STDOUT, ":encoding(UTF-8)" );
 binmode( STDIN,  ":encoding(UTF-8)" );
 $|=1;
 
+use Data::Dumper;
 #External modules
 use Carp;
 use DBI;
@@ -40,6 +41,9 @@ Exp::Strategy::Helka - Precisely export what is needed for Helka. (Except MARC)
 Export all kinds of data from Voyager using precision SQL
 
 =cut
+my $nowYear = 1900 + (localtime)[5];
+my $boundBibsStartId = 2000000; 
+
 
 my $helkaNLFLocationIDs = "2,3,4,5,6,7,8,9,51,52,148,158,173,211,231,234,238,245,247,253,281295,296,297,324,449";
 
@@ -136,6 +140,97 @@ union all
 order by id";
 
 our %queries = (
+  "00-bib_sub_frequency.csv" => {
+    uniqueKey => 0,
+    sql =>
+      "SELECT    line_item.bib_id, frequency.freq_increment, frequency.freq_calc_type            \n".
+      "FROM      line_item                                                                       \n".
+      "LEFT JOIN subscription ON (subscription.line_item_id = line_item.line_item_id)            \n".
+      "LEFT JOIN component ON (component.subscription_id = subscription.subscription_id)         \n".
+      "LEFT JOIN component_pattern ON (component_pattern.component_id = component.component_id)  \n".
+      "LEFT JOIN frequency ON (frequency.frequency_code = component_pattern.frequency_code)      \n".
+      "WHERE     line_item.line_item_id = ( SELECT MAX(flatli.line_item_id)                      \n". #There might be biblios with subscriptions with multiple different frequencies.
+      "                                     FROM   line_item flatli                              \n". #Flatten such duplicate frequencies to pick the value from the newest order.
+      "                                     WHERE  flatli.bib_id = line_item.bib_id              \n".
+      "                                   )                                                      \n".
+      "",
+  },
+  "00-bib_text.csv" => {
+    uniqueKey => 0,
+    sql =>
+      "SELECT    bib_text.bib_id, bib_text.begin_pub_date                  \n".
+      "FROM      bib_text                                                  \n".
+      "",
+  },
+  "00-mfhd_master.csv" => {
+    uniqueKey => 0,
+    sql =>
+      "SELECT    mfhd_master.mfhd_id, mfhd_master.display_call_no                                 \n".
+      "FROM      mfhd_master                                                                      \n".
+      "",
+  },
+  # Extract all bibliographic links from Voyager.
+  # This creates a list of parent and child biblio ids, link types and other supplementary details needed to debug and cross-check data validity
+  "00b-bib_link_relations.csv" => {
+    uniqueKey => -1,
+    columnNames => [qw( dup_detection_profile.dup_profile_code dup_profile_fields.searchcode
+                        dup_profile_fields.searchtarget dup_profile_fields.seqnum
+                        bib_index.source_bibid bib_index.source_index bib_index.source_heading
+                        bib_index.dest_bibid bib_index.dest_index bib_index.dest_heading )],
+    sql =>
+    "SELECT    ddp.dup_profile_code,                                                              \n".
+    "          dpf.searchcode,                                                                    \n".
+    "          TRIM(dpf.fieldoverride || UPPER(dpf.subfieldoverride)) as searchtarget,            \n".
+    "          dpf.seqnum,                                                                        \n".
+    "          bi_parent.bib_id as source_bibid, bi_parent.index_code as source_index,            \n".
+    "          bi_parent.normal_heading as source_heading,                                        \n".
+    "          bi_child.bib_id as dest_bibid, bi_child.index_code as dest_index,                  \n".
+    "          bi_child.normal_heading as dest_heading                                            \n".
+    "FROM      dup_profile_fields dpf                                                             \n".
+    "LEFT JOIN dup_detection_profile ddp ON (ddp.dup_profile_id = dpf.dup_profile_id)             \n".
+    "LEFT JOIN bib_index bi_parent ON (bi_parent.index_code =                                     \n". #Get the parent biblio matching the linking subfield-pair
+    "                                  (CASE dpf.searchcode                                       \n".
+    "                                   WHEN 'BBID' THEN '001A'                                   \n". #Deal with a index naming quirk
+#    "                                   WHEN 'ATID' THEN '001A'                                   \n". #This prolly points to voyager.auth_index, but authorities are out of scope for now.
+    "                                   ELSE dpf.searchcode END                                   \n".
+    "                                  )                                                          \n".
+    "                                 )                                                           \n".
+    "LEFT JOIN bib_index bi_child  ON (TRIM(dpf.fieldoverride || UPPER(dpf.subfieldoverride)) =   \n". #Get the child records of the parent for all of the linking options
+    "                                  bi_child.index_code                                        \n".
+    "                                  AND                                                        \n".
+    "                                  bi_parent.normal_heading = bi_child.normal_heading         \n".
+    "                                 )                                                           \n".
+    "WHERE     bi_child.bib_id IS NOT NULL                                                        \n". #And return only links that match a child
+    "",
+  },
+  "00c-bound_bibs-bib_to_parent.csv" => {
+    uniqueKey => -1,
+    columnNames => ['bib_item.bound_bib_id', 'bib_item.bound_parent_bib_id'], #Cannot parse the extractable column names or aliases for this SQL reasonably without using external SQL parsing libraries.
+    sql =>
+      "SELECT    bound_bib_ids,                                                                   \n".
+      "          (SELECT MAX(bib_id) FROM bib_master) + 10000 +                                   \n". # - Reserve bib_ids for the soon-to-be-created bound bib parent records.
+      "              ROW_NUMBER() OVER (ORDER BY bound_bib_ids                                    \n". #   Pick the latest used bib_id in the DB, add a safety buffer of 10000
+      "          ) as new_parent_bib_id                                                           \n". #   and add 1 for each deduplicated biblio group.
+      "FROM      (SELECT    LISTAGG(bib_item.bib_id, ',') WITHIN GROUP (ORDER BY bib_item.bib_id) \n". # - GROUP_CONCAT bib_ids that share the same item,
+      "                         as bound_bib_ids                                                  \n". #   this returns duplicate bib_id-group-rows for each bound item
+      "           FROM      bib_item                                                              \n".
+      "           LEFT JOIN ( SELECT   bib_item.item_id, COUNT(bib_item.bib_id) as bibs_count     \n". # - Select the count of linked biblios for this item
+      "                       FROM     bib_item                                                   \n".
+      "                       GROUP BY bib_item.item_id                                           \n".
+      "                     ) multi_bibious ON (multi_bibious.item_id = bib_item.item_id)         \n".
+      "           WHERE     multi_bibious.bibs_count > 1                                          \n". # - Only include items/bibs that are bound
+      "           GROUP BY  bib_item.item_id                                                      \n". # - First layer of flattening, concatenate all bib_id's this item links to
+      "          )                                                                                \n".
+      "GROUP BY bound_bib_ids                                                                     \n". # - Flatten duplicate bib_id-groups, now we have a group of bibs that need a parent bound record only once for all items they have
+      "",
+    postprocessor => sub {
+      my ($row) = @_;
+      my @bib_ids = split(',',$row->[0]);         # Split the bound_bib_ids-list
+      @bib_ids = map {[$_, $row->[1]]} @bib_ids;  # Make new rows from each bib_id and append the reserved bound parent record bib_id
+      return \@bib_ids;
+    },
+  },
+
   "00-suppress_in_opac_map.csv" => {
     encoding => "iso-8859-1",
     uniqueKey => -1,
@@ -398,6 +493,47 @@ our %queries = (
       "JOIN      patron             ON (circ_transactions.patron_id=patron.patron_id) \n".
       "LEFT JOIN patron_barcode     ON (circ_transactions.patron_id=patron_barcode.patron_id) \n".
       "LEFT JOIN item_barcode       ON (circ_transactions.item_id=item_barcode.item_id) \n".
+      "WHERE     item_barcode.item_barcode = (                                                \n". #Pick only one barcode
+      "              SELECT ib_union.item_barcode FROM (                                      \n". #Preferably the active one
+      "                  SELECT   ib.item_barcode                                             \n".
+      "                  FROM     item_barcode ib                                             \n".
+      "                  WHERE    ib.item_id = circ_transactions.item_id                      \n".
+      "                     AND   ib.barcode_status = 1                                       \n".
+      "                  UNION                                                                \n".
+      "                  SELECT   ib.item_barcode                                             \n". #But if unavailable pick the most recent one
+      "                  FROM     item_barcode ib                                             \n".
+      "                  WHERE    ib.item_id = circ_transactions.item_id                      \n".
+      "                     AND   ib.item_id != (                                             \n". #the same item can have barcodes with multiple statuses,
+      "                               SELECT ib2.item_id                                      \n". #including 1 == 'Available'
+      "                               FROM   item_barcode ib2                                 \n". #Make sure we include alternative statuses only
+      "                               WHERE  ib2.item_id = circ_transactions.item_id          \n". #if no barcode is 'Available'
+      "                                  AND ib2.barcode_status = 1                           \n". #without this, barcodes having multiple statuses cause duplicate rows
+      "                           )                                                           \n".
+      "                  FETCH FIRST 1 ROWS ONLY                                              \n".
+      "              ) ib_union                                                               \n".
+      "              FETCH FIRST 1 ROWS ONLY                                                  \n".
+      "          )                                                                            \n".
+      "      AND patron_barcode.patron_barcode = (                                            \n". #Pick only one barcode
+      "              SELECT pb_union.patron_barcode FROM (                                    \n". #Preferably the active one
+      "                  SELECT   pb.patron_barcode                                           \n".
+      "                  FROM     patron_barcode pb                                           \n".
+      "                  WHERE    pb.patron_id = circ_transactions.patron_id                  \n".
+      "                     AND   pb.barcode_status = 1                                       \n".
+      "                  UNION                                                                \n".
+      "                  SELECT   pb.patron_barcode                                           \n". #But if unavailable pick the most recent one
+      "                  FROM     patron_barcode pb                                           \n".
+      "                  WHERE    pb.patron_id = circ_transactions.patron_id                  \n".
+      "                     AND   pb.patron_id != (                                           \n". #the same patron can have barcodes with multiple statuses,
+      "                               SELECT pb2.patron_id                                    \n". #including 1 == 'Available'.
+      "                               FROM   patron_barcode pb2                               \n". #Make sure we include alternative statuses only
+      "                               WHERE  pb2.patron_id = circ_transactions.patron_id      \n". #if no barcode is 'Available'.
+      "                                  AND pb2.barcode_status = 1                           \n". #Without this, barcodes having multiple statuses cause duplicate rows.
+      "                           )                                                           \n". #However - There is nothing I can do, if the Patron has the same
+      "                  FETCH FIRST 1 ROWS ONLY                                              \n". #barcode with different statuses, as those cannot be distinguished.
+      "              ) pb_union                                                               \n". #These duplicates are caught by the deduplication mechanism
+      "              FETCH FIRST 1 ROWS ONLY                                                  \n". #and cause deduplication warnings.
+      "          )                                                                            \n".
+      "											      \n" 
       "LEFT JOIN item               ON (circ_transactions.item_id=item.item_id)               \n".
       "WHERE     item.perm_location IN ($helkaNLFLocationIDs)                                 \n".
       "",
@@ -475,7 +611,20 @@ our %queries = (
        LEFT JOIN component       ON (component.component_id = serial_issues.component_id)
        LEFT JOIN subscription    ON (subscription.subscription_id = component.subscription_id)
        LEFT JOIN line_item       ON (subscription.line_item_id = line_item.line_item_id)
+       LEFT JOIN issues_received ON (issues_received.issue_id = serial_issues.issue_id AND issues_received.component_id = serial_issues.component_id)
+       WHERE     EXTRACT(YEAR FROM serial_issues.expected_date) <= $nowYear
        ORDER BY  serial_issues.issue_id ASC",
+
+  },
+
+  #Extract MFHD only for serials, so the location and subscription history can be extracted.
+  #The "20a-subscription_locations.csv" seems to generate rather excellent results for HAMK, but not dropping this feature yet, since
+  # ByWater must have had a good reason to implement it. Prolly this is needed for other Voyager libraries.
+  "serials_mfhd.csv" => {
+    encoding => "UTF-8",
+    uniqueKey => -1,
+    sql =>
+      "SELECT 1", #Special processing for this one
   },
 
   "29-requests.csv" => {
