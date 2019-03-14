@@ -52,7 +52,7 @@ TRUNCATE borrower_attributes;
 TRUNCATE borrower_debarments;
 TRUNCATE borrower_files;
 DELETE FROM borrower_message_preferences WHERE borrowernumber IS NOT NULL; --Defaults are with NULL
-TRUNCATE borrower_message_transport_preferences;
+--TRUNCATE borrower_message_transport_preferences; --Relevant parts are already ON CASCADE DELETE:d from the parent table
 TRUNCATE borrower_modifications;
 TRUNCATE borrower_password_recovery;
 TRUNCATE borrower_permissions;
