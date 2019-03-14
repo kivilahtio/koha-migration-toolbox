@@ -13,4 +13,6 @@
 1: toItemnotes_nonpublic() # regular (sisäinen huomautus, ei haluta asiakaliittymään näkyviin)
 2: toItemnotes_nonpublic() # charge
 3: toItemnotes_nonpublic() # discharge
+4: toItemnotes()           # example of a public note
+5: ''                      # leave empty to remove all of these particular note-types, but preserve the Item.
 _DEFAULT_: warning()
