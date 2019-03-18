@@ -34,7 +34,7 @@ use Exp::Strategy::MARC;
 
 =head2 NAME
 
-Exp::Strategy::Helka - Precisely export what is needed for Helka. (Except MARC)
+Exp::Strategy::Precision::Helka - Precisely export what is needed for Helka. (Except MARC)
 
 =head2 DESCRIPTION
 
@@ -45,7 +45,7 @@ my $nowYear = 1900 + (localtime)[5];
 my $boundBibsStartId = 2000000; 
 
 
-my $helkaNLFLocationIDs = "2,3,4,5,6,7,8,9,51,52,148,158,173,211,231,234,238,245,247,253,281295,296,297,324,449";
+my $helkaNLFLocationIDs = '2,3,4,5,6,7,8,9,51,52,148,158,173,211,231,234,238,245,247,253,281,295,296,297,324,449';
 
 #@author Ari Ahlqvist @ NatLibFi
 my $activeSince = '2016-01-01';
@@ -281,7 +281,8 @@ our %queries = (
       "          ) bib_item         ON (bib_item.item_id = item_vw.item_id)                             \n".
       "LEFT JOIN bib_item bibi      ON (bibi.bib_id  = bib_item.bib_id AND                              \n". # We must first choose the bib_id we want to include here, then choose information related to the bib. It is either an extra join or a single deeply nested subqueries join
       "                                 bibi.item_id = item_vw.item_id)                                 \n".
-      "LEFT JOIN ( SELECT   bib_item.item_id, COUNT(bib_item.bib_id) as bibs_count                      \n". # Select the count of related biblios for this item, this is a strong indication that we are working with bound records. Such Items are dealt with elsewhere.
+######      "LEFT JOIN ( SELECT   bib_item.item_id, COUNT(bib_item.bib_id) as bibs_count                      \n". # Select the count of related biblios for this item, this is a strong indication that we are working with bound records. Such Items are dealt with elsewhere.
+      "INNER JOIN ( SELECT   bib_item.item_id, COUNT(bib_item.bib_id) as bibs_count                      \n". # Select the count of related biblios for this item, this is a strong indication that we are working with bound records. Such Items are dealt with elsewhere.
       "            FROM     bib_item                                                                    \n".
       "            GROUP BY bib_item.item_id                                                            \n".
       "          ) multi_bibious ON (multi_bibious.item_id = item_vw.item_id)                           \n".
@@ -488,11 +489,16 @@ our %queries = (
       "          circ_transactions.patron_id, patron_barcode.patron_barcode, \n".
       "          circ_transactions.item_id, item_barcode.item_barcode, \n".
       "          circ_transactions.charge_date,circ_transactions.current_due_date, \n".
-      "          circ_transactions.renewal_count, circ_transactions.charge_location \n".
-      "FROM      circ_transactions \n".
-      "JOIN      patron             ON (circ_transactions.patron_id=patron.patron_id) \n".
+      "          circ_transactions.renewal_count, circ_transactions.charge_location, \n".
+#######
+      "          item_barcode.barcode_status, patron_barcode.barcode_status,                  \n". #barcode statuses are not needed, but are helpful in debugging and understanding duplications
+      "          item.item_id, item.perm_location                   			      \n". 
+      "FROM      circ_transactions 							      \n".
+      "JOIN      patron             ON (circ_transactions.patron_id=patron.patron_id) 	      \n".
       "LEFT JOIN patron_barcode     ON (circ_transactions.patron_id=patron_barcode.patron_id) \n".
-      "LEFT JOIN item_barcode       ON (circ_transactions.item_id=item_barcode.item_id) \n".
+      "LEFT JOIN item_barcode       ON (circ_transactions.item_id=item_barcode.item_id)       \n".
+      "LEFT JOIN item ON (circ_transactions.item_id=item.item_id)                             \n".
+      #     "WHERE item.perm_location IN ($helkaNLFLocationIDs)                                     \n".
       "WHERE     item_barcode.item_barcode = (                                                \n". #Pick only one barcode
       "              SELECT ib_union.item_barcode FROM (                                      \n". #Preferably the active one
       "                  SELECT   ib.item_barcode                                             \n".
@@ -533,10 +539,8 @@ our %queries = (
       "              ) pb_union                                                               \n". #These duplicates are caught by the deduplication mechanism
       "              FETCH FIRST 1 ROWS ONLY                                                  \n". #and cause deduplication warnings.
       "          )                                                                            \n".
-      "											      \n" 
-      "LEFT JOIN item               ON (circ_transactions.item_id=item.item_id)               \n".
-      "WHERE     item.perm_location IN ($helkaNLFLocationIDs)                                 \n".
-      "",
+      "	   AND item.perm_location IN ($helkaNLFLocationIDs)                                     \n".
+      "\n",
   },
   "12a-current_circ_last_renew_date.csv" => { #Same as 02-items_last_borrow_date.csv
     uniqueKey => 0,
