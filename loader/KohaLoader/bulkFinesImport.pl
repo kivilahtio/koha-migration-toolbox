@@ -76,8 +76,11 @@ $itemnumberConversionTable =     Bulk::ConversionTable::ItemnumberConversionTabl
 my $dbh = C4::Context->dbh;
 my $fineStatement = $dbh->prepare(
     'INSERT INTO  accountlines
-        (borrowernumber, itemnumber, accountno, date, amount, description, accounttype, amountoutstanding, notify_id, manager_id)
-    VALUES (?, ?, ?, ?, ?,?, ?,?,?,?)'
+        (borrowernumber, itemnumber, accountno, date, amount, description, accounttype, amountoutstanding, notify_id, manager_id, issue_id)
+    VALUES (?, ?, ?, ?, ?,?, ?,?,?,?,?)'
+);
+my $issueStatement = $dbh->prepare(
+    'SELECT issue_id FROM issues where itemnumber = ? AND borrowernumber = ? AND returndate IS NULL'
 );
 
 
@@ -85,10 +88,25 @@ sub finesImport($fine) {
     my $accountno  = C4::Accounts::getnextacctno( $fine->{borrowernumber} );
     my $notifyid = 0;
     my $manager_id = C4::Context->userenv ? C4::Context->userenv->{'number'} : 0;
+    my @issue_id = ();
+
+    if ($fine->{accounttype} eq "FU") {
+	$issueStatement->execute($fine->{itemnumber}, $fine->{borrowernumber});
+	my $row_count = 0;
+	while (my @row = $issueStatement->fetchrow_array()) {
+	    $issue_id[0] = @row[0];
+	    $row_count++;
+	}
+
+	if ($row_count > 1) {
+	    ERROR "Fine '".fineId($fine)."' is related to multiple checkouts!";
+	    $issue_id[0] = undef; # Fallback to not connecting it to anything
+	}
+    }
 
     $fineStatement->execute(
         $fine->{borrowernumber}, $fine->{itemnumber}, $accountno, $fine->{date}, $fine->{amount},
-        $fine->{description}, $fine->{accounttype}, $fine->{amountoutstanding}, $notifyid, $manager_id
+        $fine->{description}, $fine->{accounttype}, $fine->{amountoutstanding}, $notifyid, $manager_id, $issue_id[0]
     );
 
     if ($fineStatement->errstr) {
