@@ -9,7 +9,7 @@ use Test::Most tests => 4;
 use Test::MockModule;
 
 use MMT::MARC::Record;
-use MMT::Koha::Holding;
+use MMT::Voyager2Koha::Holding;
 
 my @records = (
   <<RECORD,
@@ -67,9 +67,9 @@ subtest "Transform a Bibliographic record", sub {
   my $mmtCache = Test::MockModule->new('MMT::Cache');
   $mmtCache->mock('get', sub { return [{suppress_in_opac => 'Y'}] });
 
-  require MMT::Koha::Biblio;
+  require MMT::Voyager2Koha::Biblio;
   my $builder = {SuppressInOpacMap => bless({}, 'MMT::Cache')};
-  my $kohaObject = MMT::Koha::Biblio->new();
+  my $kohaObject = MMT::Voyager2Koha::Biblio->new();
   $kohaObject->{id} = 1001;
   $kohaObject->build(\$records[0], $builder);
 
@@ -100,7 +100,7 @@ subtest "Transform a Bibliographic record", sub {
 RECORD
 
 
-  $kohaObject = MMT::Koha::Biblio->new();
+  $kohaObject = MMT::Voyager2Koha::Biblio->new();
   $kohaObject->{id} = 1002;
   $kohaObject->build(\$records[2], $builder);
 
@@ -165,7 +165,7 @@ subtest "Parse MARC records", sub {
   ]);
   is($r->docId, '3', 'r0 - docId');
 
-  is(MMT::Koha::Holding::serialize({r => $r}), $records[0], 'r0 - serialized');
+  is(MMT::Voyager2Koha::Holding::serialize({r => $r}), $records[0], 'r0 - serialized');
 
 
 
@@ -190,19 +190,19 @@ subtest "Parse MARC records", sub {
   ]);
   is($r->docId, '150628', 'r0 - docId');
 
-  is(MMT::Koha::Holding::serialize({r => $r}), $records[1], 'r1 - serialized');
+  is(MMT::Voyager2Koha::Holding::serialize({r => $r}), $records[1], 'r1 - serialized');
 };
 
 subtest "Field 852 - Voyager location to Koha", sub {
   require MMT::TranslationTable::LocationId;
-  require MMT::Koha::Holding::HAMK;
+  require MMT::Voyager2Koha::Holding::HAMK;
   my $TTLocationId = MMT::TranslationTable::LocationId->new();
   my $builder = {LocationId => $TTLocationId};
-  my $kohaObject = MMT::Koha::Holding->new();
+  my $kohaObject = MMT::Voyager2Koha::Holding->new();
   $kohaObject->{id} = 1001;
   my $record = MMT::MARC::Record->newFromXml(\$records[0]);
 
-  MMT::Koha::Holding::HAMK::transform($kohaObject, $record, $builder);
+  MMT::Voyager2Koha::Holding::HAMK::transform($kohaObject, $record, $builder);
   my $f = $record->fields('852');
 
   testSubfields($f->[0]->getAllSubfields, [
@@ -215,11 +215,11 @@ subtest "Field 852 - Voyager location to Koha", sub {
     ['n', 'fi'],
   ]);
 
-  MMT::Koha::Holding::HAMK::transform($kohaObject, $record, $builder);
+  MMT::Voyager2Koha::Holding::HAMK::transform($kohaObject, $record, $builder);
 
   $f->[0]->deleteSubfield( $_ ) for @{$f->[0]->subfields('b')};
   $f->[0]->deleteSubfield( $_ ) for @{$f->[0]->subfields('b')};
-  MMT::Koha::Holding::HAMK::transform($kohaObject, $record, $builder);
+  MMT::Voyager2Koha::Holding::HAMK::transform($kohaObject, $record, $builder);
 };
 
 sub testFields($fs, $tests) {

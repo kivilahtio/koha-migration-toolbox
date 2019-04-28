@@ -87,9 +87,9 @@ sub test($phoneCandidate, $valid, $kohaObject, $voyagerObject, $expectedKohaObje
 }
 
 # Factory for building test objects
-use MMT::Koha::Patron;
+use MMT::Voyager2Koha::Patron;
 sub ko($args={}) {
-  my $ko = MMT::Koha::Patron->new();
+  my $ko = MMT::Voyager2Koha::Patron->new();
   $ko->{borrowernumber} = 1;
   do {$ko->{$_} = $args->{$_}} for (keys(%$args));
   return $ko;

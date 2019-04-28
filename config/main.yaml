@@ -8,6 +8,10 @@
 ##
 ## Configurations are introduced in the same order as they are needed by the migration tools
 
+# From which system are we migrating from?
+# One of ['Voyager', 'PrettyLib']
+sourceSystemType: 'Voyager'
+
 ############################
 ### 1) Data export phase ###
 ## Voyager DB dumps are fetched and delivered for the data transformation phase
@@ -16,12 +20,12 @@
 # See the extractor-dir for example implementations.
 exportPipelineScript: 'voyagerToTransformer.sh'
 
-# From where the files exported from Voyager are found?
-voyagerExportDir: 'VoyagerExports'
-
 ####################################
 ### 2) Data transformation phase ###
 ## Exported DB rows are mangled into Koha-objects
+
+# Anonymize Borrower records?
+anonymize: 1
 
 # Enable multithreading by defining workers.
 workers: 0
@@ -51,6 +55,15 @@ patronAddExpiryYears: 0
 # See MMT::Validator::Phone for available strategies
 phoneNumberValidationStrategy: HAMK
 
+# How to deal with missing barcodes?
+# ERROR: Barcodes must exist, mocks a barcode based on the Id
+# IGNORE: Barcodes might be missing
+# CREATE: Barcodes must exist. Creates a barcode using the pattern 'emptyBarcodePattern'
+emptyBarcodePolicy: IGNORE
+
+# Replaces zeroes (0) with the id of the object being transformed
+emptyBarcodePattern: HAMK00000000
+
 #############################
 ### 3) Data loading phase ###
 ## Exported DB rows are mangled into Koha-objects
@@ -58,6 +71,3 @@ phoneNumberValidationStrategy: HAMK
 # Name of the script in directory $MMT_HOME/secret used to import the transformed data into Koha
 # See the importer-dir for example implementations.
 importPipelineScript: 'transformerToKoha.sh'
-
-# Where the built library system objects are stored to be transported to Koha?
-kohaImportDir: 'KohaImports'

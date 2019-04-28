@@ -14,7 +14,7 @@ use Test::Differences;
 use Test::MockModule;
 
 use MMT::TBuilder;
-use MMT::Koha::Patron;
+use MMT::Voyager2Koha::Patron;
 
 use MMT::TranslationTable::Branchcodes;
 use MMT::TranslationTable::NoteType;
@@ -26,7 +26,7 @@ my $builder = bless({
 
 subtest "Add Popup notes via the translation table", sub {
 
-  ok(my $patron = MMT::Koha::Patron->new(),
+  ok(my $patron = MMT::Voyager2Koha::Patron->new(),
     "Given a patron");
 
   ok(! MMT::TranslationTable::NoteType->popUp($patron, {}, $builder, '', '', [{
@@ -59,7 +59,7 @@ subtest "Add Popup notes via the translation table", sub {
 };
 
 subtest "Add Popup note with missing details", sub {
-  ok(my $patron = MMT::Koha::Patron->new(),
+  ok(my $patron = MMT::Voyager2Koha::Patron->new(),
     "Given a patron");
   ok($patron->_addPopUpNote($builder, 'message1', undef, undef),
     "When a popup note without a date or branch is added");

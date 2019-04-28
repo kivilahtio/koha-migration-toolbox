@@ -46,7 +46,6 @@ sub decodeToPerlInternalEncoding($$) {
       #Try to find out what needs to be done to turn the Voyager data to Perl's internal strings correctly.
       #Show diagnostics about some approaches to find out what hexes we get and how those behave when encoded/decoded
       #Setting the Oracle UTF-8 export env variables on in Exp::DB::dbh complicates this some more
-      $DB::single=1;
       my $o = $cols->[$j];
       binmode(STDOUT, ':raw');
       print "ORI: $o\n";

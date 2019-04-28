@@ -12,7 +12,7 @@ use Test::Differences;
 use Test::MockModule;
 
 use MMT::MARC::Record;
-use MMT::Koha::Holding;
+use MMT::Voyager2Koha::Holding;
 
 my @records = (
   <<RECORD,
@@ -59,7 +59,7 @@ $mmtCache->mock('get', sub { return [{suppress_in_opac => 'Y'}] });
 
 require MMT::TranslationTable::LocationId;
 
-require MMT::Koha::Holding;
+require MMT::Voyager2Koha::Holding;
 ok(my $builder = {
   SuppressInOpacMap => bless({}, 'MMT::Cache'),
   LocationId => MMT::TranslationTable::LocationId->new(),
@@ -68,7 +68,7 @@ ok(my $builder = {
 subtest "Transform a Holdings record with ccode", sub {
   plan tests => 2;
 
-  my $kohaObject = MMT::Koha::Holding->new();
+  my $kohaObject = MMT::Voyager2Koha::Holding->new();
   my $xml = $records[0];
   $kohaObject->build(\$xml, $builder);
 
@@ -103,7 +103,7 @@ subtest "Transform a Holdings record without a ccode or opac suppression", sub {
   plan tests => 2;
   $mmtCache->mock('get', sub { return [{suppress_in_opac => undef}] });
 
-  my $kohaObject = MMT::Koha::Holding->new();
+  my $kohaObject = MMT::Voyager2Koha::Holding->new();
   my $xml = $records[1];
   $kohaObject->build(\$xml, $builder);
 

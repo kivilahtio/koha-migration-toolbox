@@ -22,8 +22,8 @@ use Bulk::PatronImporter;
 
 binmode( STDOUT, ":encoding(UTF-8)" );
 our $verbosity = 3;
-my %args = (importFile =>                         ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Patron.migrateme',
-            uploadSSNKeysFile =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Patron.ssn.csv',
+my %args = (importFile =>                         ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Borrower.migrateme',
+            uploadSSNKeysFile =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Borrower.ssn.csv',
             uploadSSNKeysHetulaCredentialsFile => ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Hetula.credentials',
             preserveIds =>                        $ENV{MMT_PRESERVE_IDS} // 0,
             defaultAdmin =>                       0,

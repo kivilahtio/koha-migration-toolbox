@@ -1,66 +1,17 @@
-# This file is part of koha-migration-toolbox
-#
-# This is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
-#
-# This is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with koha-migration-toolbox; if not, see <http://www.gnu.org/licenses>.
-#
+package MMT::Anonymize;
 
-package Exp::Anonymize;
-
-#Pragmas
-use warnings;
-use strict;
-use utf8;
+use MMT::Pragmas;
 
 #External modules
-use Carp;
-use POSIX;
+use File::Basename;
+use Data::Printer colored => 1;
 
-=head2 NAME
+#Local modules
+my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
-Exp::Anonymize
+=head1 NAME
 
-=head2 DESCRIPTION
-
-Anonymization subroutines. Dispatched via anonymize() using the given anonymization rules.
-
-nvolk from NatLibFi already implemented these, I might just as well repackage them.
-
-=cut
-
-=head2 anonymize
-
-Dispatch the anonymization subroutines for anonymizable data per the anonymization rules.
-
-=cut
-
-sub anonymize($$$) {
-  my ($cols, $anonRules, $columnToIndexLookup) = @_;
-  return unless ($anonRules);
-
-  for my $anonymizableColumnName (keys %$anonRules) {
-    my $i = $columnToIndexLookup->{$anonymizableColumnName};
-    next unless $cols->[$i];
-
-    my $anonOperation = $anonRules->{$anonymizableColumnName};
-    my $anonSub = __PACKAGE__->can('__'.$anonOperation);
-    unless ($anonSub) {
-      warn "No such anonymization subroutine '__$anonOperation' for anonymization operation '$anonOperation'";
-      next;
-    }
-
-    $cols->[$i] = $anonSub->($cols->[$i]);
-  }
-}
+MMT::Repair::Anonymize - Anonymizations
 
 =head3 _anonymize_scramble
 
@@ -68,7 +19,7 @@ Turns each character into something else within the same character class.
 
 =cut
 
-sub __scramble($) {
+sub scramble($) {
   my $newText = '';
   while ( $_[0] ) {
     if ( $_[0] =~ s/^\d// ) {
@@ -92,13 +43,13 @@ sub __scramble($) {
   }
   return $newText;
 }
-sub __surname($) {
+sub surname($) {
   return 'Meikäläinen';
 }
-sub __firstName($) {
+sub firstName($) {
   return 'Tuisku';
 }
-sub __ssn($) {
+sub ssn($) {
   if (my $ssn = createSsnIfSsn($_[0])) {
     $_[0] = $ssn;
   }
@@ -108,11 +59,11 @@ sub __ssn($) {
 
   return $_[0];
 }
-sub __date($) {
+sub date($) {
   $_[0] =~ s/\d/1/gsm;
   return $_[0];
 }
-sub __phone($) {
+sub phone($) {
   my $newPhone = '';
   if ( $_[0] =~ s/^(\+?\d{3})// ) {
     $newPhone = $1;
@@ -127,6 +78,11 @@ sub __phone($) {
   }
   return $newPhone;
 }
+
+
+
+
+
 
 sub checkIsValidFinnishSSN {
   my ($value) = @_;
@@ -161,4 +117,4 @@ sub _getSsnChecksum {
 }
 
 
-return 1;
+1;

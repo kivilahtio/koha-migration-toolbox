@@ -14,8 +14,8 @@ use Test::MockModule;
 use File::Slurp;
 
 use MMT::TBuilder;
-use MMT::Koha::Serial;
-use MMT::Koha::Serial::Enumerations;
+use MMT::Voyager2Koha::Serial;
+use MMT::Voyager2Koha::Serial::Enumerations;
 
 #Example data set. This is just the extracted file 21-ser_issues.csv
 my $dataFile = "$FindBin::Bin/../t/resource/22-stat.fi-serial-enumeration-3-legging.csv";
@@ -32,8 +32,8 @@ ok(1, "Given the source test data has been opened for reading");
 my @results;
 
 while (my $data = $csv->getline_hr( $inFH )) {
-  my $s = MMT::Koha::Serial->new();
-  MMT::Koha::Serial::Enumerations::enumThenChron($s, $data, {});
+  my $s = MMT::Voyager2Koha::Serial->new();
+  MMT::Voyager2Koha::Serial::Enumerations::enumThenChron($s, $data, {});
   push(@results, [$s->{serialseq_x}, $s->{serialseq_y}, $s->{serialseq_z}]);
 }
 
