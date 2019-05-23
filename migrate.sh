@@ -41,6 +41,14 @@ if [[ "$SOURCE_SYSTEM" =~ "PrettyLib" ]]; then
   MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --load            &> $LOG_DIR/10-load.log
 fi
 
+if [[ "$SOURCE_SYSTEM" =~ "PrettyCirc" ]]; then
+  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --biblios         &> $LOG_DIR/01-biblios.log
+  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --items           &> $LOG_DIR/02-items.log
+  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --subscriptions   &> $LOG_DIR/03-subscriptions.log
+  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --serials         &> $LOG_DIR/04-serials.log
+  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --load            &> $LOG_DIR/10-load.log
+fi
+
 echo ""
 echo "Data migration pipeline complete."
 echo "Please carefully check all the logs in the log directory '$LOG_DIR'"

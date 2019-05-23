@@ -137,6 +137,37 @@ sub filetype($file) {
   return $1;
 }
 
+=head2 parseDate
+
+ @param1 {String}, a Date in some format
+ @returns {String}, the date as ISO8601
+
+=cut
+
+sub parseDate($dateStr) {
+  if ($dateStr =~ /^\s*(\d{4})-(\d{2})-(\d{2})/) { #ISO-8601 Date
+    return $dateStr;
+  }
+  elsif ($dateStr =~ /^\s*
+                      (\d{1,2})\.(\d{1,2})\.(\d{4}) #DMY
+                      (?:
+                        [T ]
+                        (\d{1,2}):(\d{1,2}):(\d{1,2}) #HMS
+                      )?$
+                      /x) {
+    return "$3-".
+           (length($2) == 1 ? "0$2" : "$2").'-'.
+           (length($1) == 1 ? "0$1" : "$1").' '.
+           (length($4) == 1 ? "0$4" : "$4").':'.
+           (length($5) == 1 ? "0$5" : "$5").':'.
+           (length($6) == 1 ? "0$6" : "$6");
+  }
+  else {
+    $log->error("Unknown date format '$dateStr'!");
+    return $dateStr;
+  }
+}
+
 sub _parameterValidationFailed($message, $variable, $opts) {
   if ($opts) {
     #CLI params validation context

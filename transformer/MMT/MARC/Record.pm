@@ -370,18 +370,25 @@ sub modTime {
   my $modTime = shift;
 
   if ($modTime) {
-    $self->{modTime} = $modTime;
+    unless ($modTime =~ /^(\d{4})-(\d{2})-(\d{2})   #YMD
+                          (?:
+                            [T ]
+                            (\d{2}):(\d{2}):(\d{2}) #HMS
+                          )?$/x) {
+      print "modTime '$modTime' is not ISO8601!\n";
+    }
+    $self->{modTime} = $1.$2.$3.($4 || '00').($5 || '00').($6 || '00').".0";
 
     #save the docid as the 001-field
     my $target = $self->getControlfield('005');
     if (! (defined $target)) {
       $target = MMT::MARC::Field->new("005");
-      $target->addSubfield("0", $modTime);
+      $target->addSubfield("0", $self->{modTime});
       $self->addField(  $target  );
     }
     ##replace the old one if exists
     else {
-      $target->content($modTime);
+      $target->content($self->{modTime});
     }
   }
   return $self->{modTime};

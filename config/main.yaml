@@ -9,7 +9,7 @@
 ## Configurations are introduced in the same order as they are needed by the migration tools
 
 # From which system are we migrating from?
-# One of ['Voyager', 'PrettyLib']
+# One of ['Voyager', 'PrettyLib', 'PrettyCirc']
 sourceSystemType: 'Voyager'
 
 ############################

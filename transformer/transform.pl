@@ -89,6 +89,23 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
           ],
         };
       }
+      elsif (MMT::Config->sourceSystemType eq 'PrettyCirc') {
+        $conf = {
+          inputFile => 'Title.csv',
+          repositories => [
+            {name => 'Titles', file => 'Title.csv', keys => ['Id']},
+            {name => 'Documents', file => 'Document.csv', keys => ['Id_Title']},
+            {name => 'Authors', file => 'Author.csv', keys => ['Id']},
+            {name => 'AuthorCross', file => 'AuthorCross.csv', keys => ['Id_Title']},
+            {name => 'Subjects', file => 'Subject.csv', keys => ['Id']},
+            {name => 'SubjectCross', file => 'SubjectCross.csv', keys => ['Id_Title']},
+            {name => 'Publishers', file => 'Publisher.csv', keys => ['Id']},
+            {name => 'PublisherCross', file => 'PublisherCross.csv', keys => ['Id_Title']},
+            {name => 'Series', file => 'Series.csv', keys => ['Id']},
+            {name => 'SeriesCross', file => 'SeriesCross.csv', keys => ['Id_Title']},
+          ],
+        };
+      }
 
       build($confBase, $conf);
     },
@@ -149,6 +166,19 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
         };
       }
       elsif (MMT::Config->sourceSystemType eq 'PrettyLib') {
+        $conf = {
+          inputFile => 'Item.csv',
+          repositories => [
+            {name => 'LoanByItem', file => 'Loan.csv',  keys => ['Id_Item']},
+            {name => 'Shelf',      file => 'Shelf.csv', keys => ['Id']},
+          ],
+          translationTables => [
+            {name => 'LocationId'},
+            {name => 'Branchcodes'},
+          ],
+        };
+      }
+      elsif (MMT::Config->sourceSystemType eq 'PrettyCirc') {
         $conf = {
           inputFile => 'Item.csv',
           repositories => [
@@ -296,13 +326,31 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
   '--serials' => {
     help => 'Transform serials from Voyager extracts to Koha',
     callback => sub {
-      my MMT::Builder $builder = MMT::Builder->new({
-        type => 'Serial',
-        inputFile => '21-ser_issues.csv',
-        repositories => [],
-        translationTables => [],
-      });
-      $builder->build();
+      my $confBase = {
+        outputFile => 'Serial.migrateme',
+      };
+      my $conf;
+
+      if (MMT::Config->sourceSystemType eq 'Voyager') {
+        $conf = {
+          type => 'Serial',
+          inputFile => '21-ser_issues.csv',
+          repositories => [],
+          translationTables => [],
+        };
+      }
+      elsif (MMT::Config->sourceSystemType eq 'PrettyCirc') {
+        $conf = {
+          type => 'Periodical',
+          inputFile => 'Periodical.csv',
+          repositories => [
+            {name => "Items", file => 'Item.csv', keys => ['Id']}, # Translate the biblionumber from the attached items
+          ],
+          translationTables => [],
+        };
+      }
+
+      build($confBase, $conf);
     },
   },
 
@@ -310,17 +358,39 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
   '--subscriptions' => {
     help => 'Transform subscriptions from Voyager extracts to Koha',
     callback => sub {
-      my MMT::Builder $builder = MMT::Builder->new({
+      my $confBase = {
         type => 'Subscription',
-        inputFile => '20-subscriptions.csv',
-        repositories => [
-          {name => "SubscriptionLocation", file => '20a-subscription_locations.csv', keys => ['component_id']},
-        ],
-        translationTables => [
-          {name => 'LocationId'},
-        ],
-      });
-      $builder->build();
+      };
+      my $conf;
+      if (MMT::Config->sourceSystemType eq 'Voyager') {
+        $conf = {
+          inputFile => '20-subscriptions.csv',
+          repositories => [
+            {name => "SubscriptionLocation", file => '20a-subscription_locations.csv', keys => ['component_id']},
+          ],
+          translationTables => [
+            {name => 'LocationId'},
+          ],
+        };
+        build($confBase, $conf);
+      }
+      elsif (MMT::Config->sourceSystemType eq 'PrettyCirc') {
+        $conf = {
+          inputFile => 'Periodical.csv',
+          repositories => [
+            {name => "Items", file => 'Item.csv', keys => ['Id']}, # Translate the biblionumber from the attached items
+          ],
+          translationTables => [
+            {name => 'LocationId'},
+            {name => 'Branchcodes'},
+          ],
+        };
+        require MMT::PrettyCirc2Koha::Subscription;
+        @{$confBase}{keys %{$conf}} = values %{$conf}; #Merge HASH slices
+        my MMT::TBuilder $builder = MMT::TBuilder->new($confBase);
+        MMT::PrettyCirc2Koha::Subscription::analyzePeriodicals($builder);
+        MMT::PrettyCirc2Koha::Subscription::createFillerSubscriptions($builder);
+      }
     },
   },
 

@@ -112,8 +112,8 @@ if ($@) {
 unless (emptyBarcodePolicy() eq 'ERROR' || emptyBarcodePolicy() eq 'IGNORE' || emptyBarcodePolicy() eq 'CREATE') {
   die "Config emptyBarcodePolicy '".emptyBarcodePolicy()."' is unvalid, must be one of [ERROR, IGNORE, CREATE]";
 }
-unless (sourceSystemType() eq 'Voyager' || sourceSystemType() eq 'PrettyLib') {
-  die "Config sourceSystemType '".sourceSystemType()."' is invalid, must be one of [Voyager, PrettyLib]";
+unless (sourceSystemType() =~ /^(?:Voyager|PrettyLib|PrettyCirc)$/) {
+  die "Config sourceSystemType '".sourceSystemType()."' is invalid";
 }
 
 return 1;

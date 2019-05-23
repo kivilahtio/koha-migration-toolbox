@@ -5,8 +5,8 @@ use MMT::Pragmas;
 #External modules
 
 #Local modules
-use MMT::Shell;
 use MMT::MARC::Record;
+use MMT::Validator;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
 #Inheritance
@@ -39,6 +39,9 @@ sub build($s, $o, $b) {
   unless ($s->{biblionumber}) {
     MMT::Exception::Delete->throw(error => "Missing field 001 with record:\n".Data::Printer::np($o)."\n!!");
   }
+
+  sanitateInput($o);
+
   $s->{record} = MMT::MARC::Record->new();
 
   # Gather information needed to build the leader
@@ -58,6 +61,22 @@ sub build($s, $o, $b) {
 
   $s->{record}->addUnrepeatableSubfield('008', '0', $s->_build008($o));
 
+  $s->mergeLinks($o, $b);
+}
+
+=head2 sanitateInput
+
+Sanitate some values which can be in inconsistent formats across PrettyLib databases
+
+ @param1 PrettyLirc object
+
+=cut
+
+sub sanitateInput($o) {
+  $o->{$_} = MMT::Validator::parseDate($o->{$_}) for (qw(UpdateDate SaveDate));
+}
+
+sub mergeLinks($s, $o, $b) {
   linkAuthors(@_);
   linkDocuments(@_);
   linkPublishers(@_);

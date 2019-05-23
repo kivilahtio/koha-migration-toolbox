@@ -5,6 +5,7 @@ use MMT::Pragmas;
 #External modules
 
 #Local modules
+use MMT::Validator;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
 #Inheritance
@@ -109,7 +110,7 @@ sub setBarcode($s, $o, $b) {
   }
 }
 sub setDateaccessioned($s, $o, $b) {
-  $s->{dateaccessioned} = $o->{SaveDate};
+  $s->{dateaccessioned} = MMT::Validator::parseDate($o->{SaveDate});
 
   unless ($s->{dateaccessioned}) {
     $log->warn($s->logId()."' has no dateaccessioned.");
@@ -125,7 +126,7 @@ sub setReplacementprice($s, $o, $b) {
 sub setDatelastborrowed($s, $o, $b) {
   my $loans = $b->{LoanByItem}->get($o->{Id}); # The Loan-rows are ordered from oldest to newest
   if ($loans) {
-    $s->{datelastborrowed} = $loans->[-1]->{LoanDate};
+    $s->{datelastborrowed} = MMT::Validator::parseDate($loans->[-1]->{LoanDate});
   }
   #It is ok for the Item to not have datelastborrowed
 }
