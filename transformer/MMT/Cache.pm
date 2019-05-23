@@ -63,9 +63,9 @@ sub _slurpFile($s) {
   $log->info("Cache '".$s->name()."' loaded. '$linesRead' lines read.");
 }
 sub _slurpCsv($s) {
-  my $csv = Text::CSV->new({ binary => 1, sep_char => ',', auto_diag => 9 });
+  my $csv = Text::CSV->new({binary => 1, sep_char => ',', auto_diag => 9, always_quote => 1});
   open(my $FH, '<:encoding(UTF-8)', $s->file());
-  $csv->column_names($csv->getline($FH));
+  $csv->header($FH, {detect_bom => 1, munge_column_names => 'none'});
   $log->debug("Loading .csv-file '".$s->file()."', identified columns '".join(',', $csv->column_names())."'");
   my $i = 0;
   while (my $obj = $csv->getline_hr($FH)) {

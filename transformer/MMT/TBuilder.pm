@@ -371,9 +371,9 @@ sub getCsvIterator($s, $input_record_separator=undef) {
 =cut
 
 sub openCsvFile($s) {
-  $s->{csv} = Text::CSV->new({ binary => 1, sep_char => ',', auto_diag => 9 });
+  $s->{csv} = Text::CSV->new({ binary => 1, sep_char => ',', auto_diag => 9, always_quote => 1});
   open($s->{inFH}, '<:encoding(UTF-8)', $s->{inputFile}) or $log->logdie("Loading file '".$s->{inputFile}."' failed: $!");
-  $s->{csv}->column_names(  $s->{csv}->getline( $s->{inFH} )  );
+  $s->{csv}->header($s->{inFH}, {detect_bom => 1, munge_column_names => 'none'});
   $log->info("Loading file '".$s->{inputFile}."', identified columns '".join(',', $s->{csv}->column_names())."'");
   return $s->{csv}; #Have a meaningful truthy return value
 }
