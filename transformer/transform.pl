@@ -15,9 +15,10 @@ use IPC::Cmd;
 
 #Local modules
 my Log::Log4perl $log = Log::Log4perl->get_logger(__PACKAGE__);
+use MMT::AutoConfigurer;
+use MMT::Builder;
 use MMT::Extractor;
 use MMT::Loader;
-use MMT::Builder;
 use MMT::TBuilder;
 use MMT::Voyager2Koha::Biblio;
 
@@ -45,6 +46,44 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
   '--extract' => {
     help => "Runs the extract-phase using the script configured in 'exportPipelineScript'",
     callback => sub {MMT::Extractor::extract()},
+  },
+
+
+  '--autoconfig' => {
+    help => "AutoConfigures translation tables from extracted data sets",
+    callback => sub {
+      if (MMT::Config->sourceSystemType eq 'Voyager') {
+        MMT::AutoConfigurer::configure([
+          {
+
+          }
+        ]);
+      }
+      elsif (MMT::Config->sourceSystemType =~ /PrettyLib|PrettyCirc/) {
+        MMT::AutoConfigurer::configure([
+          {
+            description => "This mapping table is used by the module MMT::TranslationTable::Branchcodes, it defines mappings from PrettyLib.Library to Koha's branchcode used in various tables.",
+            sourceFile => 'Library.csv',
+            destinationFile => 'branchcodes.yaml',
+            sourcePrimaryKeyColumn => 'Id',
+            translationTemplate => '$_{Name}',
+          }, {
+            description => "This mapping table is used by the module MMT::TranslationTable::LocationId, it defines mappings from location column to Koha's shelving_location",
+            sourceFile => 'Location.csv',
+            destinationFile => 'location_id.yaml',
+            sourcePrimaryKeyColumn => 'Id',
+            translationTemplate => '"branchcLoc(,".substr($_{Location},0,8).")"',
+          }, {
+            description => "This mapping table is used by the module MMT::TranslationTable::PatronCategorycode, it defines mappings from PrettyLib.Customer.Id_Group to koha.borrowers.categorycode",
+            sourceFile => 'Groups.csv',
+            destinationFile => 'borrowers.categorycode.yaml',
+            sourcePrimaryKeyColumn => 'Id',
+            translationTemplate => 'substr($_{Name},0,8)',
+          },
+        ]);
+      }
+      return undef;
+    },
   },
 
 
