@@ -52,6 +52,7 @@ mkdir -p $PIPELINE_SCRIPTS             || exit 11
 cp -r config $MMT_HOME/                || exit 11
 cp -r tests $MMT_HOME/                 || exit 11
 cp config/seed.gitignore $MMT_HOME/.gitignore || exit 11
+cp $EXTRACTOR_DIR/PrettyLibExtractor/preprocess.sh $MMT_HOME/preprocess.sh || exit 11
 cp $EXTRACTOR_DIR/$EXTRACTOR_PIPELINE_SCRIPT $PIPELINE_SCRIPTS/ || exit 12
 cp $LOADER_DIR/$LOADER_PIPELINE_SCRIPT $PIPELINE_SCRIPTS/ || exit 12
 
@@ -90,6 +91,11 @@ Now you need to do some manual steps.
   to point into the extract-phase triggering script.
 
   A default script is placed for you into a default position.
+
+  If you don't have access to the Pretty* database, but have to rely on 3rd
+  party DB dumps,
+  $MMT_HOME/preproces.sh -script can be a good starter to do preprocessing to make the
+  dumps work with MMT's Transform-phase
 
 2)
   A load-phase (import) connection script needs to be created and configured to
