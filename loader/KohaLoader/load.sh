@@ -17,6 +17,7 @@ test ! -e "$KOHA_CONF" && echo "\$KOHA_CONF=$KOHA_CONF doesn't exist. Aborting!"
 KOHA_DB=$(xmllint --xpath "yazgfs/config/database/text()" $KOHA_CONF)
 KOHA_DB_USER=$(xmllint --xpath "yazgfs/config/user/text()" $KOHA_CONF)
 KOHA_DB_PASS=$(xmllint --xpath "yazgfs/config/pass/text()" $KOHA_CONF)
+KOHA_USE_ELASTIC=$(xmllint --xpath "yazgfs/config/elasticsearch/server/text()" $KOHA_CONF)
 test -z "$KOHA_DB" && echo "\$KOHA_DB is unknown. Couldn't parse it from \$KOHA_CONF=$KOHA_CONF. Aborting!" exit 3
 test -z "$KOHA_DB_USER" && echo "\$KOHA_DB_USER is unknown. Couldn't parse it from \$KOHA_CONF=$KOHA_CONF. Aborting!" exit 3
 test -z "$KOHA_DB_PASS" && echo "\$KOHA_DB_PASS is unknown. Couldn't parse it from \$KOHA_CONF=$KOHA_CONF. Aborting!" exit 3
@@ -89,6 +90,9 @@ test $PRESERVE_IDS &&         echo -e "\$PRESERVE_IDS set. Preserving legacy dat
 
 test $DEFAULT_ADMIN &&        echo -e "\$DEFAULT_ADMIN scheduled for creation."
 test -z $DEFAULT_ADMIN &&     echo -e "\$DEFAULT_ADMIN not being created."
+
+test $KOHA_USE_ELASTIC &&     echo -e "\$KOHA_USE_ELASTIC = '$KOHA_USE_ELASTIC'. Indexing to Elasticsearch."
+test -z $KOHA_USE_ELASTIC &&  echo -e "\$KOHA_USE_ELASTIC is unset. Indexing to Zebra."
 
 # Make environment known for bulk*.pl -scripts, so they can infer defaults automatically.
 export MMT_DATA_SOURCE_DIR=$DATA_SOURCE_DIR
@@ -167,13 +171,19 @@ function flushDataFromDB {
 }
 
 function fullReindex {
-    flush="$1"
-    if [ -n "$flush" ]; then
-        flush="-d"
+    FLUSH="$1"
+
+    if [ -n "$KOHA_USE_ELASTIC" ]; then
+        if [ -n "$FLUSH" ]; then
+            FLUSH="-d"
+        fi
+        $KOHA_PATH/misc/search_tools/rebuild_elastic_search.pl $FLUSH &> $WORKING_DIR/rebuild_elasticsearch.log
+    else
+        if [ -n "$FLUSH" ]; then
+            FLUSH="-r"
+        fi
+        su -s /bin/bash -c "$KOHA_PATH/misc/migration_tools/rebuild_zebra.pl -b -a $FLUSH -x -v &> $WORKING_DIR/rebuild_zebra.log" koha
     fi
-    #Make a full Zebra reindex.
-    #Zebra is no longer used $KOHA_PATH/misc/migration_tools/rebuild_zebra.pl -b -a -r -x -v &> $WORKING_DIR/rebuild_zebra.log
-    $KOHA_PATH/misc/search_tools/rebuild_elastic_search.pl $flush &> $WORKING_DIR/rebuild_elasticsearch.log
 }
 
 if [ "$OP" == "backup" ]
