@@ -5,6 +5,7 @@ use MMT::Pragmas;
 #External modules
 
 #Local modules
+use MMT::Validator;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
 #Inheritance
@@ -57,6 +58,8 @@ sub setDateDue($s, $o, $b) {
   unless ($s->{date_due}) {
     MMT::Exception::Delete->throw($s->logId()."' has no DueDate/date_due.");
   }
+
+  $s->{date_due} = MMT::Validator::parseDate($s->{date_due});
 }
 sub setBranchcode($s, $o, $b) {
   $s->{branchcode} = $b->{Branchcodes}->translate(@_, $o->{Id_Library});
@@ -74,6 +77,8 @@ sub setIssuedate($s, $o, $b) {
   unless ($s->{issuedate}) {
     MMT::Exception::Delete->throw($s->logId()." has no issuedate.");
   }
+
+  $s->{issuedate} = MMT::Validator::parseDate($s->{issuedate});
 }
 sub setLastrenewdate($s, $o, $b) {
   #$s->{lastrenewdate} = PrettyLib has no such concept.
