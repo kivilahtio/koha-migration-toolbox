@@ -57,6 +57,9 @@ sub build($self, $o, $b) {
     $SSN_EXPORT_FH->autoflush(1);
   }
 
+  #Trim leading/trailing whitespaces for all inputs
+  $o->{$_} =~ s/(?:^\s+|\s+$)//gsm for keys %$o;
+
   $self->setKeys($o, $b, [['Id' => 'borrowernumber']]);
   $self->setCardnumber                       ($o, $b);
   $self->setBorrowernotes                    ($o, $b); #Set notes up here, so we can start appending notes regarding validation failures.
@@ -158,9 +161,28 @@ sub logId($s) {
 }
 
 sub setCardnumber($s, $o, $b) {
-  $s->{cardnumber} = $o->{BarCode};
-  unless ($s->{cardnumber}) {
-    $s->{cardnumber} = $s->createBarcode();
+  my $cardnumber = $o->{BarCode} if $o->{BarCode};
+
+  if (not($cardnumber) || length($cardnumber) < 5) {
+    my $error = (not($cardnumber)) ?        'No cardnumber' :
+                (length($cardnumber) < 5) ? "Cardnumber '$cardnumber' too short" :
+                                            'Unspecified error';
+
+    if (MMT::Config::emptyBarcodePolicy() eq 'ERROR') {
+      my $bc = $s->createBarcode();
+      $log->error($s->logId()." - $error. Created cardnumber '$bc'.");
+      $s->{cardnumber} = $bc;
+    }
+    elsif (MMT::Config::emptyBarcodePolicy() eq 'IGNORE') {
+      $s->{cardnumber} = undef;
+      #Ignore
+    }
+    elsif (MMT::Config::emptyBarcodePolicy() eq 'CREATE') {
+      $s->{cardnumber} = $s->createBarcode();
+    }
+  }
+  else {
+    $s->{cardnumber} = $cardnumber;
   }
 }
 sub setBorrowernotes($s, $o, $b) {
@@ -214,21 +236,21 @@ sub setDateexpiry($s, $o, $b) {
 }
 sub setContactInfo($s, $o, $b) {
   my ($ok);
-  my @priority = ('HomeAddress', 'PostAddress'); # Gather via this priority table so this can be easily changed based on how PrettyLib has been used.
+  my @priority = ($o->{bHomeAddress} eq 'true') ? ('HomeAddress', 'PostAddress') : ('PostAddress', 'HomeAddress'); # Gather via this priority table so this can be easily changed based on how PrettyLib has been used.
   my %addresses; $addresses{$_} = {} for @priority; #Gather all different types of PrettyLib-addresses here
 
   if ($o->{PostAddress}) {
     $addresses{PostAddress}{phone}   = $o->{Phone};
     $addresses{PostAddress}{address} = $o->{PostAddress};
-    $addresses{PostAddress}{zipcode} = _extractZipcode(@_, 'PostCode');
-    $addresses{PostAddress}{city}    = _extractCity(@_,    'PostCode');
+    $addresses{PostAddress}{zipcode} = _extractZipcode(@_, 'PostCode') if $o->{PostCode};
+    $addresses{PostAddress}{city}    = _extractCity(@_,    'PostCode') if $o->{PostCode};
   }
 
   if ($o->{HomeAddress}) {
     $addresses{HomeAddress}{phone}   = $o->{HomePhone};
     $addresses{HomeAddress}{address} = $o->{HomeAddress};
-    $addresses{HomeAddress}{zipcode} = _extractZipcode(@_, 'HomeCode');
-    $addresses{HomeAddress}{city}    = _extractCity(@_,    'HomeCode');
+    $addresses{HomeAddress}{zipcode} = _extractZipcode(@_, 'HomeCode') if $o->{HomeCode};
+    $addresses{HomeAddress}{city}    = _extractCity(@_,    'HomeCode') if $o->{HomeCode};
   }
 
   $s->{address}   = $addresses{$priority[0]}{address} // '';
@@ -487,6 +509,7 @@ sub _extractCity($s, $o, $b, $cityField) {
   }
   else {
     $log->warn($s->logId()." - 'city' cannot be extracted from '$cityField'-field '".$o->{$cityField}."'");
+    return '';
   }
 }
 
