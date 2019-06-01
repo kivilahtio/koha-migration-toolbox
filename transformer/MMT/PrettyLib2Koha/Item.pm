@@ -175,14 +175,7 @@ sub setPermanent_location($s, $o, $b) {
   $s->{ccode} = $branchcodeLocation->{collectionCode} if $branchcodeLocation->{collectionCode};
 }
 sub setLocation($s, $o, $b) {
-  if ($o->{temp_location}) {
-    my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{Id_Location});
-    $s->{location} = $branchcodeLocation->{location};
-    $s->{ccode} = $branchcodeLocation->{collectionCode} if $branchcodeLocation->{collectionCode};
-  }
-  else {
-    $s->{location} = $s->{permanent_location};
-  }
+  $s->{location} = $s->{permanent_location};
 }
 sub setSub_location($s, $o, $b) {
   my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{Id_Location});
