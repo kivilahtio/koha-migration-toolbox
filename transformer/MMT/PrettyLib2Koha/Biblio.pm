@@ -62,6 +62,8 @@ sub build($s, $o, $b) {
   $s->{record}->addUnrepeatableSubfield('008', '0', $s->_build008($o));
 
   $s->mergeLinks($o, $b);
+
+  $s->{record}->addUnrepeatableSubfield('942', 'c', 'BK'); #TODO: Default Koha item type?
 }
 
 =head2 sanitateInput
@@ -311,6 +313,7 @@ sub linkSeries($s, $o, $builder) {
 =head2 linkSubjects
 
 PrettyLib.SubjectCross -> Subjects -> Field 653$a
+Koha wants each Subject to be in a separate Field instance.
 
 # 653 - Index Term-Uncontrolled https://marc21.kansalliskirjasto.fi/bib/6XX.htm#653
 
@@ -334,7 +337,7 @@ sub linkSubjects($s, $o, $builder) {
       }
     }
   }
-  $s->{record}->addField(MMT::MARC::Field->new('653', '#', '#', \@subfields)) if @subfields;
+  $s->{record}->addField(MMT::MARC::Field->new('653', '#', '#', [$_])) for @subfields;
 }
 
 =head2 _setF001
@@ -446,7 +449,7 @@ sub _buildLeader($s, $flags) {
 #12-16 - Base address of data
 #
 #    [number] - Length of Leader and Directory
-    '#'.
+    '00555'.
 
 #17 - Encoding level
 #
