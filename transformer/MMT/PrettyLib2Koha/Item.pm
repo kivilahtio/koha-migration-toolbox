@@ -173,6 +173,10 @@ sub setPermanent_location($s, $o, $b) {
   my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{Id_Location});
   $s->{permanent_location} = $branchcodeLocation->{location};
   $s->{ccode} = $branchcodeLocation->{collectionCode} if $branchcodeLocation->{collectionCode};
+
+  unless ($s->{permanent_location}) {
+    MMT::Exception::Delete->throw($s->logId().' - Missing Id_Location|permanent_location! Set a translation table default!');
+  }
 }
 sub setLocation($s, $o, $b) {
   $s->{location} = $s->{permanent_location};
