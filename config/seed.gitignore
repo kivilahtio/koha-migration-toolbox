@@ -5,3 +5,6 @@ secret
 *.komodoproject
 .vscode
 *.swp
+*Exports
+*Imports
+logs
