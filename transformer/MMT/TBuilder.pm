@@ -236,13 +236,13 @@ sub task($s, $textPtr) {
     $ko->build($o, $s);
   };
   if ($@) {
-    $log->fatal("Received an unhandled exception '".MMT::Validator::dumpObject($@)."'") if $log->is_fatal();
     if (ref($@) eq 'MMT::Exception::Delete') {
       $log->error($ko->logId()." was dropped. Reason: ".$@->error) if $log->is_error();
     }
     else {
       $log->fatal("Received an unhandled exception '".MMT::Validator::dumpObject($@)."'") if $log->is_fatal();
     }
+    return undef; #Prevent implicit truthy return from getting put to the write queue
   }
   else {
     $log->debug("Writing ".$ko->logId()) if $log->is_debug();
