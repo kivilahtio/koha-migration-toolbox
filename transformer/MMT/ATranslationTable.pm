@@ -149,7 +149,8 @@ Generic fallback to show a warning about a missing value translation
 =cut
 
 sub warning($s, $kohaObject, $voyagerObject, $builder, $originalValue='', $tableParams=undef, $transParams=undef) {
-  $log->warn("No mapping for value '$originalValue'");
+  $log->warn("No mapping for value '$originalValue' in '".ref($s)."'");
+  return undef; #Prevent implicit truthy return value from breaking things
 }
 
 return 1;

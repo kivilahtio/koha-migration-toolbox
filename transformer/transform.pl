@@ -72,7 +72,7 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
             sourceFile => 'Location.csv',
             destinationFile => 'location_id.yaml',
             sourcePrimaryKeyColumn => 'Id',
-            translationTemplate => '"branchcLoc(,".substr($_{Location},0,8).")"',
+            translationTemplate => '"branchLoc(,".substr($_{Location},0,8).")"',
           }, {
             description => "This mapping table is used by the module MMT::TranslationTable::PatronCategorycode, it defines mappings from PrettyLib.Customer.Id_Group to koha.borrowers.categorycode",
             sourceFile => 'Groups.csv',
