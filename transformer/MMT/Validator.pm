@@ -89,18 +89,6 @@ sub probablyAYear($value) {
   return $value =~ /^(?:19|20)\d\d$/;
 }
 
-=head2 voyagerMoneyToKohaMoney
-
- @returns Voyager money exchanged to the current Koha valuation.
- @throws die, if Voyager money is not a valid number.
-
-=cut
-
-sub voyagerMoneyToKohaMoney($cashMoney) {
-  die "Fiscal value '$cashMoney' is not a valid number" unless ($cashMoney =~ /^[-+]?\d+\.?\d*$/);
-  return sprintf("%.2f", $cashMoney / 100); #Voyager has cents instead of the "real deal". This might be smart after all.
-}
-
 sub delimiterAllowed($delim, $fileToDelimit) {
   my $suffix = filetype($fileToDelimit);
   if ($suffix eq 'csv') {

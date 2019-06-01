@@ -5,6 +5,7 @@ use MMT::Pragmas;
 #External modules
 
 #Local modules
+use MMT::Validator::Money;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
 #Inheritance
@@ -80,7 +81,7 @@ sub setAmount($s, $o, $b) {
   unless ($o->{fine_fee_amount}) {
     $log->warn($s->logId()." has fine_fee_amount='".$o->{fine_fee_amount}."'. There should be no zero-value fines?");
   }
-  $s->{amount} = MMT::Validator::voyagerMoneyToKohaMoney($o->{fine_fee_amount});
+  $s->{amount} = MMT::Validator::Money::money(@_, $o->{fine_fee_amount});
 }
 sub setAmountoutstanding($s, $o, $b) {
   unless (defined($o->{fine_fee_balance})) {
@@ -89,7 +90,7 @@ sub setAmountoutstanding($s, $o, $b) {
   unless ($o->{fine_fee_balance}) {
     $log->warn($s->logId()." has fine_fee_balance='".$o->{fine_fee_balance}."'. Fines which have already been paid, should be excluded by the Precision extractor?");
   }
-  $s->{amountoutstanding} = MMT::Validator::voyagerMoneyToKohaMoney($o->{fine_fee_balance});
+  $s->{amountoutstanding} = MMT::Validator::Money::money(@_, $o->{fine_fee_balance});
 }
 sub setDescription($s, $o, $b) {
   $s->sourceKeyExists($o, 'fine_fee_note');

@@ -6,6 +6,7 @@ use MMT::Pragmas;
 
 #Local modules
 use MMT::Validator;
+use MMT::Validator::Money;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
 #Inheritance
@@ -117,7 +118,7 @@ sub setDateaccessioned($s, $o, $b) {
   }
 }
 sub setPrice($s, $o, $b) {
-  $s->{price} = ($o->{Price}) ? MMT::Validator::voyagerMoneyToKohaMoney($o->{Price}) : undef;
+  $s->{price} = ($o->{Price}) ? MMT::Validator::Money::replacementPrice(@_, $o->{Price}) : undef;
   #$log->warn($s->logId()."' has no price.") unless $s->{price}; #Too much complaining about the missing price. Hides all other issues.
 }
 sub setReplacementprice($s, $o, $b) {
