@@ -19,7 +19,6 @@ Creates unaltered translation tables from table contents
 =cut
 
 sub configure($rules) {
-$DB::single=1;
   for my $rule (@$rules) {
     my $sourceFile =
       (MMT::Validator::checkIsAbsolutePath($rule->{sourceFile})) ? $rule->{sourceFile} :
@@ -54,7 +53,7 @@ $DB::single=1;
 
     while (my $obj = $csv->getline_hr($FHin)) {
       my %_ = %$obj;
-      my @cols = map {$_ =~ s/\p{IsCntrl}//gsm; $_;} @_{ @colNames };
+      my @cols = map {$_ =~ s/(?:\p{IsCntrl}|\s{2,}|\s+$|^\s+)//gsm; $_;} @_{ @colNames };
       push(@sb, $_{$rule->{sourcePrimaryKeyColumn}}.
                 ': '.
                 eval($rule->{translationTemplate}).
