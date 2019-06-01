@@ -14,6 +14,7 @@ use C4::RotatingCollections;
 use Bulk::ConversionTable::ItemnumberConversionTable;
 use Bulk::ConversionTable::BiblionumberConversionTable;
 use Bulk::ConversionTable::SubscriptionidConversionTable;
+use Bulk::AutoConfigurer;
 
 our $verbosity = 3;
 my %args = (itemsFile =>                          ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Item.migrateme',
@@ -143,11 +144,22 @@ sub processRow {
     C4::Items::_set_derived_columns_for_add($item);
     my ($newItemnumber, $error);
     eval {
-        ($newItemnumber, $error) = C4::Items::_koha_new_item( $item, $item->{barcode} ) if $newBiblionumber;
+        ($newItemnumber, $error) = C4::Items::_koha_new_item( $item, $item->{barcode} );
     };
-    if ($@) {
-        warn $@;
-        return undef;
+    if ($@ || $error) {
+        if (Bulk::AutoConfigurer::item($item, $@ || $error)) { #Try to recover if the error is something the autoconfigurer can deal with
+            eval {
+                ($newItemnumber, $error) = C4::Items::_koha_new_item( $item, $item->{barcode} );
+            };
+            if ($@ || $error) {
+                warn $@;
+                return undef;
+            }
+        }
+        else {
+            warn $@;
+            return undef;
+        }
     }
 
     $error = "Failed to get itemnumber" if (not($newItemnumber));

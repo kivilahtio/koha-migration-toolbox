@@ -22,6 +22,7 @@ use Koha::Patrons;
 use Koha::Auth::PermissionManager;
 
 #Local modules
+use Bulk::AutoConfigurer;
 use Bulk::ConversionTable::BorrowernumberConversionTable;
 
 sub new($class, $params) {
@@ -115,7 +116,14 @@ sub addBorrowerDBI($s, $patron) {
   }
 
   my @params = map {$patron->{$_}} @{$s->{borrowerColumns}};
-  $s->{sth_addBorrower}->execute(@params) or die("Adding borrower failed: ".$s->{sth_addBorrower}->errstr());
+  eval {
+    $s->{sth_addBorrower}->execute(@params) or die("Adding borrower failed: ".$s->{sth_addBorrower}->errstr());
+  };
+  if ($@) {
+    if (Bulk::AutoConfigurer::borrower($patron, $@)) {
+      $s->{sth_addBorrower}->execute(@params) or die("Adding borrower failed: ".$s->{sth_addBorrower}->errstr());
+    }
+  }
 
   my $borrowernumber = $s->{dbh}->last_insert_id(undef, undef, 'borrowers', undef);
   unless ($borrowernumber) {
