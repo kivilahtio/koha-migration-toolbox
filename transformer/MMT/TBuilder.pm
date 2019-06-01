@@ -130,6 +130,7 @@ sub build($s) {
 
   if (not(MMT::Config::workers())) { #non-threaded logic for clarity on what actually happens unde the hood
     while (defined(my $textPtr = $s->{next}->())) {
+      $i++;
       my $textPtr = $s->task($textPtr);
       $s->writeToDisk($textPtr) if $textPtr;
     }
@@ -152,6 +153,8 @@ sub build($s) {
 
     #Enqueue MFHDs to the job queue. This way we avoid strange race conditions in the file handle
     while (not($SIG_TERMINATE_RECEIVED) && defined(my $record = $s->{next}->())) {
+      $i++;
+
       my $wait;
       if ($inputQueue->pending() > $jobBufferMaxSize) { # This is a type of buffering to avoid loading too much into memory. Wait for a while, if the job queue is getting large.
         $log->debug("Thread MAIN - Jobs queued '".$inputQueue->pending()."' , sleeping") if $log->is_debug();
