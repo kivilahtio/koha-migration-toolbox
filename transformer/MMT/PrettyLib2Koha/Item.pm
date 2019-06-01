@@ -97,12 +97,17 @@ sub logId($s) {
 sub setBarcode($s, $o, $b) {
   $s->{barcode} = $o->{BarCode} if $o->{BarCode};
 
-  unless ($s->{barcode}) {
+  if (not($s->{barcode}) || length($s->{barcode}) < 5) {
+    my $error = (not($s->{barcode})) ?        'No barcode' :
+                (length($s->{barcode}) < 5) ? 'Barcode too short' :
+                                              'Unspecified error';
+
     if (MMT::Config::emptyBarcodePolicy() eq 'ERROR') {
       $s->{barcode} = $s->createBarcode();
-      $log->error($s->logId()." - No barcode. Created barcode '".$s->{barcode}."'.");
+      $log->error($s->logId()." - $error. Created barcode '".$s->{barcode}."'.");
     }
     elsif (MMT::Config::emptyBarcodePolicy() eq 'IGNORE') {
+      $s->{barcode} = undef;
       #Ignore
     }
     elsif (MMT::Config::emptyBarcodePolicy() eq 'CREATE') {
