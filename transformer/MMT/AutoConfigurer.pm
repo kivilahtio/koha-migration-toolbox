@@ -31,8 +31,8 @@ sub configure($rules) {
     open(my $FHin,  '<:encoding(UTF-8)', $sourceFile)      or $log->logdie("Unable to open file '$sourceFile' for reading: $!");
     open(my $FHout, '>:encoding(UTF-8)', $destinationFile) or $log->logdie("Unable to open file '$destinationFile' for writing: $!");
 
-    my $csv = Text::CSV->new({binary => 1, sep_char => ',', auto_diag => 9, always_quote => 1});
-    $csv->header($FHin, {detect_bom => 1, munge_column_names => 'none'});
+    my $csv = Text::CSV->new(MMT::Config::csvInputNew());
+    $csv->header($FHin, MMT::Config::csvInputHeader());
     $log->debug("Loading .csv-file '".$sourceFile."', identified columns '".join(',', $csv->column_names())."'");
 
     my @colNames = $csv->column_names();

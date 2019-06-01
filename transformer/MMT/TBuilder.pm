@@ -333,7 +333,7 @@ sub getCsvIterator($s, $input_record_separator=undef) {
   open($s->{inFH}, '<:encoding(UTF-8)', $s->{inputFile}) or die("Opening the file '$s->{inputFile}' for iteration failed: $!")
     unless $s->{inFH};
 
-  my $csv = Text::CSV->new({binary => 1, sep_char => ',', auto_diag => 9, always_quote => 1});
+  my $csv = Text::CSV->new(MMT::Config::csvInputNew());
 
   my $_i;
   $_i = sub {
@@ -374,9 +374,9 @@ sub getCsvIterator($s, $input_record_separator=undef) {
 =cut
 
 sub openCsvFile($s) {
-  $s->{csv} = Text::CSV->new({ binary => 1, sep_char => ',', auto_diag => 9, always_quote => 1});
+  $s->{csv} = Text::CSV->new(MMT::Config::csvInputNew());
   open($s->{inFH}, '<:encoding(UTF-8)', $s->{inputFile}) or $log->logdie("Loading file '".$s->{inputFile}."' failed: $!");
-  $s->{csv}->header($s->{inFH}, {detect_bom => 1, munge_column_names => 'none'});
+  $s->{csv}->header($s->{inFH}, MMT::Config::csvInputHeader());
   $log->info("Loading file '".$s->{inputFile}."', identified columns '".join(',', $s->{csv}->column_names())."'");
   return $s->{csv}; #Have a meaningful truthy return value
 }

@@ -64,6 +64,18 @@ emptyBarcodePolicy: IGNORE
 # Replaces zeroes (0) with the id of the object being transformed
 emptyBarcodePattern: HAMK00000000
 
+# How Perl's Text::CSV should handle .csv-files input?
+# Output is hard-coded and should not be changed to maintain zero-configuration compatibility with the Loader-modules
+csvInputParams:
+  new:
+    binary: 1
+    sep_char: ","
+    auto_diag: 9
+    always_quote: 1
+  header:
+    detect_bom: 1
+    munge_column_names: none
+
 #############################
 ### 3) Data loading phase ###
 ## Exported DB rows are mangled into Koha-objects

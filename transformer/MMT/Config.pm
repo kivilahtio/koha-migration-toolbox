@@ -25,6 +25,12 @@ our $config;
 sub anonymize() {
   return $config->{anonymize} // 1;
 }
+sub csvInputNew() {
+  return $config->{csvInputParams}->{new};
+}
+sub csvInputHeader() {
+  return $config->{csvInputParams}->{header};
+}
 sub defaultReplacementPrice() {
   return $config->{defaultReplacementPrice};
 }
@@ -114,6 +120,12 @@ unless (emptyBarcodePolicy() eq 'ERROR' || emptyBarcodePolicy() eq 'IGNORE' || e
 }
 unless (sourceSystemType() =~ /^(?:Voyager|PrettyLib|PrettyCirc)$/) {
   die "Config sourceSystemType '".sourceSystemType()."' is invalid";
+}
+unless ($config->{csvInputParams} && $config->{csvInputParams}->{new}) {
+  die "Config 'csvInputParams->new' is not a proper Text::CSV options HASH";
+}
+unless ($config->{csvInputParams} && $config->{csvInputParams}->{header}) {
+  die "Config 'csvInputParams->header' is not a proper Text::CSV options HASH";
 }
 
 return 1;
