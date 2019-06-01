@@ -54,7 +54,7 @@ sub build($self, $o, $b) {
   #  \$self->setCcode                                         ($o, $b);
   $self->set(Id_Location          => 'location',           $o, $b);
   $self->set(Id_Location          => 'sub_location',       $o, $b);
-  #$self->set(item_type_id         => 'itype',              $o, $b);
+  $self->setItype(                                         $o, $b);
   #$self->set(???                  => 'enumchron',          $o, $b);
   #$self->set(? => datereceived, $o, $b);
   #$self->set(? => booksellerid, $o, $b);
@@ -191,12 +191,7 @@ sub setSub_location($s, $o, $b) {
   $s->{sub_location} = $branchcodeLocation->{sub_location} if $branchcodeLocation->{sub_location};
 }
 sub setItype($s, $o, $b) {
-  $s->{itype} = $b->{ItemTypes}->translate(@_, $o->{item_type_id});
-
-  my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{perm_location});
-  if ($branchcodeLocation->{itemtype}) {
-    $s->{itype} = $branchcodeLocation->{itemtype};
-  }
+  $s->{itype} = 'BK'; #TODO:: How is this defined in PrettyLib?
 
   unless ($s->{itype}) {
     MMT::Exception::Delete->throw($s->logId()."' has no itype! item_type_id=".$o->{item_type_id});
