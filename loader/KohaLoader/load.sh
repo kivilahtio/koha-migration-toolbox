@@ -168,7 +168,7 @@ function flushDataFromDB {
 
 function fullReindex {
     flush="$1"
-    if [ -z "$flush" ]; then
+    if [ -n "$flush" ]; then
         flush="-d"
     fi
     #Make a full Zebra reindex.
