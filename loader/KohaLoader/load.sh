@@ -173,6 +173,8 @@ function flushDataFromDB {
 function fullReindex {
     FLUSH="$1"
 
+    checkUser "koha"
+
     if [ -n "$KOHA_USE_ELASTIC" ]; then
         if [ -n "$FLUSH" ]; then
             FLUSH="-d"
@@ -182,7 +184,7 @@ function fullReindex {
         if [ -n "$FLUSH" ]; then
             FLUSH="-r"
         fi
-        su -s /bin/bash -c "$KOHA_PATH/misc/migration_tools/rebuild_zebra.pl -b -a $FLUSH -x -v &> $WORKING_DIR/rebuild_zebra.log" koha
+        $KOHA_PATH/misc/migration_tools/rebuild_zebra.pl -b -a $FLUSH -x -v &> $WORKING_DIR/rebuild_zebra.log
     fi
 }
 
