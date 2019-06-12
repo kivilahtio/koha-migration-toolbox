@@ -12,7 +12,6 @@ use Carp;
 # External modules
 use Time::HiRes;
 use Log::Log4perl qw(:easy);
-use Hetula::Client;
 
 # Koha modules used
 use C4::Context;
@@ -277,6 +276,7 @@ Upload ssn keys to koha.borrower_attributes
 =cut
 
 sub uploadSSNKeys($s) {
+  require Hetula::Client;
   INFO "Opening BorrowernumberConversionTable '".$s->p('borrowernumberConversionTableFile')."' for reading";
   my $borrowernumberConversionTable = Bulk::ConversionTable::BorrowernumberConversionTable->new($s->p('borrowernumberConversionTableFile'), 'read');
 
