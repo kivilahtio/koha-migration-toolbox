@@ -53,7 +53,7 @@ sub configure($rules) {
 
     while (my $obj = $csv->getline_hr($FHin)) {
       my %_ = %$obj;
-      my @cols = map {$_ =~ s/(?:\p{IsCntrl}|\s{2,}|\s+$|^\s+)//gsm; $_;} @_{ @colNames };
+      my @cols = map {$_ =~ s/(?:\p{IsCntrl}|\s{2,}|\s+$|^\s+|\W)//gsm; $_ || 'KONVERSIO';} @_{ @colNames };
       push(@sb, $_{$rule->{sourcePrimaryKeyColumn}}.
                 ': '.
                 eval($rule->{translationTemplate}).
