@@ -172,7 +172,7 @@ sub linkToMother($s, $o, $b, $leader) {
       unless ($mother->[0]->{F001}) {
         $log->warn($s->logId." - Link to Id_Mother '".$o->{Id_Mother}."' but the mother has no Field 001? Adding biblionumber '".$o->{Id_Mother}."' to 773w.");
       }
-      $s->{record}->addUnrepeatableSubfield('773', 'w', $mother->[0]->{F001} // $o->{Id_Mother});
+      $s->{record}->addUnrepeatableSubfield('773', 'w', $mother->[0]->{F001} || $o->{Id_Mother});
       $leader->{isComponentPart} = 1;
       $log->debug($s->logId." - Component part link (773w) created to parent '".($mother->[0]->{F001} || $o->{Id_Mother})."'") if $log->is_debug();
     }
