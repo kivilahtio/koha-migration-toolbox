@@ -14,7 +14,7 @@
 # along with koha-migration-toolbox; if not, see <http://www.gnu.org/licenses>.
 #
 
-package Exp::Strategy::Precision::Helka;
+package Exp::Strategy::Precision::HAMK;
 
 #Pragmas
 use warnings;
@@ -25,119 +25,19 @@ binmode( STDIN,  ":encoding(UTF-8)" );
 $|=1;
 
 use Data::Dumper;
-#External modules
-use Carp;
-use DBI;
-
-#Local modules
-use Exp::Strategy::MARC;
 
 =head2 NAME
 
-Exp::Strategy::Precision::Helka - Precisely export what is needed for Helka. (Except MARC)
+Exp::Strategy::Precision::HAMK - Precisely export what is needed for HAMK. (Except MARC)
 
 =head2 DESCRIPTION
 
-Export all kinds of data from Voyager using precision SQL
+Export all kinds of data from Voyager using the given precision SQL.
 
 =cut
+
 my $nowYear = 1900 + (localtime)[5];
-my $boundBibsStartId = 2000000; 
-
-
-my $helkaNLFLocationIDs = '2,3,4,5,6,7,8,9,51,52,148,158,173,211,231,234,238,245,247,253,281,295,296,297,324,449';
-
-#@author Ari Ahlqvist @ NatLibFi
-my $activeSince = '2016-01-01';
-my $helkaNLFActivePatronsSubquery = "
-select distinct id
-from
-(
-    select p.patron_id as id
-    from helkadb.patron p, helkadb.circ_transactions ct, helkadb.item i, helkadb.location l
-    where p.patron_id = ct.patron_id
-    and ct.item_id = i.item_id
-    and i.perm_location = l.location_id
-    and l.location_code between '100' and '139'
-    and ct.charge_date >= '$activeSince'
-
-union all
-
-    select p.patron_id as id
-    from helkadb.patron p, helkadb.circ_trans_archive cta, helkadb.item i, helkadb.location l
-    where p.patron_id = cta.patron_id
-    and cta.item_id = i.item_id
-    and i.perm_location = l.location_id
-    and l.location_code between '100' and '139'
-    and (cta.charge_date >= '$activeSince' OR cta.discharge_date >= '$activeSince')
-
-union all
-
-    select p.patron_id as id
-    from helkadb.patron p, helkadb.circ_transactions ct, helkadb.renew_transactions rt, helkadb.item i, helkadb.location l
-    where p.patron_id = ct.patron_id
-    and ct.circ_transaction_id = rt.circ_transaction_id
-    and ct.item_id = i.item_id
-    and i.perm_location = l.location_id
-    and l.location_code between '100' and '139'
-    and rt.renew_date >= '$activeSince'
-
-union all
-
-    select p.patron_id as id
-    from helkadb.patron p, helkadb.circ_trans_archive cta, helkadb.renew_trans_archive rta, helkadb.item i, helkadb.location l
-    where p.patron_id = cta.patron_id
-    and cta.circ_transaction_id = rta.circ_transaction_id
-    and cta.item_id = i.item_id
-    and i.perm_location = l.location_id
-    and l.location_code between '100' and '139'
-    and rta.renew_date >= '$activeSince'
-
-union all
-
-    select p.patron_id as id
-    from helkadb.patron p, helkadb.hold_recall hr, helkadb.item i, helkadb.hold_recall_items hri, helkadb.location l
-    where p.patron_id = hr.patron_id
-    and hr.hold_recall_id = hri.hold_recall_id
-    and hri.item_id = i.item_id
-    and i.perm_location = l.location_id
-    and l.location_code between '100' and '139'
-    and hr.create_date >= '$activeSince'
-
-union all
-
-    select p.patron_id as id
-    from helkadb.patron p, helkadb.hold_recall_archive hra, helkadb.item i, helkadb.hold_recall_items hri, helkadb.location l
-    where p.patron_id = hra.patron_id
-    and hra.hold_recall_id = hri.hold_recall_id
-    and hri.item_id = i.item_id
-    and i.perm_location = l.location_id
-    and l.location_code between '100' and '139'
-    and hra.create_date >= '$activeSince'
-
-union all
-
-    select p.patron_id as id
-    from helkadb.patron p, helkadb.call_slip cs, helkadb.item i, helkadb.location l
-    where p.patron_id = cs.patron_id
-    and cs.item_id = i.item_id
-    and i.perm_location = l.location_id
-    and l.location_code between '100' and '139'
-    and cs.date_requested >= '$activeSince'
-
-union all
-
-    select p.patron_id as id
-    from helkadb.patron p, helkadb.call_slip_archive csa, helkadb.item i, helkadb.location l
-    where p.patron_id = csa.patron_id
-    and csa.item_id = i.item_id
-    and i.perm_location = l.location_id
-    and l.location_code between '100' and '139'
-    and csa.date_requested >= '$activeSince'
-
-)
-
-order by id";
+my $boundBibsStartId = 2000000;
 
 our %queries = (
   "00-bib_sub_frequency.csv" => {
@@ -175,17 +75,17 @@ our %queries = (
     uniqueKey => -1,
     columnNames => [qw( dup_detection_profile.dup_profile_code dup_profile_fields.searchcode
                         dup_profile_fields.searchtarget dup_profile_fields.seqnum
-                        bib_index.source_bibid bib_index.source_index bib_index.source_heading
-                        bib_index.dest_bibid bib_index.dest_index bib_index.dest_heading )],
+                        bib_index.source_bibid bib_index.source_index bib_index.source_heading bib_index.source_norm_heading
+                        bib_index.dest_bibid bib_index.dest_index bib_index.dest_heading bib_index.dest_norm_heading )],
     sql =>
     "SELECT    ddp.dup_profile_code,                                                              \n".
     "          dpf.searchcode,                                                                    \n".
     "          TRIM(dpf.fieldoverride || UPPER(dpf.subfieldoverride)) as searchtarget,            \n".
     "          dpf.seqnum,                                                                        \n".
     "          bi_parent.bib_id as source_bibid, bi_parent.index_code as source_index,            \n".
-    "          bi_parent.normal_heading as source_heading,                                        \n".
+    "          bi_parent.display_heading as source_heading, bi_parent.normal_heading as source_norm_heading, \n".
     "          bi_child.bib_id as dest_bibid, bi_child.index_code as dest_index,                  \n".
-    "          bi_child.normal_heading as dest_heading                                            \n".
+    "          bi_child.display_heading as dest_heading, bi_child.normal_heading as dest_norm_heading \n".
     "FROM      dup_profile_fields dpf                                                             \n".
     "LEFT JOIN dup_detection_profile ddp ON (ddp.dup_profile_id = dpf.dup_profile_id)             \n".
     "LEFT JOIN bib_index bi_parent ON (bi_parent.index_code =                                     \n". #Get the parent biblio matching the linking subfield-pair
@@ -230,7 +130,6 @@ our %queries = (
       return \@bib_ids;
     },
   },
-
   "00-suppress_in_opac_map.csv" => {
     encoding => "iso-8859-1",
     uniqueKey => -1,
@@ -262,8 +161,9 @@ our %queries = (
       "          mfhd_item.mfhd_id, multi_holdacious.holdings_count,                                    \n".
       "          item_vw.barcode, item.perm_location, item.temp_location,                               \n".
       "          item.item_type_id, item.temp_item_type_id,                                             \n".
-      "          item_vw.enumeration, item_vw.chronology, item_vw.historical_charges, item_vw.call_no,  \n".
-      "          item_vw.call_no_type,                                                                  \n".
+      "          mfhd_item_conversion.enumeration, mfhd_item_conversion.chronology,                     \n".
+      "          item_vw.historical_charges,                                                            \n".
+      "          item_vw.call_no, item_vw.call_no_type,                                                 \n".
       "          item.price, item.copy_number, item.pieces                                              \n".
       "FROM      item_vw                                                                                \n".
       "LEFT JOIN item               ON (item_vw.item_id = item.item_id)                                 \n".
@@ -281,12 +181,14 @@ our %queries = (
       "          ) bib_item         ON (bib_item.item_id = item_vw.item_id)                             \n".
       "LEFT JOIN bib_item bibi      ON (bibi.bib_id  = bib_item.bib_id AND                              \n". # We must first choose the bib_id we want to include here, then choose information related to the bib. It is either an extra join or a single deeply nested subqueries join
       "                                 bibi.item_id = item_vw.item_id)                                 \n".
-######      "LEFT JOIN ( SELECT   bib_item.item_id, COUNT(bib_item.bib_id) as bibs_count                      \n". # Select the count of related biblios for this item, this is a strong indication that we are working with bound records. Such Items are dealt with elsewhere.
-      "INNER JOIN ( SELECT   bib_item.item_id, COUNT(bib_item.bib_id) as bibs_count                      \n". # Select the count of related biblios for this item, this is a strong indication that we are working with bound records. Such Items are dealt with elsewhere.
+      "LEFT JOIN ( SELECT   bib_item.item_id, COUNT(bib_item.bib_id) as bibs_count                      \n". # Select the count of related biblios for this item, this is a strong indication that we are working with bound records. Such Items are dealt with elsewhere.
       "            FROM     bib_item                                                                    \n".
       "            GROUP BY bib_item.item_id                                                            \n".
       "          ) multi_bibious ON (multi_bibious.item_id = item_vw.item_id)                           \n".
-      "WHERE     item.perm_location IN ($helkaNLFLocationIDs)                                           \n".
+      "LEFT JOIN ( SELECT mfhd_item.item_id, mfhd_item.chron as chronology,                             \n".
+      "                   mfhd_item.item_enum as enumeration                                            \n".
+      "            FROM mfhd_item                                                                       \n".
+      "          ) mfhd_item_conversion ON (mfhd_item_conversion.item_id = item_vw.item_id)                                 \n".
       "",
   },
   "02-items_last_borrow_date.csv" => { #This needs to be separate from the 02-items.csv, because otherwise Oracle drops Item-rows with last_borrow_date == NULL, even if charge_date is NULL in both the comparator and the comparatee.
@@ -367,7 +269,6 @@ our %queries = (
                OR
                circ_trans_archive.circ_transaction_id IS NULL
              )
-         AND item.perm_location IN ($helkaNLFLocationIDs)
 
       UNION
       ".
@@ -388,7 +289,6 @@ our %queries = (
                OR
                circ_trans_archive.circ_transaction_id IS NULL
              )
-         AND item.perm_location IN ($helkaNLFLocationIDs)
 
       UNION
       ".
@@ -409,7 +309,6 @@ our %queries = (
                OR
                circ_trans_archive.circ_transaction_id IS NULL
              )
-         AND item.perm_location IN ($helkaNLFLocationIDs)
       ",
   },
   "05-patron_addresses.csv" => {
@@ -451,7 +350,6 @@ our %queries = (
                  patron.patron_pin,
                  patron.institution_id, patron.birth_date
        FROM      patron
-       INNER JOIN ($helkaNLFActivePatronsSubquery) aps ON aps.id = patron.patron_id
        ORDER BY  patron.patron_id",
   },
   "09-patron_notes.csv" => {
@@ -485,20 +383,16 @@ our %queries = (
   "12-current_circ.csv" => {
     uniqueKey => 0,
     sql =>
-      "SELECT    circ_transactions.circ_transaction_id, \n".
-      "          circ_transactions.patron_id, patron_barcode.patron_barcode, \n".
-      "          circ_transactions.item_id, item_barcode.item_barcode, \n".
-      "          circ_transactions.charge_date,circ_transactions.current_due_date, \n".
-      "          circ_transactions.renewal_count, circ_transactions.charge_location, \n".
-#######
-      "          item_barcode.barcode_status, patron_barcode.barcode_status,                  \n". #barcode statuses are not needed, but are helpful in debugging and understanding duplications
-      "          item.item_id, item.perm_location                   			      \n". 
-      "FROM      circ_transactions 							      \n".
-      "JOIN      patron             ON (circ_transactions.patron_id=patron.patron_id) 	      \n".
+      "SELECT    circ_transactions.circ_transaction_id,                                       \n".
+      "          circ_transactions.patron_id, patron_barcode.patron_barcode,                  \n".
+      "          circ_transactions.item_id, item_barcode.item_barcode,                        \n".
+      "          circ_transactions.charge_date, circ_transactions.current_due_date,           \n".
+      "          circ_transactions.renewal_count, circ_transactions.charge_location,          \n".
+      "          item_barcode.barcode_status, patron_barcode.barcode_status                   \n". #barcode statuses are not needed, but are helpful in debugging and understanding duplications
+      "FROM      circ_transactions                                                            \n".
+      "JOIN      patron             ON (circ_transactions.patron_id=patron.patron_id)         \n".
       "LEFT JOIN patron_barcode     ON (circ_transactions.patron_id=patron_barcode.patron_id) \n".
       "LEFT JOIN item_barcode       ON (circ_transactions.item_id=item_barcode.item_id)       \n".
-      "LEFT JOIN item ON (circ_transactions.item_id=item.item_id)                             \n".
-      #     "WHERE item.perm_location IN ($helkaNLFLocationIDs)                                     \n".
       "WHERE     item_barcode.item_barcode = (                                                \n". #Pick only one barcode
       "              SELECT ib_union.item_barcode FROM (                                      \n". #Preferably the active one
       "                  SELECT   ib.item_barcode                                             \n".
@@ -539,8 +433,7 @@ our %queries = (
       "              ) pb_union                                                               \n". #These duplicates are caught by the deduplication mechanism
       "              FETCH FIRST 1 ROWS ONLY                                                  \n". #and cause deduplication warnings.
       "          )                                                                            \n".
-      "	   AND item.perm_location IN ($helkaNLFLocationIDs)                                     \n".
-      "\n",
+      "                                                                                       \n",
   },
   "12a-current_circ_last_renew_date.csv" => { #Same as 02-items_last_borrow_date.csv
     uniqueKey => 0,
@@ -562,7 +455,6 @@ our %queries = (
       "FROM      fine_fee \n".
       "LEFT JOIN item_vw ON (item_vw.item_id = fine_fee.item_id) \n".
       "LEFT JOIN patron  ON (fine_fee.patron_id = patron.patron_id) \n".
-      "INNER JOIN ($helkaNLFActivePatronsSubquery) aps ON aps.id = patron.patron_id \n".
       "WHERE     fine_fee.fine_fee_balance != 0 \n",
   },
 
@@ -598,27 +490,30 @@ our %queries = (
        ORDER BY  issues_received.component_id ASC, issues_received.location_id ASC",
   },
 
-  #No data in the Voyager subscription about into which branches it orders serials?
-  #Only received serials have location-information.
-  #Currently ignore predictions, because migrating predictions most certainly will be very slow/tedious vs benefits.
+  #Migrate only the serial numbers (predicted or received) up until the end of the current year. As the Koha's serials-module takes over then.
+  #TODO: Cannot know how many physical serial magazines are expected to be received for non-received serial numbers.
+  #      So serial issues that need to be received after going live, need to be added as supplements as there is only one item/magazine in Koha subscription ready to be received.
   "21-ser_issues.csv" => {
-    uniqueKey => [0, 1],
+    #uniqueKey => [0, 1, 3], #as item_id can be null or 0, this causes a lot of false positive warnings, so just disable uniqueness checks.
+    uniqueKey => -1,
     sql =>
       "SELECT    serial_issues.issue_id, serial_issues.component_id,
-                 line_item.bib_id,
+                 line_item.bib_id, issues_received.item_id,
                  serial_issues.enumchron, serial_issues.lvl1, serial_issues.lvl2, serial_issues.lvl3,
                  serial_issues.lvl4, serial_issues.lvl5, serial_issues.lvl6, serial_issues.alt_lvl1,
                  serial_issues.alt_lvl2, serial_issues.chron1, serial_issues.chron2, serial_issues.chron3,
                  serial_issues.chron4, serial_issues.alt_chron,
-                 serial_issues.expected_date, serial_issues.receipt_date, serial_issues.received
+                 serial_issues.expected_date, serial_issues.receipt_date, serial_issues.received,
+
+                 issues_received.location_id as received_location_id, issues_received.receipt_date as received_receipt_date,
+                 issues_received.opac_suppressed, issues_received.note as received_note, issues_received.collapsed
        FROM      serial_issues
        LEFT JOIN component       ON (component.component_id = serial_issues.component_id)
        LEFT JOIN subscription    ON (subscription.subscription_id = component.subscription_id)
        LEFT JOIN line_item       ON (subscription.line_item_id = line_item.line_item_id)
        LEFT JOIN issues_received ON (issues_received.issue_id = serial_issues.issue_id AND issues_received.component_id = serial_issues.component_id)
        WHERE     EXTRACT(YEAR FROM serial_issues.expected_date) <= $nowYear
-       ORDER BY  serial_issues.issue_id ASC",
-
+       ORDER BY  serial_issues.component_id ASC, serial_issues.issue_id ASC",
   },
 
   #Extract MFHD only for serials, so the location and subscription history can be extracted.
@@ -630,7 +525,6 @@ our %queries = (
     sql =>
       "SELECT 1", #Special processing for this one
   },
-
   "29-requests.csv" => {
     # Multiple holds with the same primary key? This is a parallel hold which is fulfillable by any of the reserved items.
     # TODO: This feature is something that needs to be implemented in Koha first. For the time being, let the extractor complain about it so we wont forget.
@@ -651,9 +545,7 @@ our %queries = (
       "  FROM      hold_recall                                                                                                              \n".
       "  LEFT JOIN hold_recall_items  on (hold_recall_items.hold_recall_id = hold_recall.hold_recall_id)                                    \n".
       "  LEFT JOIN hold_recall_status on (hold_recall_status.hr_status_type = hold_recall_items.hold_recall_status)                         \n".
-      "  LEFT JOIN item               on (item.item_id = hold_recall_items.item_id)                                                         \n".
       "  WHERE     hold_recall.request_level = 'C'                                                                                          \n". # C stands for "Cunning stunts"
-      "        AND item.perm_location IN ($helkaNLFLocationIDs)                                                                             \n".
 #      "  ORDER BY  hold_recall.hold_recall_id, hold_recall_items.item_id, hold_recall_items.queue_position                                  \n".
 #      "",
 #    sql =>
@@ -687,9 +579,7 @@ our %queries = (
       "                       hold_recall_items.hold_recall_status_date                                                                     \n".
       "            ) hold_recall_items ON (hold_recall_items.hold_recall_id = hold_recall.hold_recall_id)                                   \n".
       "  LEFT JOIN hold_recall_status on (hold_recall_status.hr_status_type = hold_recall_items.hold_recall_status)                         \n".
-      "  LEFT JOIN item               on (item.item_id = hold_recall_items.item_id)                                                         \n".
       "  WHERE     hold_recall.request_level = 'T'                                                                                          \n". # T stands for Title-level hold
-      "        AND item.perm_location IN ($helkaNLFLocationIDs)                                                                             \n".
 #      "  ORDER BY  hold_recall.hold_recall_id, hold_recall_items.queue_position                                                             \n".
 #      "",
 #    sql =>
@@ -718,8 +608,6 @@ our %queries = (
       "                                      call_slip.item_id = circ_transactions.item_id                                                  \n". # having the same patron and item
       #"                                      AND TRUNC(call_slip.status_date) = TRUNC(circ_transactions.charge_date)                        \n". # (requiring the same checkout day is not necessary)
       "                                     )                                                                                               \n". # is a pretty strong quarantee that the attached circ_transaction satisfied the hold_recall.
-      "  LEFT JOIN item               on (item.item_id = call_slip.item_id)                                                                 \n".
-      "  WHERE     item.perm_location IN ($helkaNLFLocationIDs)                                                                             \n".
 #      "  ORDER BY  call_slip.call_slip_id, call_slip.item_id                                                                                \n".
 #      "",
       ")                                                                                                                                    \n".
@@ -740,41 +628,4 @@ our %queries = (
   },
 );
 
-=head2 extensions
-
-Execute Helka-specific extensions in addition to the normal query extraction workflow
-
-=cut
-
-sub extensions {
-  warn "Exporting Helka bibs";
-  Exp::Strategy::MARC::_exportMARC(
-    Exp::Config::exportPath('biblios.marcxml'),
-    "SELECT     bib_data.*                                                           \n".
-    "FROM       bib_data                                                             \n".
-    "INNER JOIN ( SELECT DISTINCT(bib_mfhd.bib_id) as id                             \n".
-    "             FROM   bib_mfhd                                                    \n".
-    "             LEFT JOIN mfhd_master ON (bib_mfhd.mfhd_id = mfhd_master.mfhd_id)  \n".
-    "             WHERE mfhd_master.location_id IN ($helkaNLFLocationIDs)            \n".
-    "           ) nlf_bib ON (nlf_bib.id = bib_data.bib_id)                          \n".
-    "ORDER BY   bib_id, seqnum                                                       \n".
-    "",
-    undef
-  );
-
-  warn "Exporting Helka MFHD";
-  Exp::Strategy::MARC::_exportMARC(
-    Exp::Config::exportPath('holdings.marcxml'),
-    "SELECT     mfhd_data.*                                                \n".
-    "FROM       mfhd_data                                                  \n".
-    "INNER JOIN ( SELECT DISTINCT(mfhd_master.mfhd_id) as id               \n".
-    "             FROM   mfhd_master                                       \n".
-    "             WHERE mfhd_master.location_id IN ($helkaNLFLocationIDs)  \n".
-    "           ) nlf_mfhd ON (nlf_mfhd.id = mfhd_data.mfhd_id)            \n".
-    "ORDER BY   mfhd_id, seqnum                                            \n".
-    "",
-    undef
-  );
-}
-
-return 1;
+1;
