@@ -25,6 +25,7 @@ binmode( STDIN,  ":encoding(UTF-8)" );
 $|=1;
 
 use Data::Dumper;
+use Exp::Strategy::MARC;
 
 =head2 NAME
 
@@ -619,15 +620,6 @@ our %queries = (
        ORDER BY  serial_issues.component_id ASC, serial_issues.issue_id ASC",
   },
 
-  #Extract MFHD only for serials, so the location and subscription history can be extracted.
-  #The "20a-subscription_locations.csv" seems to generate rather excellent results for HAMK, but not dropping this feature yet, since
-  # ByWater must have had a good reason to implement it. Prolly this is needed for other Voyager libraries.
-  "serials_mfhd.csv" => {
-    encoding => "UTF-8",
-    uniqueKey => -1,
-    sql =>
-      "SELECT 1", #Special processing for this one
-  },
   "29-requests.csv" => {
     # Multiple holds with the same primary key? This is a parallel hold which is fulfillable by any of the reserved items.
     # TODO: This feature is something that needs to be implemented in Koha first. For the time being, let the extractor complain about it so we wont forget.
@@ -736,5 +728,42 @@ our %queries = (
       "",
   },
 );
+
+=head2 extensions
+
+Execute Helka-specific extensions in addition to the normal query extraction workflow
+
+=cut
+
+sub extensions {
+  warn "Exporting Helka bibs";
+  Exp::Strategy::MARC::_exportMARC(
+    Exp::Config::exportPath('biblios.marcxml'),
+    "SELECT     bib_data.*                                                           \n".
+    "FROM       bib_data                                                             \n".
+    "INNER JOIN ( SELECT DISTINCT(bib_mfhd.bib_id) as id                             \n".
+    "             FROM   bib_mfhd                                                    \n".
+    "             LEFT JOIN mfhd_master ON (bib_mfhd.mfhd_id = mfhd_master.mfhd_id)  \n".
+    "             WHERE mfhd_master.location_id IN ($helkaNLFLocationIDs)            \n".
+    "           ) nlf_bib ON (nlf_bib.id = bib_data.bib_id)                          \n".
+    "ORDER BY   bib_id, seqnum                                                       \n".
+    "",
+    undef
+  );
+
+  warn "Exporting Helka MFHD";
+  Exp::Strategy::MARC::_exportMARC(
+    Exp::Config::exportPath('holdings.marcxml'),
+    "SELECT     mfhd_data.*                                                \n".
+    "FROM       mfhd_data                                                  \n".
+    "INNER JOIN ( SELECT DISTINCT(mfhd_master.mfhd_id) as id               \n".
+    "             FROM   mfhd_master                                       \n".
+    "             WHERE mfhd_master.location_id IN ($helkaNLFLocationIDs)  \n".
+    "           ) nlf_mfhd ON (nlf_mfhd.id = mfhd_data.mfhd_id)            \n".
+    "ORDER BY   mfhd_id, seqnum                                            \n".
+    "",
+    undef
+  );
+}
 
 1;
