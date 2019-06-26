@@ -14,7 +14,7 @@
 # along with koha-migration-toolbox; if not, see <http://www.gnu.org/licenses>.
 #
 
-package Exp::Strategy::Precision::HAMK;
+package Exp::Strategy::Precision::Helka;
 
 #Pragmas
 use warnings;
@@ -28,13 +28,21 @@ use Data::Dumper;
 
 =head2 NAME
 
-Exp::Strategy::Precision::HAMK - Precisely export what is needed for HAMK. (Except MARC)
+Exp::Strategy::Precision::Helka - Precisely export what is needed for Helka. (Except MARC)
 
 =head2 DESCRIPTION
 
 Export all kinds of data from Voyager using the given precision SQL.
 
 =cut
+
+my $helkaNLFLocationIDs = "2,3,4,5,6,7,8,9,51,52,148,158,173,211,231,234,238,245,247,253,281295,296,297,324,449";
+
+#@author Ari Ahlqvist @ NatLibFi
+my $activeSince = '2016-01-01';
+my $helkaNLFActivePatronsSubquery = "
+";
+
 
 my $nowYear = 1900 + (localtime)[5];
 my $boundBibsStartId = 2000000;
@@ -189,6 +197,7 @@ our %queries = (
       "                   mfhd_item.item_enum as enumeration                                            \n".
       "            FROM mfhd_item                                                                       \n".
       "          ) mfhd_item_conversion ON (mfhd_item_conversion.item_id = item_vw.item_id)                                 \n".
+      "WHERE     item.perm_location IN ($helkaNLFLocationIDs)                                           \n".
       "",
   },
   "02-items_last_borrow_date.csv" => { #This needs to be separate from the 02-items.csv, because otherwise Oracle drops Item-rows with last_borrow_date == NULL, even if charge_date is NULL in both the comparator and the comparatee.
@@ -269,6 +278,7 @@ our %queries = (
                OR
                circ_trans_archive.circ_transaction_id IS NULL
              )
+         AND item.perm_location IN ($helkaNLFLocationIDs)
 
       UNION
       ".
@@ -289,6 +299,7 @@ our %queries = (
                OR
                circ_trans_archive.circ_transaction_id IS NULL
              )
+         AND item.perm_location IN ($helkaNLFLocationIDs)
 
       UNION
       ".
@@ -309,6 +320,7 @@ our %queries = (
                OR
                circ_trans_archive.circ_transaction_id IS NULL
              )
+         AND item.perm_location IN ($helkaNLFLocationIDs)
       ",
   },
   "05-patron_addresses.csv" => {
@@ -350,6 +362,7 @@ our %queries = (
                  patron.patron_pin,
                  patron.institution_id, patron.birth_date
        FROM      patron
+       INNER JOIN ($helkaNLFActivePatronsSubquery) aps ON aps.id = patron.patron_id
        ORDER BY  patron.patron_id",
   },
   "09-patron_notes.csv" => {
@@ -393,7 +406,9 @@ our %queries = (
       "JOIN      patron             ON (circ_transactions.patron_id=patron.patron_id)         \n".
       "LEFT JOIN patron_barcode     ON (circ_transactions.patron_id=patron_barcode.patron_id) \n".
       "LEFT JOIN item_barcode       ON (circ_transactions.item_id=item_barcode.item_id)       \n".
-      "WHERE     item_barcode.item_barcode = (                                                \n". #Pick only one barcode
+      "LEFT JOIN item               ON (circ_transactions.item_id=item.item_id)               \n".
+      "WHERE     item.perm_location IN ($helkaNLFLocationIDs)                                 \n".
+      "      AND item_barcode.item_barcode = (                                                \n". #Pick only one barcode
       "              SELECT ib_union.item_barcode FROM (                                      \n". #Preferably the active one
       "                  SELECT   ib.item_barcode                                             \n".
       "                  FROM     item_barcode ib                                             \n".
@@ -455,6 +470,7 @@ our %queries = (
       "FROM      fine_fee \n".
       "LEFT JOIN item_vw ON (item_vw.item_id = fine_fee.item_id) \n".
       "LEFT JOIN patron  ON (fine_fee.patron_id = patron.patron_id) \n".
+      "INNER JOIN ($helkaNLFActivePatronsSubquery) aps ON aps.id = patron.patron_id \n".
       "WHERE     fine_fee.fine_fee_balance != 0 \n",
   },
 
@@ -545,7 +561,9 @@ our %queries = (
       "  FROM      hold_recall                                                                                                              \n".
       "  LEFT JOIN hold_recall_items  on (hold_recall_items.hold_recall_id = hold_recall.hold_recall_id)                                    \n".
       "  LEFT JOIN hold_recall_status on (hold_recall_status.hr_status_type = hold_recall_items.hold_recall_status)                         \n".
+      "  LEFT JOIN item               on (item.item_id = hold_recall_items.item_id)                                                         \n".
       "  WHERE     hold_recall.request_level = 'C'                                                                                          \n". # C stands for "Cunning stunts"
+      "        AND item.perm_location IN ($helkaNLFLocationIDs)                                                                             \n".
 #      "  ORDER BY  hold_recall.hold_recall_id, hold_recall_items.item_id, hold_recall_items.queue_position                                  \n".
 #      "",
 #    sql =>
@@ -579,7 +597,9 @@ our %queries = (
       "                       hold_recall_items.hold_recall_status_date                                                                     \n".
       "            ) hold_recall_items ON (hold_recall_items.hold_recall_id = hold_recall.hold_recall_id)                                   \n".
       "  LEFT JOIN hold_recall_status on (hold_recall_status.hr_status_type = hold_recall_items.hold_recall_status)                         \n".
+      "  LEFT JOIN item               on (item.item_id = hold_recall_items.item_id)                                                         \n".
       "  WHERE     hold_recall.request_level = 'T'                                                                                          \n". # T stands for Title-level hold
+      "        AND item.perm_location IN ($helkaNLFLocationIDs)                                                                             \n".
 #      "  ORDER BY  hold_recall.hold_recall_id, hold_recall_items.queue_position                                                             \n".
 #      "",
 #    sql =>
@@ -608,6 +628,8 @@ our %queries = (
       "                                      call_slip.item_id = circ_transactions.item_id                                                  \n". # having the same patron and item
       #"                                      AND TRUNC(call_slip.status_date) = TRUNC(circ_transactions.charge_date)                        \n". # (requiring the same checkout day is not necessary)
       "                                     )                                                                                               \n". # is a pretty strong quarantee that the attached circ_transaction satisfied the hold_recall.
+      "  LEFT JOIN item               on (item.item_id = call_slip.item_id)                                                                 \n".
+      "  WHERE     item.perm_location IN ($helkaNLFLocationIDs)                                                                             \n".
 #      "  ORDER BY  call_slip.call_slip_id, call_slip.item_id                                                                                \n".
 #      "",
       ")                                                                                                                                    \n".
