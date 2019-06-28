@@ -727,6 +727,53 @@ our %queries = (
       "ORDER BY  hold_recall.hold_recall_id, hold_recall_items.item_id, hold_recall_items.queue_position                                    \n".
       "",
   },
+
+  "30-vendors.csv" => {
+  uniqueKey => [0],
+  anonymize => {vendor_name => 'scramble'},
+  sql =>
+    "SELECT vendor.vendor_id, vendor.vendor_name, vendor.default_currency
+     FROM vendor
+     WHERE vendor.vendor_id IN (SELECT vendor_id FROM purchase_order WHERE order_location = $natlib_order_location)",
+  },
+
+  "31-vendor_accounts.csv" => {
+  uniqueKey => [0, 1],
+  anonymize => {account_number => 'scramble', account_name => 'scramble'},
+  sql =>
+    "SELECT vendor_account.account_id, vendor_account.vendor_id, vendor_account.account_number, vendor_account.account_name
+     FROM vendor_account
+     WHERE vendor_account.vendor_id IN (SELECT vendor_id FROM purchase_order WHERE order_location = $natlib_order_location)",
+  },
+
+  "32-vendor_phones.csv" => {
+  uniqueKey => -1,
+  anonymize => {phone_number => 'scramble'},
+  sql =>
+    "SELECT vendor_phone.address_id, vendor_phone.phone_type, vendor_phone.phone_number
+     FROM vendor_phone
+     WHERE vendor_phone.address_id IN (SELECT address_id FROM vendor_address where vendor_id IN (SELECT vendor_id FROM purchase_order WHERE order_location = $natlib_order_location))",
+  },
+
+  "33-vendor_addresses.csv" => {
+  uniqueKey => [0],
+  anonymize => {city => 'scramble', address_line1 => 'scramble', address_line2 => 'scramble', address_line3 => 'scramble', address_line4 => 'scramble', address_line5 => 'scramble', zip_postal => 'scramble', country => 'scramble', },
+  sql =>
+    "SELECT vendor_address.address_id, vendor_address.vendor_id, vendor_address.city, vendor_address.address_line1, vendor_address.address_line2, vendor_address.address_line3, vendor_address.address_line4, vendor_address.address_line5, vendor_address.zip_postal, vendor_address.country
+     FROM vendor_address
+     WHERE vendor_id IN (SELECT vendor_id FROM purchase_order WHERE order_location = $natlib_order_location)",
+  },
+
+  "34-vendor_notes.csv" => {
+  uniqueKey => -1,
+  anonymize => {note => 'scramble'},
+  sql =>
+    "SELECT vendor_note.vendor_id, vendor_note.note
+     FROM vendor_note
+     WHERE vendor_id IN (SELECT vendor_id FROM purchase_order WHERE order_location = $natlib_order_location)",
+  },
+
+
 );
 
 =head2 extensions
