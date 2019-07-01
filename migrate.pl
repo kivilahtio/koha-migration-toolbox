@@ -250,6 +250,20 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
   },
 
 
+  '--vendors' => {
+    help => 'Transform vendors from Voyager extracts to Koha',
+    callback => sub {
+      my MMT::Builder $builder = MMT::Builder->new({
+        type => 'Vendor',
+        inputFile => '30-vendors.csv',
+        repositories => [
+	    {name => "accounts", file => '31-vendor_accounts.csv', keys => ['vendor_id']},
+        ],
+      });
+      $builder->build();
+    },
+  },
+
   '--load' => {
     help => "Runs the load-phase using the script configured in 'importPipelineScript'",
     callback => sub {MMT::Loader::load()},
