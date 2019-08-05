@@ -37,7 +37,7 @@ Export all kinds of data from Voyager using the given precision SQL.
 
 =cut
 
-my $helkaNLFLocationIDs = "2,3,4,5,6,7,8,9,51,52,148,158,173,211,231,234,238,245,247,253,281295,296,297,324,449";
+my $helkaNLFLocationIDs = "2,3,4,5,6,7,8,9,51,52,148,158,173,211,231,234,238,245,247,253,281,295,296,297,324,449";
 my $natlib_order_location = "148";
 
 #@author Ari Ahlqvist @ NatLibFi
