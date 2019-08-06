@@ -65,20 +65,33 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
             description => "This mapping table is used by the module MMT::TranslationTable::Branchcodes, it defines mappings from PrettyLib.Library to Koha's branchcode used in various tables.",
             sourceFile => 'Library.csv',
             destinationFile => 'branchcodes.yaml',
-            sourcePrimaryKeyColumn => 'Id',
-            translationTemplate => '$_{Name}',
+            sourcePrimaryKeyColumn => sub { return $_[0]->{Id} },
+            translationTemplate => sub { return substr($_[0]->{Name},0,12) },
           }, {
             description => "This mapping table is used by the module MMT::TranslationTable::LocationId, it defines mappings from location column to Koha's shelving_location",
             sourceFile => 'Location.csv',
             destinationFile => 'location_id.yaml',
-            sourcePrimaryKeyColumn => 'Id',
-            translationTemplate => '"branchLoc(,".substr($_{Location},0,8).")"',
+            sourcePrimaryKeyColumn => sub { return $_[0]->{Id} },
+            translationTemplate => sub { return "branchLoc(,".substr($_[0]->{Location},0,12).")" },
           }, {
             description => "This mapping table is used by the module MMT::TranslationTable::PatronCategorycode, it defines mappings from PrettyLib.Customer.Id_Group to koha.borrowers.categorycode",
             sourceFile => 'Groups.csv',
             destinationFile => 'borrowers.categorycode.yaml',
-            sourcePrimaryKeyColumn => 'Id',
-            translationTemplate => 'substr($_{Name},0,8)',
+            sourcePrimaryKeyColumn => sub { return $_[0]->{Id} },
+            translationTemplate => sub { return substr($_[0]->{Name},0,12) },
+          }, {
+            description => "This mapping table is used by the module MMT::TranslationTable::ItemTypes, it defines mappings from PrettyLib.Title.TitleType to koha.items.itype",
+            sourceFile => 'Title.csv',
+            destinationFile => 'itemtypes.yaml',
+            filter => sub { # Filter out unwanted definitions
+              my ($row, $notFiltered) = @_;
+              return undef unless (defined($row->{TitleType}));
+              return undef if (defined($notFiltered->{  $row->{TitleType}  })); # Prevent including duplicate rows.
+              $notFiltered->{$row->{TitleType}} = $row;
+              return $row;
+            },
+            sourcePrimaryKeyColumn => sub { return $_[0]->{TitleType} },
+            translationTemplate =>  sub { return substr($_[0]->{TitleType},0, 12) },
           },
         ]);
       }
@@ -125,6 +138,10 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
             {name => 'PublisherCross', file => 'PublisherCross.csv', keys => ['Id_Title']},
             {name => 'Series', file => 'Series.csv', keys => ['Id']},
             {name => 'SeriesCross', file => 'SeriesCross.csv', keys => ['Id_Title']},
+            {name => 'TitleExtension', file => 'TitleExtension.csv', keys => ["Id_Title", "iMarc", "strSubField"]},
+          ],
+          translationTables => [
+            {name => 'ItemTypes'},
           ],
         };
       }
@@ -142,6 +159,10 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
             {name => 'PublisherCross', file => 'PublisherCross.csv', keys => ['Id_Title']},
             {name => 'Series', file => 'Series.csv', keys => ['Id']},
             {name => 'SeriesCross', file => 'SeriesCross.csv', keys => ['Id_Title']},
+            {name => 'TitleExtension', file => 'TitleExtension.csv', keys => ["Id_Title", "iMarc", "strSubField"]},
+          ],
+          translationTables => [
+            {name => 'ItemTypes'},
           ],
         };
       }
@@ -210,10 +231,13 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
           repositories => [
             {name => 'LoanByItem', file => 'Loan.csv',  keys => ['Id_Item']},
             {name => 'Shelf',      file => 'Shelf.csv', keys => ['Id']},
+            {name => 'Title',      file => 'Title.csv', keys => ['Id']},
+            {name => 'Publishers', file => 'Publisher.csv', keys => ['Id']},
           ],
           translationTables => [
             {name => 'LocationId'},
             {name => 'Branchcodes'},
+            {name => 'ItemTypes'},
           ],
         };
       }
@@ -223,10 +247,12 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
           repositories => [
             {name => 'LoanByItem', file => 'Loan.csv',  keys => ['Id_Item']},
             {name => 'Shelf',      file => 'Shelf.csv', keys => ['Id']},
+            {name => 'Title',      file => 'Title.csv', keys => ['Id']},
           ],
           translationTables => [
             {name => 'LocationId'},
             {name => 'Branchcodes'},
+            {name => 'ItemTypes'},
           ],
         };
       }

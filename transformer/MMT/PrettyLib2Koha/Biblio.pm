@@ -63,7 +63,7 @@ sub build($s, $o, $b) {
 
   $s->mergeLinks($o, $b);
 
-  $s->{record}->addUnrepeatableSubfield('942', 'c', 'BK'); #TODO: Default Koha item type?
+  $s->{record}->addUnrepeatableSubfield('942', 'c', getItemType(@_));
 }
 
 =head2 sanitateInput
@@ -84,6 +84,7 @@ sub mergeLinks($s, $o, $b) {
   linkPublishers(@_);
   linkSeries(@_);
   linkSubjects(@_);
+  linkTitleExtension(@_);
 }
 
 sub logId($s) {
@@ -112,7 +113,6 @@ sub parseFxxx($s, $o, $b) {
     next unless $data;
     if ($column =~ /^F(\d\d\d)$/i || $column =~ /^F(410)xyv$/) {
       my $code = $1;
-      my ($indicator1, $indicator2, @subfields);
       $log->trace($s->logId." - Found Field '$code', with \$data '$data'") if $log->is_trace();
 
       if ($code < 10) {
@@ -125,36 +125,41 @@ sub parseFxxx($s, $o, $b) {
       }
       else {
         #Datafields
-        if (my @elements = split(/\x{1F}/, $data)) {
-
-          ($indicator1, $indicator2) = split(//, $elements[0]);
-          for (my $i=1 ; $i<@elements ; $i++) {
-            my $sf = MMT::MARC::Subfield->new(_ss(substr($elements[$i],0,1)), _ss(substr($elements[$i],1)));
-            unless ($sf->content()) {
-              $log->debug($s->logId()." - Skipping subfield '$code\$".$sf->code()."' is missing \$data?") if $log->is_debug();
-              next;
-            }
-            push(@subfields, $sf);
-            $log->trace($s->logId." - Found Subfield '".$subfields[-1]->code."' '".$subfields[-1]->content."'") if $log->is_trace();
-          }
-        }
-        elsif ($data) {
-          MMT::Exception::Delete->throw(error => "Unable to parse the given MARC Field column '$column' containing data '$data'");
-        }
-
-        if (@subfields) {
-          $s->{record}->addField(
-            MMT::MARC::Field->new(_ss($code),
-                                  ($indicator1 ? _ss($indicator1) : ''),
-                                  ($indicator2 ? _ss($indicator2) : ''),
-                                  \@subfields)
-          );
-        }
-        else {
-          $log->debug($s->logId()." - Skipping field '$code' is missing subfields?");
-        }
+        _parseDatafield(@_, $code, $data);
       }
     }
+  }
+}
+
+sub _parseDatafield($s, $o, $b, $code, $data) {
+  my ($indicator1, $indicator2, @subfields);
+
+  if (my @elements = split(/\x{1F}/, $data)) {
+    ($indicator1, $indicator2) = split(//, $elements[0]);
+    for (my $i=1 ; $i<@elements ; $i++) {
+      my $sf = MMT::MARC::Subfield->new(_ss(substr($elements[$i],0,1)), _ss(substr($elements[$i],1)));
+      unless ($sf->content()) {
+        $log->debug($s->logId()." - Skipping subfield '$code\$".$sf->code()."' is missing \$data?") if $log->is_debug();
+        next;
+      }
+      push(@subfields, $sf);
+      $log->trace($s->logId." - Found Subfield '".$subfields[-1]->code."' '".$subfields[-1]->content."'") if $log->is_trace();
+    }
+  }
+  elsif ($data) {
+    MMT::Exception::Delete->throw(error => "Unable to parse the given MARC Field code '$code' containing data '$data'");
+  }
+
+  if (@subfields) {
+    $s->{record}->addField(
+      MMT::MARC::Field->new(_ss($code),
+                            ($indicator1 ? _ss($indicator1) : ''),
+                            ($indicator2 ? _ss($indicator2) : ''),
+                            \@subfields)
+    );
+  }
+  else {
+    $log->debug($s->logId()." - Skipping field '$code' is missing subfields?");
   }
 }
 
@@ -172,9 +177,30 @@ sub linkToMother($s, $o, $b, $leader) {
       unless ($mother->[0]->{F001}) {
         $log->warn($s->logId." - Link to Id_Mother '".$o->{Id_Mother}."' but the mother has no Field 001? Adding biblionumber '".$o->{Id_Mother}."' to 773w.");
       }
-      $s->{record}->addUnrepeatableSubfield('773', 'w', $mother->[0]->{F001} || $o->{Id_Mother});
+
+
+      #Create the component parent link field
+      my @sfs;
+      # First the 'w'
+      push(@sfs, MMT::MARC::Subfield->new('w', $mother->[0]->{F001} || $o->{Id_Mother}));
+      # Then look for 't' from a long list of candidates
+      for my $fieldCandidate (qw(245 240 210 222 247 246 243 242)) {
+        if (my $f = _parseDatafield($s, $o, $b, $fieldCandidate, $mother->[0]->{"F$fieldCandidate"})) {
+          if ($f->subfields('a') && $f->subfields('a')->[0] && $f->subfields('a')->[0]->content()) {
+            push(@sfs, MMT::MARC::Subfield->new('t', $f->subfields('a')->[0]->content()));
+            last;
+          }
+        }
+      }
+
+      unless (@sfs == 2) {
+        $log->error($s->logId()." - Is missing 773\$t. Cannot find it from 245\$a.");
+      }
+
+      my $newField = $s->{record}->addField( MMT::MARC::Field->new('773', '0', '#', \@sfs) );
+
       $leader->{isComponentPart} = 1;
-      $log->debug($s->logId." - Component part link (773w) created to parent '".($mother->[0]->{F001} || $o->{Id_Mother})."'") if $log->is_debug();
+      $log->debug($s->logId." - Component part link (773w) created to parent '".($mother->[0]->{F001} || $o->{Id_Mother})."', with link text 't'='". (eval { $newField->subfields('t')->[0]->content() } || 'MISSING') ."'") if $log->is_debug();
     }
     else {
       $log->warn($s->logId." - Links to Id_Mother '".$o->{Id_Mother}."' but no matching biblionumber in PrettyLib?");
@@ -338,6 +364,53 @@ sub linkSubjects($s, $o, $builder) {
     }
   }
   $s->{record}->addField(MMT::MARC::Field->new('653', '#', '#', [$_])) for @subfields;
+}
+
+=head2 linkTitleExtension
+
+PrettyLib.TitleExtension contains extra MARC fields.
+
+=cut
+
+sub linkTitleExtension($s, $o, $b) {
+  if (my $texes = $b->{TitleExtension}->get($o->{Id})) {
+    for my $tex (@$texes) {
+      $s->{record}->addUnrepeatableSubField(
+        $tex->{iMarc},
+        $tex->{strSubField},
+        $tex->{strValue},
+      );
+      $log->debug($s->logId." - Linked TitleExtension Field '".$tex->{iMarc}."\$".$tex->{strSubField}."' = '".$tex->{strValue}."'") if $log->is_debug();
+    }
+  }
+}
+
+=head2 getItemType
+
+@STATIC
+
+  Used statically from Item conversion as well.
+
+=cut
+
+sub getItemType($s, $o, $b) {
+
+  my $tt = $o->{TitleType}; # If we are building Biblios, which have innately the attribute TitleType
+  unless (defined($tt)) { # Or if we are building something else that needs to refer it's related Title-object.
+
+    unless(defined($o->{Id_Title})) {
+      die $s->logId()." - Missing 'biblionumber'?";
+    }
+    my $titles = $b->{Title}->get( $o->{Id_Title} );
+    my $title = $titles->[0] if $titles;
+    $tt = $title->{TitleType} if $title;
+  }
+  unless(defined($tt)) {
+    $log->warn($s->logId().' - Missing TitleType as bibliounmber="'.($o->{Id_Title} // $s->{biblionumber}).'"!');
+    return undef;
+  }
+
+  return $b->{ItemTypes}->translate(@_, $tt);
 }
 
 =head2 _setF001

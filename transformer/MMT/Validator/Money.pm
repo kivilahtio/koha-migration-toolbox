@@ -81,7 +81,7 @@ sub money_Voyager($kohaObject, $voyagerObject, $builder, $priceCandidate) {
 
 sub money_PrettyLib($kohaObject, $voyagerObject, $builder, $priceCandidate) {
   return undef unless $priceCandidate;
-$DB::single=1;
+
   $priceCandidate =~ s/\s//gsm;
 
   if ($priceCandidate =~ /^

@@ -76,6 +76,12 @@ csvInputParams:
     detect_bom: 1
     munge_column_names: none
 
+
+############ PRETTY* -specific configs ################
+
+# Instead of the Item.BarCode use Item.AcqNumIdx to populate koha.items.barcode
+pl_barcodeFromAcqNumber: 0
+
 #############################
 ### 3) Data loading phase ###
 ## Exported DB rows are mangled into Koha-objects

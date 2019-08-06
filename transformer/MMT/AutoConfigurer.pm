@@ -47,16 +47,23 @@ sub configure($rules) {
       '# '.$rule->{description},
       '',
       '',
-      '#'.$rule->{sourcePrimaryKeyColumn}.',KohaValue',
+      '# PrettyLibValue, KohaValue',
       '#             '.join(", ", @colNames)
     );
 
+    my %notFiltered; #aka. survived the filter
     while (my $obj = $csv->getline_hr($FHin)) {
-      my %_ = %$obj;
-      my @cols = map {$_ =~ s/(?:\p{IsCntrl}|\s{2,}|\s+$|^\s+|\W)//gsm; $_ || 'KONVERSIO';} @_{ @colNames };
-      push(@sb, $_{$rule->{sourcePrimaryKeyColumn}}.
+
+      if ($rule->{filter}) {
+        $obj = $rule->{filter}->($obj, \%notFiltered);
+        next unless $obj;
+      }
+
+      my @cols = List::Util::pairmap {$obj->{$a} =~ s/(?:\p{IsCntrl}|\s{2,}|\s+$|^\s+)//gsm; $obj->{$a}} %$obj; # Drop anomalous whitespace in-place and create a list of values for documentation purposes.
+
+      push(@sb, $rule->{sourcePrimaryKeyColumn}->($obj).
                 ': '.
-                eval($rule->{translationTemplate}).
+                ($rule->{translationTemplate}->($obj) // 'KONVERSIO').
                 ' # '.join(", ", @cols)
       );
     }

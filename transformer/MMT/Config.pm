@@ -96,6 +96,10 @@ sub workers() {
 }
 
 
+sub pl_barcodeFromAcqNumber() {
+  return $config->{pl_barcodeFromAcqNumber};
+}
+
 
 #Check that the environment is properly configured
 my $errorDescr = "This must point to the home directory created during MMT-Voyager installation, where all the configurations reside.";

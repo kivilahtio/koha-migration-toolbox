@@ -391,7 +391,7 @@ sub DESTROY {
       my $array = $self->{$k};
       for(my $i=0 ; $i < @{$array} ; $i++) {
         if (ref $array->[$i] eq "MMT::MARC::Subfield") {
-            $array->[$i]->DESTROY();
+          weaken $array->[$i];
         }
         undef $array->[$i];
       }

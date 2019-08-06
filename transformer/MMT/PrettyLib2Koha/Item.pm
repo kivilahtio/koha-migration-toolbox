@@ -7,6 +7,7 @@ use MMT::Pragmas;
 #Local modules
 use MMT::Validator;
 use MMT::Validator::Money;
+use MMT::PrettyLib2Koha::Biblio;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
 #Inheritance
@@ -95,7 +96,14 @@ sub logId($s) {
 }
 
 sub setBarcode($s, $o, $b) {
-  $s->{barcode} = $o->{BarCode} if $o->{BarCode};
+  if (MMT::Config::pl_barcodeFromAcqNumber()) {
+    my $acqNum = $o->{AcqNumIdx};
+    $acqNum =~ s/\s//gsm if $acqNum; #Trim all whitespace
+    $s->{barcode} = $acqNum;
+  }
+  else {
+    $s->{barcode} = $o->{BarCode} if $o->{BarCode};
+  }
 
   if (not($s->{barcode}) || length($s->{barcode}) < 5) {
     my $error = (not($s->{barcode})) ?        'No barcode' :
@@ -191,10 +199,10 @@ sub setSub_location($s, $o, $b) {
   $s->{sub_location} = $branchcodeLocation->{sub_location} if $branchcodeLocation->{sub_location};
 }
 sub setItype($s, $o, $b) {
-  $s->{itype} = 'BK'; #TODO:: How is this defined in PrettyLib?
+  $s->{itype} = MMT::PrettyLib2Koha::Biblio::getItemType(@_);
 
   unless ($s->{itype}) {
-    MMT::Exception::Delete->throw($s->logId()."' has no itype! item_type_id=".$o->{item_type_id});
+    MMT::Exception::Delete->throw($s->logId()."' has no default itype!");
   }
 }
 sub setEnumchron($s, $o, $b) {
@@ -241,6 +249,7 @@ sub setCcode($s, $o, $b) {
 }
 
 my %statusMap = (
+  '' => 'KONVERSIO',
   0  => 'Keskeneräinen',
   1  => 'Ehdotus',
   2  => 'Lähettämätön tilaus',
@@ -261,9 +270,14 @@ my %statusMap = (
 );
 sub setStatuses($s, $o, $b) {
   my $S = $o->{Status};
+
+  if ($S eq '') {
+    $s->{itemnotes} .= " | Unexpected status '$statusMap{$S}'";
+  }
+
   #0;Keskeneräinen
   #1;Ehdotus
-  if ($S == 0 || $S == 1) {
+  elsif ($S == 0 || $S == 1) {
     $s->{itemnotes} .= " | Unexpected status '$statusMap{$S}'";
   }
 
