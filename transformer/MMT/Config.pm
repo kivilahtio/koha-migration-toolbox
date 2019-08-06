@@ -94,6 +94,9 @@ sub useHetula() {
 sub workers() {
   return $config->{workers};
 }
+sub barcodeMinLength() {
+  return $config->{barcodeMinLength} // 5;
+}
 
 
 sub pl_barcodeFromAcqNumber() {

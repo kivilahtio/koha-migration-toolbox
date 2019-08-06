@@ -7,6 +7,7 @@ use MMT::Pragmas;
 #Local modules
 use MMT::Validator;
 use MMT::Validator::Money;
+use MMT::Validator::Barcode;
 use MMT::PrettyLib2Koha::Biblio;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
@@ -96,18 +97,23 @@ sub logId($s) {
 }
 
 sub setBarcode($s, $o, $b) {
+  my ($bc, $ok);
   if (MMT::Config::pl_barcodeFromAcqNumber()) {
-    my $acqNum = $o->{AcqNumIdx};
+    my $acqNum = $o->{AcqNum};
     $acqNum =~ s/\s//gsm if $acqNum; #Trim all whitespace
-    $s->{barcode} = $acqNum;
+    $bc = $acqNum;
   }
   else {
-    $s->{barcode} = $o->{BarCode} if $o->{BarCode};
+    $bc = $o->{BarCode} if $o->{BarCode};
   }
 
-  if (not($s->{barcode}) || length($s->{barcode}) < 5) {
+  ($bc, $ok) = MMT::Validator::Barcode::validate(@_, $bc);
+  $s->{barcode} = $bc;
+
+  if (not($ok) || not($s->{barcode}) || length($s->{barcode}) <= MMT::Config::barcodeMinLength()) {
     my $error = (not($s->{barcode})) ?        'No barcode' :
-                (length($s->{barcode}) < 5) ? 'Barcode too short' :
+                (length($s->{barcode}) <= MMT::Config::barcodeMinLength()) ? 'Barcode too short' :
+                (not($ok)) ?                  'Validation error' :
                                               'Unspecified error';
 
     if (MMT::Config::emptyBarcodePolicy() eq 'ERROR') {
@@ -122,6 +128,9 @@ sub setBarcode($s, $o, $b) {
       $s->{barcode} = $s->createBarcode();
     }
   }
+
+  #Validate barcode
+
 }
 sub setDateaccessioned($s, $o, $b) {
   $s->{dateaccessioned} = MMT::Validator::parseDate($o->{SaveDate});

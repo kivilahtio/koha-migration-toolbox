@@ -64,6 +64,11 @@ emptyBarcodePolicy: IGNORE
 # Replaces zeroes (0) with the id of the object being transformed
 emptyBarcodePattern: HAMK00000000
 
+# Minimum length for a barcode.
+# If barcode doesn't fit here, a new barcode is generated.
+# TODO: Voyager support
+barcodeMinLength: 5
+
 # How Perl's Text::CSV should handle .csv-files input?
 # Output is hard-coded and should not be changed to maintain zero-configuration compatibility with the Loader-modules
 csvInputParams:

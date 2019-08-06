@@ -395,22 +395,27 @@ sub linkTitleExtension($s, $o, $b) {
 
 sub getItemType($s, $o, $b) {
 
-  my $tt = $o->{TitleType}; # If we are building Biblios, which have innately the attribute TitleType
-  unless (defined($tt)) { # Or if we are building something else that needs to refer it's related Title-object.
-
+  my ($titleType, $item);
+  if (ref($s) =~ /Item/) {
     unless(defined($o->{Id_Title})) {
       die $s->logId()." - Missing 'biblionumber'?";
     }
     my $titles = $b->{Title}->get( $o->{Id_Title} );
     my $title = $titles->[0] if $titles;
-    $tt = $title->{TitleType} if $title;
+    $titleType = $title->{TitleType} if $title;
+    $item = $o;
   }
-  unless(defined($tt)) {
-    $log->warn($s->logId().' - Missing TitleType as bibliounmber="'.($o->{Id_Title} // $s->{biblionumber}).'"!');
-    return undef;
+  else {
+    $titleType = $o->{TitleType}; # If we are building Biblios, which have innately the attribute TitleType
+    unless(defined($titleType)) {
+      $log->warn($s->logId().' - Missing TitleType as bibliounmber="'.($o->{Id_Title} // $s->{biblionumber}).'"!');
+    }
+    my $items = $b->{Items}->get($s->{biblionumber});
+    $item = $items->[0] if $items;
+    return undef unless $item;
   }
 
-  return $b->{ItemTypes}->translate(@_, $tt);
+  return $b->{ItemTypes}->translate($s, $item, $b, $titleType); # Try to get the itemtype from the biblio or the item
 }
 
 =head2 _setF001

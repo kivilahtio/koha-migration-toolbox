@@ -139,6 +139,7 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
             {name => 'Series', file => 'Series.csv', keys => ['Id']},
             {name => 'SeriesCross', file => 'SeriesCross.csv', keys => ['Id_Title']},
             {name => 'TitleExtension', file => 'TitleExtension.csv', keys => ["Id_Title", "iMarc", "strSubField"]},
+            {name => 'Items', file => 'Item.csv', keys => ['Id_Title']},
           ],
           translationTables => [
             {name => 'ItemTypes'},
@@ -160,6 +161,7 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
             {name => 'Series', file => 'Series.csv', keys => ['Id']},
             {name => 'SeriesCross', file => 'SeriesCross.csv', keys => ['Id_Title']},
             {name => 'TitleExtension', file => 'TitleExtension.csv', keys => ["Id_Title", "iMarc", "strSubField"]},
+            {name => 'Items', file => 'Item.csv', keys => ['Id_Title']},
           ],
           translationTables => [
             {name => 'ItemTypes'},
