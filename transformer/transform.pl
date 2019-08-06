@@ -232,7 +232,7 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
             {name => 'LoanByItem', file => 'Loan.csv',  keys => ['Id_Item']},
             {name => 'Shelf',      file => 'Shelf.csv', keys => ['Id']},
             {name => 'Title',      file => 'Title.csv', keys => ['Id']},
-            {name => 'Publishers', file => 'Publisher.csv', keys => ['Id']},
+            {name => 'Suppliers',  file => 'Supplier.csv', keys => ['Id']},
           ],
           translationTables => [
             {name => 'LocationId'},
@@ -248,6 +248,7 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
             {name => 'LoanByItem', file => 'Loan.csv',  keys => ['Id_Item']},
             {name => 'Shelf',      file => 'Shelf.csv', keys => ['Id']},
             {name => 'Title',      file => 'Title.csv', keys => ['Id']},
+            {name => 'Suppliers',  file => 'Supplier.csv', keys => ['Id']},
           ],
           translationTables => [
             {name => 'LocationId'},

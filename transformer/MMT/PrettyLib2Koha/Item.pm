@@ -58,7 +58,7 @@ sub build($self, $o, $b) {
   $self->setItype(                                         $o, $b);
   #$self->set(???                  => 'enumchron',          $o, $b);
   #$self->set(? => datereceived, $o, $b);
-  #$self->set(? => booksellerid, $o, $b);
+  $self->set(Id_Supplier          => 'booksellerid',       $o, $b);
   $self->set(Price                => 'replacementprice',   $o, $b);
   #$self->set(? => replacementpricedate, $o, $b);
   #$self->set(? => datelastseen, $o, $b);
@@ -246,6 +246,15 @@ sub setCcode($s, $o, $b) {
   else {
     $s->{ccode} = $kohaStatCat;
   }
+}
+sub setBooksellerid($s, $o, $b) {
+  my $suppliers = $b->{Suppliers}->get( $o->{Id_Supplier} );
+  unless ($suppliers) {
+    return;
+  }
+  my $supplier = $suppliers->[0];
+
+  $s->{booksellerid} = ($supplier->{Name} || 'NO-NAME').' ('.($supplier->{Code} || 'NO-CODE').')';
 }
 
 my %statusMap = (
