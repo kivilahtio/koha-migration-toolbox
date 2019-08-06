@@ -19,6 +19,20 @@ sub borrower {
   }
 }
 
+
+our %locationsAutoconfigured;
+sub shelvingLocation {
+  my ($permanent_location, $location) = @_;
+
+  for my $loc (@_) {
+    unless ($locationsAutoconfigured{$loc}) {
+      C4::Context->dbh()->do("INSERT IGNORE INTO authorised_values (category, authorised_value, lib, lib_opac) ".
+                                    "VALUE ('LOC','$loc','AUTO-$loc','AUTO-$loc')");
+      $locationsAutoconfigured{$loc} = 1;
+    }
+  }
+}
+
 sub addBranch {
   my ($branchcode) = @_;
   return C4::Context->dbh()->do("INSERT IGNORE INTO branches (branchcode, branchname) VALUE ('$branchcode','AUTO-$branchcode')");
