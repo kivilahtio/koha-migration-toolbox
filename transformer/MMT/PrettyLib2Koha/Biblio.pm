@@ -80,6 +80,7 @@ sub sanitateInput($o) {
 
 sub mergeLinks($s, $o, $b) {
   linkAuthors(@_);
+  linkClasses(@_);
   linkDocuments(@_);
   linkPublishers(@_);
   linkSeries(@_);
@@ -238,6 +239,34 @@ sub linkAuthors($s, $o, $builder) {
     }
   }
   $s->{record}->addField(MMT::MARC::Field->new('100', '1', '#', \@subfields)) if @subfields;
+}
+
+=head2 linkClasses
+
+PrettyLib.ClassCross -> Class -> Field ??? Trying 084$a for now. This might depend a lot about how the library organized these values.
+
+=cut
+
+sub linkClasses($s, $o, $builder) {
+  my (@subfields);
+  if (my $crosses = $builder->{ClassCross}->get($o->{Id})) {
+    $log->trace($s->logId." - Found '".scalar(@$crosses)."' classes.") if $log->is_trace();
+
+    @$crosses = sort {$a->{Pos} <=> $b->{Pos}} @$crosses; # PrettyLib.ClassCross.Pos seems to denote the ordering of these subject-words.
+    for my $cross (@$crosses) {
+      if (my $classes = $builder->{Class}->get($cross->{Id_Class})) {
+        for my $class (@$classes) {
+          $class->{Class} = _ss($class->{Class});
+          unless ($class->{Class}) {
+            $log->debug($s->logId." - Found an empty Class with Id '".$class->{Id}."'.") if $log->is_debug();
+            next;
+          }
+          push(@subfields, MMT::MARC::Subfield->new('a', $class->{Class})) if $class->{Class};
+        }
+      }
+    }
+  }
+  $s->{record}->addField(MMT::MARC::Field->new('084', '#', '#', \@subfields)) if @subfields;
 }
 
 =head2 linkDocuments
