@@ -51,12 +51,12 @@ sub build($self, $o, $b) {
   $self->set(Id                   => 'issues',             $o, $b);
   $self->set(Note                 => 'itemnotes',          $o, $b);
   #  \$self->setItemnotes_nonpublic
+  $self->setItype(                                         $o, $b);
   $self->set(Id_Library           => 'holdingbranch',      $o, $b);
   $self->set(Id_Location          => 'permanent_location', $o, $b);
   #  \$self->setCcode                                         ($o, $b);
   $self->set(Id_Location          => 'location',           $o, $b);
   $self->set(Id_Location          => 'sub_location',       $o, $b);
-  $self->setItype(                                         $o, $b);
   #$self->set(???                  => 'enumchron',          $o, $b);
   #$self->set(? => datereceived, $o, $b);
   $self->set(Id_Supplier          => 'booksellerid',       $o, $b);
@@ -98,10 +98,17 @@ sub logId($s) {
 
 sub setBarcode($s, $o, $b) {
   my ($bc, $ok);
+
+  MMT::Exception::Delete->throw($s->logId()." - No BarCode-key?")
+    unless exists($o->{BarCode});
+  MMT::Exception::Delete->throw($s->logId()." - No AcqNum-key?")
+    unless exists($o->{AcqNum});
+
   if (MMT::Config::pl_barcodeFromAcqNumber()) {
     my $acqNum = $o->{AcqNum};
     $acqNum =~ s/\s//gsm if $acqNum; #Trim all whitespace
-    $bc = $acqNum;
+    $bc = $acqNum if $acqNum;
+    $bc = $o->{BarCode} unless $acqNum;
   }
   else {
     $bc = $o->{BarCode} if $o->{BarCode};
@@ -110,27 +117,34 @@ sub setBarcode($s, $o, $b) {
   ($bc, $ok) = MMT::Validator::Barcode::validate(@_, $bc);
   $s->{barcode} = $bc;
 
-  if (not($ok) || not($s->{barcode}) || length($s->{barcode}) <= MMT::Config::barcodeMinLength()) {
-    my $error = (not($s->{barcode})) ?        'No barcode' :
-                (length($s->{barcode}) <= MMT::Config::barcodeMinLength()) ? 'Barcode too short' :
-                (not($ok)) ?                  'Validation error' :
-                                              'Unspecified error';
-
+  my $error;
+  if (not($ok) || not($s->{barcode})) {
+    $error = (not($s->{barcode})) ?        'No barcode' :
+             (not($ok)) ?                  'Validation error' :
+                                           'Unspecified error';
+  }
+  elsif (length($s->{barcode}) < MMT::Config::barcodeMinLength()) {
+    $error = 'Barcode too short';
+  }
+  elsif (length($s->{barcode}) > 20) { #koha.items.barcode max length is 20 characters
+    $error = 'Barcode too long. Max length 20 characters';
+  }
+  if ($error) {
+    my $msg = $s->logId()."' has invalid barcode='".($s->{barcode} // 'undef')."'. $error.";
     if (MMT::Config::emptyBarcodePolicy() eq 'ERROR') {
-      $s->{barcode} = $s->createBarcode();
-      $log->error($s->logId()." - $error. Created barcode '".$s->{barcode}."'.");
+      MMT::Exception::Delete->throw($msg);
     }
     elsif (MMT::Config::emptyBarcodePolicy() eq 'IGNORE') {
+      $log->error($msg) if ($s->{barcode});
       $s->{barcode} = undef;
       #Ignore
     }
     elsif (MMT::Config::emptyBarcodePolicy() eq 'CREATE') {
-      $s->{barcode} = $s->createBarcode();
+      my $newBc = $s->createBarcode();
+      $log->error("$msg Created barcode '$newBc'.");
+      $s->{barcode} = $newBc;
     }
   }
-
-  #Validate barcode
-
 }
 sub setDateaccessioned($s, $o, $b) {
   $s->{dateaccessioned} = MMT::Validator::parseDate($o->{SaveDate});

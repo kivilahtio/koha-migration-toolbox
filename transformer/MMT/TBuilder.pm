@@ -242,6 +242,9 @@ sub task($s, $textPtr) {
     if (ref($@) eq 'MMT::Exception::Delete') {
       $log->error($ko->logId()." was dropped. Reason: ".$@->error) if $log->is_error();
     }
+    elsif (ref($@) eq 'MMT::Exception::Delete::Silently') {
+      $log->debug($ko->logId()." was silently dropped. Reason: ".$@->error) if $log->is_error();
+    }
     else {
       $log->fatal("Received an unhandled exception '".MMT::Validator::dumpObject($@)."'") if $log->is_fatal();
     }

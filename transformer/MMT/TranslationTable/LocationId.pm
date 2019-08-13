@@ -146,4 +146,21 @@ sub _statisticsLibrary($publicationYear, $subscriptionFrequencyIncrement, $subsc
   return ($location, $itemtype);
 }
 
+sub JNSKonsa_Muskari_drop_es($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tableParams, $transParams) {
+
+  if (ref($kohaObject) =~ /Item/ && $kohaObject->{itype} eq 'ES') {
+    MMT::Exception::Delete::Silently->throw($s->logId()."' Muskari-item is a physical item (Esine). Removing.");
+  }
+
+  # Same return signature as branchLoc()
+  return {
+    branch         => $tableParams->[0],
+    location       => $tableParams->[1],
+    collectionCode => $tableParams->[2],
+    sub_location   => $tableParams->[3],
+    itemtype       => $tableParams->[4],
+    notforloan     => $tableParams->[5],
+  };
+}
+
 return 1;
