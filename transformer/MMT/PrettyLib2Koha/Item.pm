@@ -193,7 +193,7 @@ sub setIssues($s, $o, $b) {
   }
 }
 sub setItemnotes($s, $o, $b) {
-  $s->{itemnotes} = $o->{Note} || '';
+  $s->{itemnotes_nonpublic} = $o->{Note} || '';
 }
 sub setHomebranch($s, $o, $b) {
   $s->{homebranch} = $b->{Branchcodes}->translate(@_, $o->{Id_Library});
