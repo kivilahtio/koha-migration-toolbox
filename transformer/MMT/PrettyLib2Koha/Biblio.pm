@@ -152,16 +152,23 @@ sub _parseDatafield($s, $o, $b, $code, $data) {
   }
 
   if (@subfields) {
-    $s->{record}->addField(
-      MMT::MARC::Field->new(_ss($code),
-                            ($indicator1 ? _ss($indicator1) : ''),
-                            ($indicator2 ? _ss($indicator2) : ''),
-                            \@subfields)
-    );
+    my $field = MMT::MARC::Field->new(_ss( $code),
+                                          ($indicator1 ? _ss($indicator1) : ''),
+                                          ($indicator2 ? _ss($indicator2) : ''),
+                                          \@subfields);
+    $s->{record}->addField($field);
+    normalizeLanguageCodes($field) if $code eq '041';
+    return $field;
   }
   else {
     $log->debug($s->logId()." - Skipping field '$code' is missing subfields?");
   }
+  return undef;
+}
+
+sub normalizeLanguageCodes($field) {
+  my $sfs = $field->getAllSubfields();
+  $_->content( lc($_->content()) ) for @$sfs;
 }
 
 =head2 linkToMother
