@@ -52,7 +52,6 @@ from
     and ct.item_id = i.item_id
     and i.perm_location = l.location_id
     and l.location_code between '100' and '139'
-    and ct.charge_date >= '$activeSince'
 
 union all
 
