@@ -557,9 +557,11 @@ our %queries = (
       "          fine_fee.fine_fee_note \n".
       "FROM      fine_fee \n".
       "LEFT JOIN item_vw ON (item_vw.item_id = fine_fee.item_id) \n".
+      "LEFT JOIN item ON (item.item_id = fine_fee.item_id) \n".
       "LEFT JOIN patron  ON (fine_fee.patron_id = patron.patron_id) \n".
       "INNER JOIN ($helkaNLFActivePatronsSubquery) aps ON aps.id = patron.patron_id \n".
-      "WHERE     fine_fee.fine_fee_balance != 0 \n",
+      "WHERE     fine_fee.fine_fee_balance != 0 \n".
+      "          AND item.perm_location IN ($helkaNLFLocationIDs) \n",
   },
 
   #Koha has a single subscription for each branch receiving serials.
