@@ -187,7 +187,9 @@ sub setCardnumber($s, $o, $b) {
 }
 sub setBorrowernotes($s, $o, $b) {
   if ($o->{Note}) {
-    $s->concatenate($o->{Note} => 'borrowernotes');
+    my ($Note, $ssns) = MMT::Validator::filterSSNs($s, $o->{Note});
+    $s->_exportSsn($_) for @$ssns;
+    $s->concatenate($Note => 'borrowernotes');
   }
 }
 sub setFirstname($s, $o, $b) {
@@ -353,7 +355,7 @@ sub setSsn($s, $o, $b) {
   if ($s->{ssn}) {
     if (eval { MMT::Validator::checkIsValidFinnishSSN($s->{ssn}) }) {
       if (MMT::Config::useHetula()) {
-        $s->_exportSsn($s->{borrowernumber}, $s->{ssn});
+        $s->_exportSsn($s->{ssn});
         $s->{ssn} = 'via Hetula'; #This ssn is valid, and is transported to Hetula.
       }
       else {
@@ -472,8 +474,8 @@ Writes the given ssn and patron_id to the export file
 
 =cut
 
-sub _exportSsn($s, $patronId, $ssn) {
-  print $SSN_EXPORT_FH "$patronId,$ssn\n";
+sub _exportSsn($s, $ssn) {
+  print $SSN_EXPORT_FH join(',', $s->id(), $s->{cardnumber}, $ssn)."\n";
 }
 
 sub _extractZipcode($s, $o, $b, $codeField) {

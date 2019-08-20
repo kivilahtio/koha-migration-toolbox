@@ -33,6 +33,9 @@ Validators beginning with 'check':
 
 use MMT::Exception::SSN;
 
+our $regex_FinnishSSN     = qr/(\d\d)(\d\d)(\d\d)([+-A])(\d{3})([A-Z0-9])/;
+our $regex_FinnishSSNBulk = qr/\d\d\d\d\d\d[+-A]\d{3}[A-Z0-9]/;
+
 sub isArray($array, $variable, $opts) {
   if (!ref $array eq 'ARRAY') {
     _parameterValidationFailed("Variable '$array' is not an ARRAY", $variable, $opts);
@@ -67,6 +70,7 @@ sub isString($value, $variable, $opts) {
 sub checkIsAbsolutePath($value) {
   return ($value =~ /^\//);
 }
+
 =head2 checkIsValidFinnishSSN
 
  @param {String} SSN
@@ -76,13 +80,27 @@ sub checkIsAbsolutePath($value) {
 =cut
 
 sub checkIsValidFinnishSSN($value) {
-  MMT::Exception::SSN->throw(error => "Given ssn '$value' is not well formed") unless ($value =~ /^(\d\d)(\d\d)(\d\d)([+-A])(\d{3})([A-Z0-9])$/);
+  MMT::Exception::SSN->throw(error => "Given ssn '$value' is not well formed") unless ($value =~ /^$regex_FinnishSSN$/);
   MMT::Exception::SSN->throw(error => "Given ssn '$value' has a bad day-component") unless (1 <= $1 && $1 <= 31);
   MMT::Exception::SSN->throw(error => "Given ssn '$value' has a bad month-component") unless (1 <= $2 && $2 <= 12); # This is not DateTime but this is fast and good enough.
   MMT::Exception::SSN->throw(error => "Given ssn '$value' has a bad year-component") unless (0 <= $3 && $3 <= 99);
   my $expectedChecksum = _getSsnChecksum($1, $2, $3, $5);
   MMT::Exception::SSN->throw(error => "Given ssn '$value' has a bad checksum-component. Expected '$expectedChecksum'") unless $6 eq $expectedChecksum;
   return 1;
+}
+
+=head2 filterSSNs
+
+ @param {String} some text
+ @returns {(String, ARRAY of String)} (the same text without SSNs, the SSNs if found)
+
+=cut
+
+sub filterSSNs($kohaObject, $text) {
+  my @ssns;
+  (my $newText = $text) =~ s/($regex_FinnishSSNBulk)/push(@ssns, $1); 'SSN-FILTERED';/gsme;
+  $log->debug($kohaObject->logId()." - Filtered '".scalar(@ssns)."' ssns [@ssns]. New text '$newText'") if (@ssns);
+  return ($newText, \@ssns);
 }
 
 sub probablyAYear($value) {
