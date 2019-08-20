@@ -45,12 +45,13 @@ sub JNSKonsa_itypes($s, $kohaObject, $prettyObject, $builder, $originalValue, $t
 
     if    ($an =~ /^nu/i)   { return 'NU' } # Nuotti
     elsif ($an =~ /^cd/i)   { return 'CD' } # CD-Levy
+    elsif ($an =~ /^ka/i)   { return 'KA' } # Kasetti
     elsif ($an =~ /^dvd/i)  { return 'DV' } # DVD-levy
     elsif ($an =~ /^es/i)   { return 'ES' } # Esine
     elsif ($an =~ /^(?:har|hv|j|kl|kmo|kon)/i) { return 'ES' }
     elsif ($an =~ /^Kansio/i) { return 'KN' } # Kansio
     elsif ($an =~ /^ki/i)   { return 'KI' } # Kirja
-    elsif ($an =~ /^lp/i)   { MMT::Exception::Delete::Silently->throw($s->logId()."' LP-items are silently set to die"); } # LP:t poistetaan
+    elsif ($an =~ /^lp/i)   { return 'LP' } # LP:t viedään Kohaan tutkimista varten, tuotannossa poistetaan
     elsif ($an =~ /^opin/i) { return 'OP' } # Opinnäytetyö
     elsif ($an =~ /^vid/i)  { MMT::Exception::Delete::Silently->throw($s->logId()."' Video-items are silently set to die"); } # Videot poistetaan
 
