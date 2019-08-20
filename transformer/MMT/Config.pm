@@ -102,6 +102,9 @@ sub barcodeMinLength() {
 sub pl_barcodeFromAcqNumber() {
   return $config->{pl_barcodeFromAcqNumber};
 }
+sub pl_class_classifiers() {
+  return $config->{pl_class_classifiers};
+}
 
 
 #Check that the environment is properly configured
@@ -133,6 +136,12 @@ unless ($config->{csvInputParams} && $config->{csvInputParams}->{new}) {
 }
 unless ($config->{csvInputParams} && $config->{csvInputParams}->{header}) {
   die "Config 'csvInputParams->header' is not a proper Text::CSV options HASH";
+}
+
+if (sourceSystemType() =~ /^(?:PrettyLib|PrettyCirc)$/) {
+  unless ($config->{pl_class_classifiers} && ref($config->{pl_class_classifiers}) eq 'ARRAY') {
+    die "config 'pl_class_classifiers' is not set or is not an ARRAY|List! See the source code template config/main.yaml for usage example."
+  }
 }
 
 return 1;

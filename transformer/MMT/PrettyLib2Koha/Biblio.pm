@@ -268,12 +268,44 @@ sub linkClasses($s, $o, $builder) {
             $log->debug($s->logId." - Found an empty Class with Id '".$class->{Id}."'.") if $log->is_debug();
             next;
           }
-          push(@subfields, MMT::MARC::Subfield->new('a', $class->{Class})) if $class->{Class};
+
+
+          #Classify based on the class classifier rules
+          my ($classifiedOk, $field);
+          for my $classifier (@{MMT::Config::pl_class_classifiers()}) {
+            if ($class->{Class} =~ /$classifier->{regexp}/) {
+              $classifiedOk = 1;
+              $log->trace($s->logId()." - Classifier '".$classifier->{regexp}."' matches '".$class->{Class}."'.") if $log->is_trace();
+
+              $field = $s->{record}->getUnrepeatableField($classifier->{field});
+              unless ($field) {
+                $field = MMT::MARC::Field->new($classifier->{field}, $classifier->{indicator1}, $classifier->{indicator2});
+                $s->{record}->addField($field);
+              }
+
+              $field->addSubfield('a', $class->{Class}, {after => 'a'});
+
+              if ($classifier->{subfields}) {
+                for my $sfRule (@{$classifier->{subfields}}) {
+                  my ($code, $value) = ((keys(%$sfRule))[0], (values(%$sfRule))[0]);
+
+                  my $sf = $field->getUnrepeatableSubfield($code);
+                  unless ($sf) {
+                    $field->addSubfield(MMT::MARC::Subfield->new($code, $value));
+                  }
+                  else {
+                    $sf->value($value);
+                  }
+                }
+              }
+
+            }
+          }
+          $log->error($s->logId()." - Classifying Class '".$class->{Class}."' failed. No matching classifier found. Update the configuration parameter 'pl_class_classifiers'") unless ($classifiedOk);
         }
       }
     }
   }
-  $s->{record}->addField(MMT::MARC::Field->new('084', '#', '#', \@subfields)) if @subfields;
 }
 
 =head2 linkDocuments

@@ -129,21 +129,31 @@ sub addSubfield($self, $subfield_code, $content=undef, $position={last => 1}) {
     unshift @{$self->{subfields}}, $sf;
   }
   elsif (exists $position->{before}) {
+    my $success;
     for (my $i=0 ; $i<@{$self->{subfields}} ; $i++) {
       if ((ref $position->{before} && $self->{subfields}->[$i] == $position->{before}) ||
                                       ($self->{subfields}->[$i]->code eq $position->{before})) {
         splice(@{$self->{subfields}}, $i, 0, $sf);
+        $success = 1;
         last;
       }
     }
+    unless ($success) {
+      push @{$self->{subfields}}, $sf;
+    }
   }
   elsif (exists $position->{after}) {
+    my $success;
     for (my $i=scalar(@{$self->{subfields}})-1 ; $i>=0 ; $i--) {
       if ((ref $position->{after} && $self->{subfields}->[$i] == $position->{after}) ||
                                     ($self->{subfields}->[$i]->code eq $position->{after})) {
         splice(@{$self->{subfields}}, $i+1, 0, $sf);
+        $success = 1;
         last;
       }
+    }
+    unless ($success) {
+      push @{$self->{subfields}}, $sf;
     }
   }
 

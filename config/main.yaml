@@ -87,6 +87,16 @@ csvInputParams:
 # Instead of the Item.BarCode use Item.AcqNumIdx to populate koha.items.barcode
 pl_barcodeFromAcqNumber: 0
 
+# Use these regexps to classify PrettyLib/Circ.Class-table's ClassText-column to different ontologies.
+# if one of the regexp matches, the classification is put to the given MARC21 field with the extra static subfield contents
+pl_class_classifiers:
+  - regexp: ".*"
+    field: 084
+    indicator1: '#'
+    indicator2: '#'
+    subfields:
+      - q: FI-Hamk
+
 #############################
 ### 3) Data loading phase ###
 ## Exported DB rows are mangled into Koha-objects
