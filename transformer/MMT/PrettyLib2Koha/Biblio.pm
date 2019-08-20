@@ -426,12 +426,49 @@ sub linkSubjects($s, $o, $builder) {
             $log->debug($s->logId." - Found an empty Subject with Id '".$subject->{Id}."'.") if $log->is_debug();
             next;
           }
-          push(@subfields, MMT::MARC::Subfield->new('a', $subject->{Subject}));
+          my @subfields;
+
+          my ($fieldCode, $subfieldA, $subfield2, $indicator1, $indicator2) = ('653', $subject->{Subject}, undef, '#', '#'); #Defaults for unknown and uncontrolled index term
+          if    ($subject->{List} == 152) { # YSA
+            $fieldCode = '650';
+            $subfield2 = 'YSA';
+            $indicator1 = '#';
+            $indicator2 = '7';
+          }
+          elsif ($subject->{List} == 192) { # Kirjastokohtaiset (Organization specific)
+            $fieldCode = '650';
+            $subfield2 = MMT::Config::organizationISILCode();
+            $indicator1 = '#';
+            $indicator2 = '7';
+          }
+          elsif ($subject->{List} == 199) { # Avainsanat (Topical keywords) ??? TODO::
+            $fieldCode = '650';
+            $subfield2 = MMT::Config::organizationISILCode();
+            $indicator1 = '#';
+            $indicator2 = '7';
+          }
+          elsif ($subject->{List} == 0) { # MeSH (Medical Subject Headings)
+            $fieldCode = '650';
+            $indicator1 = '#';
+            $indicator2 = '2';
+          }
+          elsif ($subject->{List} == 50) { # MUSA (Musiikki asiasanasto)
+            $fieldCode = '650';
+            $subfield2 = 'MUSA';
+            $indicator1 = '#';
+            $indicator2 = '7';
+          }
+          else {
+            $log->warn($s->logId()." - Subject list '".$subject->{List}."' is unknown. Subject word in unknown list '$subfieldA'");
+          }
+
+          push(@subfields, MMT::MARC::Subfield->new('a', $subfieldA)) if $subfieldA;
+          push(@subfields, MMT::MARC::Subfield->new('2', $subfield2)) if $subfield2;
+          $s->{record}->addField(MMT::MARC::Field->new($fieldCode, $indicator1, $indicator2, \@subfields));
         }
       }
     }
   }
-  $s->{record}->addField(MMT::MARC::Field->new('653', '#', '#', [$_])) for @subfields;
 }
 
 =head2 linkTitleExtension
