@@ -25,59 +25,80 @@ use Encode;
 use Carp;
 use DBI qw(:sql_types);
 use DBD::ODBC;
+use File::stat;
 use Getopt::Long qw(:config no_ignore_case bundling);
 use Data::Dumper;
 $Data::Dumper::Sortkeys = 1;
 
-=head2 NAME
-
-extract.pl
-
-=head2 DESCRIPTION
-
-Export everything exportable in the given DB
-
-=head2 USAGE
-
-Put all the export configuration to file
-
-    config.perl
-
-next to this export script.
-Then
-
-    perl extract.pl --help
-
-=cut
-
 my $opExtract;
 my $opIntrospect;
+my $opShip;
 my $help;
 my $v;
 my $sql;
+my $configPath = 'config.perl';
+my $workingDir;
 
 sub print_usage {
   (my $basename = $0) =~ s|.*/||;
-  print <<USAGE;
-$basename
-  Exports all data from PrettyLib/Circ
+  print <<HELP;
+NAME $basename
 
-Usage:
-  -e, --extract           Exports all DB tables as is based on the config.perl -file.
-  -i, --introspect        Introspect all the known data sources from ODBC.
-  -h, --help              Show this help
-  -v, --verbose           Show debug information
-  -s, --sql               Execute the given SQL and save it to extract.csv
+DESCRIPTION
+
+  Export everything exportable in the given DB as .csv-files named by the table
+  names.
 
 USAGE
+
+  Configuration
+
+    By default the export configuration is in file
+
+      config.perl
+
+    next to this export script.
+
+	Make sure to carefully configure all fields and maintain the proper syntax. Do not remove ending commas etc.
+	The config.perl-file needs to be valid Perl to be usable.
+
+  Shipping files
+
+    To scp (Secure copy remotely) the extracted table files to a remote server,
+	you must manually install the PSCP-program from
+	https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html
+    By default the PSCP-program must reside in the same directory as this script.
+
+  Running the extractor
+
+    Then
+
+      perl extract.pl --help
+
+ARGUMENTS
+
+  -e, --extract           Exports all DB tables as is based on the config.perl -file.
+  -i, --introspect        Introspect all the known data sources from ODBC.
+  -s, --ship              Send the database dumps to the configured ssh-server.
+  -h, --help              Show this help
+  -v, --verbose           Show debug information
+  -q, --sql               Execute the given SQL and save it to extract.csv
+  -c, --config            Path to the configuration file, defaults to config.perl
+  -w, --workingDir        Set the given absolute path as the working directory for this process scope.
+                          Useful to make sure the configured dynamic paths are detected in the proper context.
+
+HELP
 }
 
 GetOptions(
-    'e|extract'     => \$opExtract,
-    'i|introspect'  => \$opIntrospect,
-    'h|help'        => \$help,
-    'v|verbose'     => \$v,
-    's|sql:s'       => \$sql,
+    'e|extract'      => \$opExtract,
+	's|ship'         => \$opShip,
+    'i|introspect'   => \$opIntrospect,
+    'h|help'         => \$help,
+    'v|verbose'      => \$v,
+    'q|sql:s'        => \$sql,
+	'c|config:s'     => \$configPath,
+	'w|workingDir:s' => \$workingDir,
 ) or print_usage, exit 1;
 
 if ($help) {
@@ -87,7 +108,13 @@ if ($help) {
 
 
 my $nl = ($^O =~ /linux/i) ? "\n" : "\r\n";
-my $config = do './config.perl' || confess("Unable to read the configuration file: ".($@ || $!));
+
+chdir($workingDir) if $workingDir;
+print "Changed the working dir to '$workingDir'.$nl" if $workingDir and $v;
+
+my $config = configure($configPath);
+print "Using configuration:$nl".Data::Dumper::Dumper($config)."$nl" if $v;
+
 my $dbh = DBI->connect("dbi:ODBC:DSN=".$config->{db_dsn}, $config->{db_username}, $config->{db_password}) || confess $@;
 if ($dbh->{odbc_has_unicode}) {
   print "ODBC has unicode enabled$nl";
@@ -96,6 +123,21 @@ if ($dbh->{odbc_has_unicode}) {
 $dbh->{odbc_default_bind_type} = SQL_VARCHAR;
 $dbh->{LongReadLen} = 8000;
 
+
+sub configure {
+  my ($configPath) = @_;
+
+  $configPath = './'.$configPath;# unless ($configPath =~ /^[\/]/ or $configPath =~ /^\./);
+  my $config = do $configPath || confess("Unable to read the configuration file '".$configPath."': ".($@ || $!));
+  return $config;
+}
+
+sub hasPSCP {
+  my ($config) = @_;
+
+  my $stats = File::stat::stat($config->{pscp_filepath}) or confess("Unable to find the PSCP-program from the configured path '".$config->{pscp_filepath}."'");
+  confess("PSCP-program from the configured path '".$config->{pscp_filepath}."' with size '".$stats->size."' looks too small?") unless ($stats->size);
+}
 
 sub introspectTables {
   my ($dbh, $config) = @_;
@@ -199,8 +241,9 @@ sub _writeSql {
         $row->[$i] = '"'.$row->[$i].'"'
       }
 	  if ($config->{db_reverse_decoding}) {
-	    # Some columns have rows that are UTF-8 flagged if they contain Unicode.
-		# The encoding is naturally detected on the ass way up.
+	    # Some rows have columns that are UTF-8 flagged if they contain Unicode.
+		# The encoding is naturally detected on the ass way up and this inconsistent
+		# flagging of Strings as UTF-8 causes issues with Perl trying to recover it using it's heuristics.
 		# Revert the damages.
 		# Make sure all strings have the utf8-flag off so Perl does some magic mumbo jumbo and spits out the diacritics correctly.
         if (Encode::is_utf8($row->[$i])) {
@@ -217,6 +260,16 @@ sub _writeSql {
   }
 }
 
+sub ship {
+  my ($config) = @_;
+
+  my $cmd = $config->{pscp_filepath}.' -pw "'.$config->{ssh_pass}.'" -r '.$config->{export_path}.' '.$config->{ssh_user}.'@'.$config->{ssh_host}.':'.$config->{ssh_shipping_dir}.'/';
+  print "Executing shipping command:$nl  $cmd$nl" if $v;
+  qx($cmd);
+}
+
+hasPSCP($config) if $config->{pscp_filepath} or $opShip;
 introspectTables($dbh, $config) if $opIntrospect or $opExtract;
 exportSql($dbh, $config, $sql) if $sql;
+ship($config) if $opShip;
 

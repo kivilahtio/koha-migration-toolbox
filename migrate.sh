@@ -45,6 +45,8 @@ if [[ "$SOURCE_SYSTEM" =~ "Voyager" ]]; then
 fi
 
 if [[ "$SOURCE_SYSTEM" =~ "PrettyLib" ]]; then
+  echo "--extract"
+  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --extract         &> $LOG_DIR/00-extract.log
   echo "--biblios"
   MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --biblios         &> $LOG_DIR/01-biblios.log
   echo "--items"
@@ -60,6 +62,8 @@ if [[ "$SOURCE_SYSTEM" =~ "PrettyLib" ]]; then
 fi
 
 if [[ "$SOURCE_SYSTEM" =~ "PrettyCirc" ]]; then
+  echo "--extract"
+  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --extract         &> $LOG_DIR/00-extract.log
   echo "--biblios"
   MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --biblios         &> $LOG_DIR/01-biblios.log
   echo "--items"
