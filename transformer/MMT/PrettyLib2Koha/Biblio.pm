@@ -85,7 +85,7 @@ sub mergeLinks($s, $o, $b) {
   linkPublishers(@_);
   linkSeries(@_);
   linkSubjects(@_);
-  linkTitleExtension(@_);
+  linkTitleExtension(@_) unless (ref($s) eq 'MMT::PrettyCirc2Koha::Biblio');
 }
 
 sub logId($s) {
