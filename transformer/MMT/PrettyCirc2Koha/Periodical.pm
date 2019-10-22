@@ -100,7 +100,7 @@ sub setNotes($s, $o, $b) {
 }
 #In Koha the publisheddate is the date the serial is actually printed. Voyager has no such distinction, so reuse expected_date.
 sub setPublisheddate($s, $o, $b) {
-  $s->{publisheddate} = $o->{planneddate};
+  $s->{publisheddate} = $s->{planneddate};
 }
 
 use constant { #Koha C4::Serial line 44:
