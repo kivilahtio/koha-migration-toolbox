@@ -65,7 +65,10 @@ sub _slurpFile($s) {
 sub _slurpCsv($s) {
   my $csv = Text::CSV->new(MMT::Config::csvInputNew());
   open(my $FH, '<:encoding(UTF-8)', $s->file());
-  $csv->header($FH, MMT::Config::csvInputHeader());
+  eval {
+    $csv->header($FH, MMT::Config::csvInputHeader());
+  };
+  if ($@) { $log->logdie("Failed to read the header of .csv-file '".$s->file()."'!\n$@") }
   $log->debug("Loading .csv-file '".$s->file()."', identified columns '".join(',', $csv->column_names())."'");
   my $i = 0;
   while (my $obj = $csv->getline_hr($FH)) {
