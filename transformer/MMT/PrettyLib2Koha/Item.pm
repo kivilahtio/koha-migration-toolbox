@@ -158,7 +158,15 @@ sub setPrice($s, $o, $b) {
   #$log->warn($s->logId()."' has no price.") unless $s->{price}; #Too much complaining about the missing price. Hides all other issues.
 }
 sub setReplacementprice($s, $o, $b) {
-  $s->{replacementprice} = $s->{price} // MMT::Config::defaultReplacementPrice;
+  # Use the Item's price as a basis
+  $s->{replacementprice} = $s->{price};
+  unless ($s->{replacementprice}) {
+    #If the Item doesn't have a price, look for the parent biblio
+    my $titles = $b->{Title}->get($o->{Id_Title});
+    $s->{replacementprice} = $titles->[0]->{Price} if @$titles;
+  }
+  #finally use the default replacement price.
+  $s->{replacementprice} = MMT::Config::defaultReplacementPrice() unless $s->{replacementprice};
 }
 sub setDatelastborrowed($s, $o, $b) {
   my $loans = $b->{LoanByItem}->get($o->{Id}); # The Loan-rows are ordered from oldest to newest
@@ -278,6 +286,8 @@ sub setBooksellerid($s, $o, $b) {
   my $supplier = $suppliers->[0];
 
   $s->{booksellerid} = ($supplier->{Name} || 'NO-NAME').' ('.($supplier->{Code} || 'NO-CODE').')';
+  $s->{booksellerid} = MMT::PrettyLib2Koha::Biblio::_ss( $s->{booksellerid} );
+  $s->{booksellerid} =~ s/\s{2,}/ /gsm;
 }
 
 my %statusMap = (

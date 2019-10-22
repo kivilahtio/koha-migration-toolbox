@@ -39,6 +39,7 @@ useHetula: false
 holdingsTransformationModule: HAMK
 
 # If the item doesn't have a price or a replacementprice, use this default.
+# Use '' (empty String) to skip setting the default replacement price
 defaultReplacementPrice: 25
 
 # ISIL-code for the migrated organization
