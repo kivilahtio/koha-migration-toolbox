@@ -107,10 +107,12 @@ my $ser_insert_sth = $dbh->prepare("INSERT INTO serial
                                 VALUES (?,?,?,?,?,
                                         ?,?,?,?)");
 sub migrate_serial($s) {
-    $ser_insert_sth->execute($s->{biblionumber},$s->{subscriptionid},$s->{status},      $s->{planneddate}, $s->{publisheddate},
-                             $s->{serialseq},   $s->{serialseq_x},   $s->{serialseq_y}, $s->{serialseq_z})
-      or die "INSERT:ing Serial failed: ".$ser_insert_sth->errstr();
-    $s->{serialid} = $ser_insert_sth->{mysql_insertid} // $ser_insert_sth->last_insert_id() // die("Couldn't get the last_insert_id from a newly created serial ".np($s));
+    eval {
+        $ser_insert_sth->execute($s->{biblionumber},$s->{subscriptionid},$s->{status},      $s->{planneddate}, $s->{publisheddate},
+                                 $s->{serialseq},   $s->{serialseq_x},   $s->{serialseq_y}, $s->{serialseq_z})
+          or die "INSERT:ing Serial failed: ".$ser_insert_sth->errstr();
+        $s->{serialid} = $ser_insert_sth->{mysql_insertid} // $ser_insert_sth->last_insert_id() // die("Couldn't get the last_insert_id from a newly created serial ".np($s));
+    };
 
     migrate_serialitems($s) if $s->{itemnumber};
 }
@@ -119,8 +121,10 @@ my $seritems_insert_sth = $dbh->prepare("INSERT INTO serialitems
                                 (itemnumber, serialid)
                                 VALUES (?,?)");
 sub migrate_serialitems($s) {
-    $seritems_insert_sth->execute($s->{itemnumber},$s->{serialid})
-      or die "INSERT:ing Serialitem failed: ".$seritems_insert_sth->errstr();
+    eval {
+        $seritems_insert_sth->execute($s->{itemnumber},$s->{serialid})
+          or die "INSERT:ing Serialitem failed: ".$seritems_insert_sth->errstr();
+    };
 }
 
 sub validateAndConvertSubscriptionKeys($s) {
