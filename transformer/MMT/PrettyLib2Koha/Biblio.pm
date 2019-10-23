@@ -75,7 +75,9 @@ Sanitate some values which can be in inconsistent formats across PrettyLib datab
 =cut
 
 sub sanitateInput($o) {
-  $o->{$_} = MMT::Validator::parseDate($o->{$_}) for (qw(UpdateDate SaveDate));
+  for my $k (qw(UpdateDate SaveDate)) {
+    $o->{$k} = MMT::Validator::parseDate($o->{$k}) if ($o->{$k});
+  }
 }
 
 sub mergeLinks($s, $o, $b) {
@@ -517,7 +519,7 @@ sub getItemType($s, $o, $b) {
     }
     my $items = $b->{Items}->get($s->{biblionumber});
     $item = $items->[0] if $items;
-    return undef unless $item;
+    #return undef unless $item;
   }
 
   return $b->{ItemTypes}->translate($s, $item, $b, $titleType); # Try to get the itemtype from the biblio or the item
