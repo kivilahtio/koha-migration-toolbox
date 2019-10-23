@@ -59,14 +59,14 @@ USAGE
 
     next to this export script.
 
-	Make sure to carefully configure all fields and maintain the proper syntax. Do not remove ending commas etc.
-	The config.perl-file needs to be valid Perl to be usable.
+    Make sure to carefully configure all fields and maintain the proper syntax. Do not remove ending commas etc.
+    The config.perl-file needs to be valid Perl to be usable.
 
   Shipping files
 
     To scp (Secure copy remotely) the extracted table files to a remote server,
-	you must manually install the PSCP-program from
-	https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html
+    you must manually install the PSCP-program from
+    https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html
     By default the PSCP-program must reside in the same directory as this script.
 
   Running the extractor
@@ -92,13 +92,13 @@ HELP
 
 GetOptions(
     'e|extract'      => \$opExtract,
-	's|ship'         => \$opShip,
+    's|ship'         => \$opShip,
     'i|introspect'   => \$opIntrospect,
     'h|help'         => \$help,
     'v|verbose'      => \$v,
     'q|sql:s'        => \$sql,
-	'c|config:s'     => \$configPath,
-	'w|workingDir:s' => \$workingDir,
+    'c|config:s'     => \$configPath,
+    'w|workingDir:s' => \$workingDir,
 ) or print_usage, exit 1;
 
 if ($help) {
@@ -201,7 +201,7 @@ sub exportTable {
   my $columnInfos = $sth->fetchall_arrayref({}) || confess $dbh->errstr;
   my @columnNames = map {$_->{COLUMN_NAME}} @$columnInfos;
   print "-Found columns ".join(",", @columnNames)."$nl" if $v;
-  print $FH join(",", @columnNames)."$nl"; #Make the .csv header
+  print $FH join(",", @columnNames)."\n"; #Make the .csv header
 
   my $rows = _executeSql($dbh, $config, "SELECT * FROM ".$table->{TABLE_NAME});
 
@@ -237,7 +237,8 @@ sub _writeSql {
         $row->[$i] = '';
       }
       else {
-        $row->[$i] =~ s/("|\n|\r)/\\$1/gsm;
+        $row->[$i] =~ s/(\n|\r)/\\$1/gsm;
+        $row->[$i] =~ s/"/""/gsm;
         $row->[$i] = '"'.$row->[$i].'"'
       }
 	  if ($config->{db_reverse_decoding}) {
@@ -256,14 +257,14 @@ sub _writeSql {
         }
       }
 	}
-    print $FH join(",", @$row)."$nl";
+    print $FH join(",", @$row)."\n";
   }
 }
 
 sub ship {
   my ($config) = @_;
 
-  my $cmd = $config->{pscp_filepath}.' -pw "'.$config->{ssh_pass}.'" -r '.$config->{export_path}.' '.$config->{ssh_user}.'@'.$config->{ssh_host}.':'.$config->{ssh_shipping_dir}.'/';
+  my $cmd = $config->{pscp_filepath}.' -pw "'.$config->{ssh_pass}.'" -r '.$config->{export_path}.'/* '.$config->{ssh_user}.'@'.$config->{ssh_host}.':'.$config->{ssh_shipping_dir}.'/';
   print "Executing shipping command:$nl  $cmd$nl" if $v;
   qx($cmd);
 }
