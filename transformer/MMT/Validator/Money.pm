@@ -90,6 +90,9 @@ sub money_PrettyLib($kohaObject, $voyagerObject, $builder, $priceCandidate) {
                            (?<CURRENCY>  \D+)?
                           $/x) {
     my ($symbol, $price, $currency) = @+{qw(SYMBOL PRICE CURRENCY)};
+    $symbol //= '';
+    $price //= '';
+    $currency //= '';
     $log->trace($kohaObject->logId()." - \$symbol='$symbol' \$price='$price' \$currency='$currency'");
 
     $symbol = '' if $symbol eq '+';
