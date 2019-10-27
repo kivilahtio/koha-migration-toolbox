@@ -404,10 +404,13 @@ sub setStatuses($s, $o, $b) {
   }
 }
 sub setSort1($s, $o, $b) {
-  $s->{sort1} = $o->{Id};
+  my $groups = $b->{Groups}->get($o->{Id_Group});
+  if ($groups) {
+    $s->{sort1} = $groups->[0]->{Name};
+  }
 }
 sub setSort2($s, $o, $b) {
-  $s->{sort2} = $s->{branchcode};
+  $s->{sort2} = $o->{Id};
 }
 
 sub _addExtendedPatronAttribute($s, $attributeName, $val, $isRepeatable) {

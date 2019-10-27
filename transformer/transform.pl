@@ -300,7 +300,9 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
         $conf = {
           type =>    'Customer',
           inputFile => 'Customer.csv',
-          repositories => [],
+          repositories => [
+            {name => 'Groups', file => 'Groups.csv',  keys => ['Id']},
+          ],
           translationTables => [
             {name => 'Branchcodes'},
             {name => 'PatronCategorycode'},
@@ -311,7 +313,9 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
         $conf = {
           type =>    'Customer',
           inputFile => 'Customer.csv',
-          repositories => [],
+          repositories => [
+            {name => 'Groups', file => 'Groups.csv',  keys => ['Id']},
+          ],
           translationTables => [
             {name => 'Branchcodes'},
             {name => 'PatronCategorycode'},
@@ -352,6 +356,15 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
           ],
         };
       }
+      elsif (MMT::Config->sourceSystemType eq 'PrettyCirc') {
+        $conf = {
+          type => 'Loan',
+          inputFile => 'Loan.csv',
+          translationTables => [
+            {name => 'Branchcodes'},
+          ],
+        };
+      }
       build($confBase, $conf);
     },
   },
@@ -377,6 +390,12 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
         };
       }
       elsif (MMT::Config->sourceSystemType eq 'PrettyLib') {
+        $conf = {
+          type => 'Fee',
+          inputFile => 'Fee.csv',
+        };
+      }
+      elsif (MMT::Config->sourceSystemType eq 'PrettyCirc') {
         $conf = {
           type => 'Fee',
           inputFile => 'Fee.csv',
