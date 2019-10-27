@@ -70,10 +70,14 @@ if [[ "$SOURCE_SYSTEM" =~ "PrettyCirc" ]]; then
   MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --items           &> $LOG_DIR/02-items.log
   echo "--patrons"
   MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --patrons         &> $LOG_DIR/03-patrons.log
+  echo "--issues"
+  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --issues          &> $LOG_DIR/04-issues.log
+  echo "--fines"
+  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --fines           &> $LOG_DIR/05-fines.log
   echo "--subscriptions"
-  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --subscriptions   &> $LOG_DIR/03-subscriptions.log
+  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --subscriptions   &> $LOG_DIR/08-subscriptions.log
   echo "--serials"
-  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --serials         &> $LOG_DIR/04-serials.log
+  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --serials         &> $LOG_DIR/09-serials.log
   echo "--load"
   MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --load            &> $LOG_DIR/10-load.log
 fi
