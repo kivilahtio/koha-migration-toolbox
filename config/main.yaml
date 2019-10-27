@@ -98,6 +98,9 @@ pl_class_classifiers:
     subfields:
       - q: FI-Hamk
 
+# Drop all Item Shelf (itemcallunmber) values that match this filter.
+pl_shelf_filter: "(?:nu|es|ki)"
+
 #############################
 ### 3) Data loading phase ###
 ## Exported DB rows are mangled into Koha-objects

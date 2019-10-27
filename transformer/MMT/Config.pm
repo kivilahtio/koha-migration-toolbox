@@ -105,6 +105,9 @@ sub pl_barcodeFromAcqNumber() {
 sub pl_class_classifiers() {
   return $config->{pl_class_classifiers};
 }
+sub pl_shelf_filter() {
+  return $config->{pl_shelf_filter};
+}
 
 
 #Check that the environment is properly configured
@@ -136,6 +139,10 @@ unless ($config->{csvInputParams} && $config->{csvInputParams}->{new}) {
 }
 unless ($config->{csvInputParams} && $config->{csvInputParams}->{header}) {
   die "Config 'csvInputParams->header' is not a proper Text::CSV options HASH";
+}
+
+unless (defined $config->{pl_shelf_filter}) {
+  die "Config 'pl_shelf_filter' is not defined";
 }
 
 if (sourceSystemType() =~ /^(?:PrettyLib|PrettyCirc)$/) {
