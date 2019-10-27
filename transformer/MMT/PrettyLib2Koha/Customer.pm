@@ -385,7 +385,10 @@ sub setPrivacy($s, $o, $b) {
   # 2 - never save privacy information. Koha tries to save as little info as possible
   # 1 - Default
   # 0 - Gather and keep data about me! 
-  if ($o->{LoanHistory} eq 'True') {
+  if (not(defined($o->{LoanHistory}))) { # PrettyCirc Customers don't have a LoanHistory-column
+    $s->{privacy} = 1;
+  }
+  elsif ($o->{LoanHistory} eq 'True') {
     $s->{privacy} = 1;
   }
   else {
