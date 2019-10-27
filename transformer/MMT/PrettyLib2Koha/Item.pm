@@ -210,7 +210,10 @@ sub setItemnotes($s, $o, $b) {
   $s->{itemnotes_nonpublic} = $o->{Note} || '';
 }
 sub setHomebranch($s, $o, $b) {
-  $s->{homebranch} = $b->{Branchcodes}->translate(@_, $o->{Id_Library});
+  my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{Id_Location});
+  $s->{homebranch} = $branchcodeLocation->{branch} if ($branchcodeLocation && $branchcodeLocation->{branch});
+
+  $s->{homebranch} = $b->{Branchcodes}->translate(@_, $o->{Id_Library}) unless ($s->{homebranch});
 
   unless ($s->{homebranch}) {
     MMT::Exception::Delete->throw($s->logId()."' has no homebranch! Id_Library=".$o->{Id_Library}.". Define a default in the LocationId translation table!");

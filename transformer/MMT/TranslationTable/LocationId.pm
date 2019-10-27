@@ -148,7 +148,7 @@ sub _statisticsLibrary($publicationYear, $subscriptionFrequencyIncrement, $subsc
 
 sub JNSKonsa_Muskari_drop_es($s, $kohaObject, $voyagerObject, $builder, $originalValue, $tableParams, $transParams) {
 
-  if (ref($kohaObject) =~ /Item/ && $kohaObject->{itype} eq 'ES') {
+  if (ref($kohaObject) =~ /Item/ && $kohaObject->{itype} && $kohaObject->{itype} eq 'ES') {
     MMT::Exception::Delete::Silently->throw($s->logId()."' Muskari-item is a physical item (Esine). Removing.");
   }
 
