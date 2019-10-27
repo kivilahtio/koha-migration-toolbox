@@ -68,6 +68,8 @@ if [[ "$SOURCE_SYSTEM" =~ "PrettyCirc" ]]; then
   MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --biblios         &> $LOG_DIR/01-biblios.log
   echo "--items"
   MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --items           &> $LOG_DIR/02-items.log
+  echo "--patrons"
+  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --patrons         &> $LOG_DIR/03-patrons.log
   echo "--subscriptions"
   MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --subscriptions   &> $LOG_DIR/03-subscriptions.log
   echo "--serials"

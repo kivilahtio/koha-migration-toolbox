@@ -307,6 +307,17 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
           ],
         };
       }
+      elsif (MMT::Config->sourceSystemType eq 'PrettyCirc') {
+        $conf = {
+          type =>    'Customer',
+          inputFile => 'Customer.csv',
+          repositories => [],
+          translationTables => [
+            {name => 'Branchcodes'},
+            {name => 'PatronCategorycode'},
+          ],
+        };
+      }
       build($confBase, $conf);
     },
   },
