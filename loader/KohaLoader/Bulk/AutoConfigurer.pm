@@ -19,15 +19,21 @@ sub borrower {
   }
 }
 
-
 our %locationsAutoconfigured;
 sub shelvingLocation {
   my ($permanent_location, $location) = @_;
 
   for my $loc (@_) {
     unless ($locationsAutoconfigured{$loc}) {
-      C4::Context->dbh()->do("INSERT IGNORE INTO authorised_values (category, authorised_value, lib, lib_opac) ".
-                                    "VALUE ('LOC','$loc','AUTO-$loc','AUTO-$loc')");
+      my $ary = C4::Context->dbh->selectall_arrayref(
+        'SELECT 1 FROM authorised_values WHERE category = "loc" AND authorised_value = ?',
+        undef,
+        $loc
+      );
+      unless (ref($ary) eq 'ARRAY' && scalar(@$ary) > 0) {
+        C4::Context->dbh()->do("INSERT IGNORE INTO authorised_values (category, authorised_value, lib, lib_opac) ".
+                                "VALUE ('LOC','$loc','AUTO-$loc','AUTO-$loc')");
+      }
       $locationsAutoconfigured{$loc} = 1;
     }
   }
