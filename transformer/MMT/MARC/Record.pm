@@ -467,40 +467,6 @@ sub signum {
   }
   return $self->{signum};
 }
-sub materialType {
-  my $self = shift;
-  my $matType = shift;
-
-#  my $f245a = $self->getUnrepeatableSubfield('245','a');
-#  if ($f245a && $f245a->content =~ /Ella ja Paterock/) {
-#    my $break = 1;
-#  }
-
-
-  if ($matType) {
-    my $itype = TranslationTables::material_code_to_itype::fetch($matType);
-    if (defined $itype && exists $itype->[0]) {
-      $self->isASerial(1) if exists $itype->[1] && $itype->[1] == 1;
-      my $newMatType = $itype->[0];
-
-      $newMatType = MMT::Biblios::MarcRepair::convertAanikirjaItemtype($self, $newMatType);
-      $newMatType = MMT::Biblios::MarcRepair::convertYleItemTypes($self, $newMatType);
-
-      $self->{materialType} = $newMatType;
-      $self->addUnrepeatableSubfield('942', 'c', $newMatType); #Store the Koha 942$c default itemtype already.
-
-      if ($self->{materialType} eq 'DELETE') {
-        print "Record docId:".$self->docId()." material type: 'DELETE'. Deleting record.\n";
-        die 'DELETE';
-      }
-    }
-    else {
-      print "Record docId:".$self->docId()." has a bad material type:".$matType."\n";
-      return undef;
-    }
-  }
-  return $self->{materialType};
-}
 sub countryOfOrigin {
   my $self = shift;
   my $coo = shift;

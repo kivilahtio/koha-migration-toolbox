@@ -6,6 +6,7 @@ use MMT::Pragmas;
 
 #Local modules
 use MMT::MARC::Record;
+use MMT::PrettyLib2Koha::Biblio::MaterialTypeRepair;
 use MMT::Validator;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
@@ -47,7 +48,8 @@ sub build($s, $o, $b) {
   # Gather information needed to build the leader
   my %leader;
 
-  $s->{record}->addUnrepeatableSubfield('003', '0', MMT::Config::organizationISILCode()); # Set 003
+  $s->{record}->addUnrepeatableSubfield('003', '0', MMT::Config::organizationISILCode()); # Set the cataloguing organization code
+  $s->{record}->addUnrepeatableSubfield('040', 'a', MMT::Config::organizationISILCode());
 
   $s->{record}->modTime($o->{UpdateDate} || $o->{SaveDate}); # Set 005
 
@@ -66,6 +68,8 @@ sub build($s, $o, $b) {
   $s->{record}->addUnrepeatableSubfield('942', 'c', getItemType(@_));
 
   fixMARCProblems(@_);
+
+  MMT::PrettyLib2Koha::Biblio::MaterialTypeRepair::forceControlFields(@_);
 }
 
 =head2 sanitateInput
@@ -187,7 +191,7 @@ sub linkToMother($s, $o, $b, $leader) {
   if ($o->{Id_Mother}) {
     if (my $mother = $b->{Titles}->get($o->{Id_Mother})) {
       unless ($mother->[0]->{F001}) {
-        $log->warn($s->logId." - Link to Id_Mother '".$o->{Id_Mother}."' but the mother has no Field 001? Adding biblionumber '".$o->{Id_Mother}."' to 773w.");
+        $log->debug($s->logId." - Link to Id_Mother '".$o->{Id_Mother}."' but the mother has no Field 001? Adding biblionumber '".$o->{Id_Mother}."' to 773w.");
       }
 
 
