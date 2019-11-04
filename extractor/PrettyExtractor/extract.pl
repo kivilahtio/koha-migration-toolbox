@@ -36,8 +36,9 @@ my $opShip;
 my $help;
 my $v;
 my $sql;
-my $configPath = 'config.perl';
+my $configPath = './config.perl';
 my $workingDir;
+my $logFile = 'extract.log';
 
 sub print_usage {
   (my $basename = $0) =~ s|.*/||;
@@ -75,6 +76,23 @@ USAGE
 
       perl extract.pl --help
 
+  Scheduling via Windows Server Task Scheduler
+
+    Trigger the following program
+
+      cmd.exe
+
+    with parameters
+
+      /c perl C:\Users\hypernovamies\extract.pl -v -e -s -w C:\Users\hypernovamies -c C:\Users\hypernovamies\config.perl -l C:\Users\hypernovamies\extract.log > C:\Users\hypernovamies\extract.log2 2>&1
+
+    Be aware, that all output is buffered. Logfiles are written only after the process exits.
+
+  Logging
+
+    The Windows Server scheduled tasks runner seems to hide the STDOUT/ERR of a running task.
+    To circumvent this, all output is written by default to extract.log
+
 ARGUMENTS
 
   -e, --extract           Exports all DB tables as is based on the config.perl -file.
@@ -86,6 +104,7 @@ ARGUMENTS
   -c, --config            Path to the configuration file, defaults to config.perl
   -w, --workingDir        Set the given absolute path as the working directory for this process scope.
                           Useful to make sure the configured dynamic paths are detected in the proper context.
+  -l, --logFile           Where to write the program logs
 
 HELP
 }
@@ -99,6 +118,7 @@ GetOptions(
     'q|sql:s'        => \$sql,
     'c|config:s'     => \$configPath,
     'w|workingDir:s' => \$workingDir,
+    'l|logFile:s'    => \$logFile,
 ) or print_usage, exit 1;
 
 if ($help) {
@@ -110,6 +130,9 @@ if ($help) {
 my $nl = ($^O =~ /linux/i) ? "\n" : "\r\n";
 
 chdir($workingDir) if $workingDir;
+open(my $LOG, '>', $logFile) or die("Unable to open logFile '$logFile' for writing!");
+*STDOUT = $LOG;
+*STDERR = $LOG;
 print "Changed the working dir to '$workingDir'.$nl" if $workingDir and $v;
 
 my $config = configure($configPath);
@@ -127,8 +150,8 @@ $dbh->{LongReadLen} = 8000;
 sub configure {
   my ($configPath) = @_;
 
-  $configPath = './'.$configPath;# unless ($configPath =~ /^[\/]/ or $configPath =~ /^\./);
-  my $config = do $configPath || confess("Unable to read the configuration file '".$configPath."': ".($@ || $!));
+  $configPath = './'.$configPath unless ($configPath =~ /^\w:\\/ or $configPath =~ /^[\/]/ or $configPath =~ /^\./);
+  my $config = do "$configPath" || confess("Unable to read the configuration file '".$configPath."': ".($@ || $!));
   return $config;
 }
 
@@ -241,22 +264,22 @@ sub _writeSql {
         $row->[$i] =~ s/"/""/gsm;
         $row->[$i] = '"'.$row->[$i].'"'
       }
-	  if ($config->{db_reverse_decoding}) {
-	    # Some rows have columns that are UTF-8 flagged if they contain Unicode.
-		# The encoding is naturally detected on the ass way up and this inconsistent
-		# flagging of Strings as UTF-8 causes issues with Perl trying to recover it using it's heuristics.
-		# Revert the damages.
-		# Make sure all strings have the utf8-flag off so Perl does some magic mumbo jumbo and spits out the diacritics correctly.
+      if ($config->{db_reverse_decoding}) {
+        # Some rows have columns that are UTF-8 flagged if they contain Unicode.
+        # The encoding is naturally detected on the ass way up and this inconsistent
+        # flagging of Strings as UTF-8 causes issues with Perl trying to recover it using it's heuristics.
+        # Revert the damages.
+        # Make sure all strings have the utf8-flag off so Perl does some magic mumbo jumbo and spits out the diacritics correctly.
         if (Encode::is_utf8($row->[$i])) {
           #print $row->[$i]." is UTF8\nl";
-		  $row->[$i] = Encode::encode("UTF-8", $row->[$i]);
-		  Encode::_utf8_off($row->[$i]);
+          $row->[$i] = Encode::encode("UTF-8", $row->[$i]);
+          Encode::_utf8_off($row->[$i]);
         }
         else {
           #print $row->[$i]." NOT UTF8\nl";
         }
       }
-	}
+    }
     print $FH join(",", @$row)."\n";
   }
 }
@@ -264,7 +287,7 @@ sub _writeSql {
 sub ship {
   my ($config) = @_;
 
-  my $cmd = $config->{pscp_filepath}.' -pw "'.$config->{ssh_pass}.'" -r '.$config->{export_path}.'/* '.$config->{ssh_user}.'@'.$config->{ssh_host}.':'.$config->{ssh_shipping_dir}.'/';
+  my $cmd = $config->{pscp_filepath}.' -batch -unsafe -pw "'.$config->{ssh_pass}.'" -r '.$config->{export_path}.'/* '.$config->{ssh_user}.'@'.$config->{ssh_host}.':'.$config->{ssh_shipping_dir}.'/';
   print "Executing shipping command:$nl  $cmd$nl" if $v;
   qx($cmd);
 }
