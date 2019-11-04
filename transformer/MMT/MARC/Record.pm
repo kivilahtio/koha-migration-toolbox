@@ -624,8 +624,8 @@ sub getUnrepeatableField {
   return $fields->[0];
 }
 
-#If Subfield's code changes, we need to move it to another hash bucket.
-sub relocateField { #params: ->($oldCode, $MARC::Subfield)
+#If Field's code changes, we need to move it to another hash bucket.
+sub relocateField { #params: ->($oldCode, $MARC::Field)
   my $self = shift;
   my $oldCode = shift;
   my $f = shift;
@@ -649,6 +649,27 @@ sub relocateField { #params: ->($oldCode, $MARC::Subfield)
   &$removeFieldFromArray("fields");
 
   $self->addField($f);
+}
+
+sub relocateSubfield {
+  my ($self, $fromFieldCode, $toFieldCode, $fromSubfieldCode, $toSubfieldCode) = @_;
+
+  if (my $fields = $self->fields($fromFieldCode)) {
+    for my $field (@$fields) {
+
+      if ($toFieldCode && $fromFieldCode ne $toFieldCode) {
+        $field->setCode($toFieldCode);
+      }
+
+      if ($fromSubfieldCode && $toSubfieldCode) {
+        if (my $subfields = $field->subfields($fromSubfieldCode)) {
+          for my $subfield (@$subfields) {
+            $subfield->code($toSubfieldCode);
+          }
+        }
+      }
+    }
+  }
 }
 
 sub getCallNumber() {
