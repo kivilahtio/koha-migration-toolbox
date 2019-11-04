@@ -64,6 +64,8 @@ sub build($s, $o, $b) {
   $s->mergeLinks($o, $b);
 
   $s->{record}->addUnrepeatableSubfield('942', 'c', getItemType(@_));
+
+  fixMARCProblems(@_);
 }
 
 =head2 sanitateInput
@@ -856,6 +858,11 @@ sub _ss($text) {
   $text =~ s/$re_sanitator//gsm;
   $text =~ s/^\s+|\s+$//gsm; #Trim leading/tailing whitespace
   return $text;
+}
+
+sub fixMARCProblems($s, $o, $b) {
+  # JNSKons 300$d is deprecated, move it to 300$3
+  $s->{record}->relocateSubfield('300', '300', 'd', 'e');
 }
 
 return 1;
