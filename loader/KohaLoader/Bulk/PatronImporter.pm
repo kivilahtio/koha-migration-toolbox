@@ -152,8 +152,9 @@ sub addDefaultAdmin($s, $defaultAdmin) {
   my ($username, $password) = split(':', $defaultAdmin);
   INFO "Adding default admin";
   my $dbh = C4::Context->dbh;
-  my $categorycode = $dbh->selectrow_array("SELECT categorycode from categories LIMIT 1") or die "Failed to get default admin categorycode ".$dbh->errstr(); #Pick any borrower.categorycode
-  my $branchcode = $dbh->selectrow_array("SELECT branchcode from branches LIMIT 1") or die "Failed to get default admin branchcode ".$dbh->errstr(); #Pick any borrower.branchcode
+  my $categorycode = $dbh->selectrow_array("SELECT categorycode from categories LIMIT 1") or warn "Failed to get default admin categorycode ".$dbh->errstr(); #Pick any borrower.categorycode
+  $categorycode = 'ADMIN' unless $categorycode;
+  my $branchcode = $dbh->selectrow_array("SELECT branchcode from branches LIMIT 1") or warn "Failed to get default admin branchcode ".$dbh->errstr(); #Pick any borrower.branchcode
   my %defaultAdmin = (
     cardnumber =>   "kalifi",
     surname =>      "Kalifi",
