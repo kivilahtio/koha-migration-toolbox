@@ -12,7 +12,7 @@ Withing the SQL SERVER:
 
 - Configure the extract.pl tool's config.perl to use the configured ODBC data sources, and the export/shipping remote file server access. One separate config.perl-file needs to be created for both PrettyLib and PrettyCirc databases. Make sure they export to different export directories.
 
-- Schedule the extract.pl to be ran daily via the "Task Scheduler"-program. extract.pl needs the following commandline parameters; --extract --ship --workingDir "C:\Absolute\Path\To\Directory\Of\extract.pl"
+- Schedule the extract.pl to be ran daily via the "Task Scheduler"-program. see extract.pl --help
 
 - Make sure to manually test data exporting first. See "perl extract.pl --help" for more information.
 
