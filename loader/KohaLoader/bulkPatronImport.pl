@@ -217,7 +217,11 @@ sub processNewFromRow($patron) {
     my $ssn = $patron->{ssn};                                           delete $patron->{ssn};
     my $popup_message = $patron->{popup_message};                       delete $patron->{popup_message};
     unless ($old_borrowernumber) {
+
+        Bulk::AutoConfigurer::borcat($patron->{categorycode});
+
         eval { $patron->{borrowernumber} = $patronImporter->AddMember($patron) };
+
         if ($@) {
             if ($@ =~ /Duplicate entry '.*?' for key 'cardnumber'/) {
                 WARN "Patron cn:'$patron->{cardnumber}' has a duplicate cardnumber|userid. Prepending 'TUPLA_' and retrying.";

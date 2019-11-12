@@ -39,6 +39,42 @@ sub shelvingLocation {
   }
 }
 
+our %itypesAutoconfigured;
+sub itemType {
+  my ($itype) = @_;
+
+  unless ($itypesAutoconfigured{$itype}) {
+    my $ary = C4::Context->dbh->selectall_arrayref(
+      'SELECT 1 FROM itemtypes WHERE itemtype = ?',
+      undef,
+      $itype
+    );
+    unless (ref($ary) eq 'ARRAY' && scalar(@$ary) > 0) {
+      C4::Context->dbh()->do("INSERT IGNORE INTO itemtypes (itemtype, description) ".
+                              "VALUE ('$itype','AUTO-$itype')");
+    }
+    $itypesAutoconfigured{$itype} = 1;
+  }
+}
+
+our %borcatAutoconfigured;
+sub borcat {
+  my ($borcat) = @_;
+
+  unless ($borcatAutoconfigured{$borcat}) {
+    my $ary = C4::Context->dbh->selectall_arrayref(
+      'SELECT 1 FROM categories WHERE categorycode = ?',
+      undef,
+      $borcat
+    );
+    unless (ref($ary) eq 'ARRAY' && scalar(@$ary) > 0) {
+      C4::Context->dbh()->do("INSERT IGNORE INTO categories (categorycode, description) ".
+                              "VALUE ('$borcat','AUTO-$borcat')");
+    }
+    $borcatAutoconfigured{$borcat} = 1;
+  }
+}
+
 sub addBranch {
   my ($branchcode) = @_;
   return C4::Context->dbh()->do("INSERT IGNORE INTO branches (branchcode, branchname) VALUE ('$branchcode','AUTO-$branchcode')");

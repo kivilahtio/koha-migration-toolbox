@@ -143,6 +143,7 @@ sub processRow {
 
     #Autoconfigure shelving locations
     Bulk::AutoConfigurer::shelvingLocation($item->{permanent_location}, $item->{location});
+    Bulk::AutoConfigurer::itemType($item->{itype});
 
     C4::Items::_set_defaults_for_add($item);
     C4::Items::_set_derived_columns_for_add($item);
