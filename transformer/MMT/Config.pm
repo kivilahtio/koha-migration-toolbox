@@ -56,6 +56,7 @@ sub importPipelineScript() {
   return $ENV{MMT_HOME}.'/secret/'.$config->{importPipelineScript};
 }
 sub kohaImportDir() {
+  mkdir $ENV{MMT_HOME}.'/KohaImports' unless (-e $ENV{MMT_HOME}.'/KohaImports');
   return $ENV{MMT_HOME}.'/KohaImports';
 }
 sub log4perlConfig() {
