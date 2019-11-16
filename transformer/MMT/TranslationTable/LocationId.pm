@@ -163,4 +163,18 @@ sub JNSKonsa_Muskari_drop_es($s, $kohaObject, $voyagerObject, $builder, $origina
   };
 }
 
+=head2 branchLoc_add_note
+
+Preserve the original location in a private item note
+
+=cut
+
+sub branchLoc_add_note($s, $kohaObject, $prettyObject, $builder, $originalValue, $tableParams, $transParams) {
+  my $locations = $builder->{Location}->get($prettyObject->{Id_Location});
+  $log->warn($kohaObject->logId().": Missing PrettyLib location matching the Location_Id '".$prettyObject->{Id_Location}."'.") unless $locations && $locations[0];
+
+  $kohaObject->concatenate("Vanha Pretty sijainti '".$locations[0]."'", 'itemnotes_nonpublic', '|');
+  return branchLoc(@_);
+}
+
 return 1;

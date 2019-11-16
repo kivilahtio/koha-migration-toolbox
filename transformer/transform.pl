@@ -156,6 +156,8 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
             {name => 'Documents', file => 'Document.csv', keys => ['Id_Title']},
             {name => 'Authors', file => 'Author.csv', keys => ['Id']},
             {name => 'AuthorCross', file => 'AuthorCross.csv', keys => ['Id_Title']},
+            {name => 'CircleStorage', file => 'CircleStorage.csv', keys => ['Id_Title']}, # One title can have many serial holdings entries
+            {name => 'Class', file => 'Class.csv', keys => ['Id']},
             {name => 'Class', file => 'Class.csv', keys => ['Id']},
             {name => 'ClassCross', file => 'ClassCross.csv', keys => ['Id_Title']},
             {name => 'Subjects', file => 'Subject.csv', keys => ['Id']},
@@ -235,9 +237,10 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
         $conf = {
           inputFile => 'Item.csv',
           repositories => [
-            {name => 'LoanByItem', file => 'Loan.csv',  keys => ['Id_Item']},
-            {name => 'Shelf',      file => 'Shelf.csv', keys => ['Id']},
-            {name => 'Title',      file => 'Title.csv', keys => ['Id']},
+            {name => 'LoanByItem', file => 'Loan.csv',     keys => ['Id_Item']},
+            {name => 'Location',   file => 'Location.csv', keys => ['Id']},
+            {name => 'Shelf',      file => 'Shelf.csv',    keys => ['Id']},
+            {name => 'Title',      file => 'Title.csv',    keys => ['Id']},
             {name => 'Suppliers',  file => 'Supplier.csv', keys => ['Id']},
           ],
           translationTables => [

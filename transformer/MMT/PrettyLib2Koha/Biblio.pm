@@ -49,7 +49,7 @@ sub build($s, $o, $b) {
   my %leader;
 
   $s->{record}->addUnrepeatableSubfield('003', '0', MMT::Config::organizationISILCode()); # Set the cataloguing organization code
-  $s->{record}->addUnrepeatableSubfield('040', 'a', MMT::Config::organizationISILCode());
+  $s->{record}->addUnrepeatableSubfield('040', 'c', MMT::Config::organizationISILCode());
 
   $s->{record}->modTime($o->{UpdateDate} || $o->{SaveDate}); # Set 005
 
@@ -94,6 +94,7 @@ sub mergeLinks($s, $o, $b) {
   linkSeries(@_);
   linkSubjects(@_);
   linkTitleExtension(@_) unless (ref($s) eq 'MMT::PrettyCirc2Koha::Biblio');
+  linkSerialHoldings(@_) if     (ref($s) eq 'MMT::PrettyCirc2Koha::Biblio');
 }
 
 sub logId($s) {
