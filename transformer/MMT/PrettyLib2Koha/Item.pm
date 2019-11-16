@@ -338,6 +338,10 @@ my %statusMap = (
   15 => 'Tilaus peruttu',
   16 => 'Tiedustelu',
 );
+my %circStatusMap = ( # Item.CircStatus -column
+  0 => 'Passive',
+  2 => 'Active',
+);
 sub setStatuses($s, $o, $b) {
   my $S = $o->{Status};
 
@@ -391,6 +395,12 @@ sub setStatuses($s, $o, $b) {
 
   else {
     $log->error($s->logId." - Unhandled status '$statusMap{$S}'");
+  }
+
+
+  if (ref($s) eq 'MMT::PrettyCirc2Koha::Item') {
+    $S = $o->{CircStatus};
+    if ($S == 0) { $s->{withdrawn} = 1 } # TODO: Passive PrettyCirc Items are flagged temporarily. Figure what to do with them.
   }
 }
 
