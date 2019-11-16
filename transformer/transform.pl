@@ -254,7 +254,9 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
         $conf = {
           inputFile => 'Item.csv',
           repositories => [
+            {name => 'CircleStorage', file => 'CircleStorage.csv', keys => ['Id_Title']}, # One title can have many serial holdings entries
             {name => 'LoanByItem', file => 'Loan.csv',  keys => ['Id_Item']},
+            {name => 'Location',   file => 'Location.csv', keys => ['Id']},
             {name => 'Shelf',      file => 'Shelf.csv', keys => ['Id']},
             {name => 'Title',      file => 'Title.csv', keys => ['Id']},
             {name => 'Suppliers',  file => 'Supplier.csv', keys => ['Id']},

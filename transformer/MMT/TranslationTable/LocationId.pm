@@ -12,6 +12,8 @@ use MMT::ATranslationTable;
 use base qw(MMT::ATranslationTable);
 
 #Exceptions
+use MMT::Exception::Delete;
+use MMT::Exception::Delete::Silently;
 
 =head1 NAME
 
@@ -170,10 +172,22 @@ Preserve the original location in a private item note
 =cut
 
 sub branchLoc_add_note($s, $kohaObject, $prettyObject, $builder, $originalValue, $tableParams, $transParams) {
-  my $locations = $builder->{Location}->get($prettyObject->{Id_Location});
-  $log->warn($kohaObject->logId().": Missing PrettyLib location matching the Location_Id '".$prettyObject->{Id_Location}."'.") unless $locations && $locations[0];
+  if (ref($kohaObject) eq 'MMT::PrettyLib2Koha::Item') {
+    my $locations = $builder->{Location}->get($prettyObject->{Id_Location});
+    my $oldLoc = ($locations && $locations->[0]) ? $locations->[0]->{Location} : $prettyObject->{Id_Location};
+    $kohaObject->concatenate("PrettyLib sijainti '$oldLoc'", 'itemnotes_nonpublic', '|');
+  }
+  elsif (ref($kohaObject) eq 'MMT::PrettyCirc2Koha::Item') {
+    if (my $holdings = $builder->{CircleStorage}->get($prettyObject->{Id_Title})) {
+      my $h = $holdings->[0];
+      my $oldLoc = $h->{Notes};
+      $kohaObject->concatenate("PrettyCirc sijainti '$oldLoc'", 'itemnotes_nonpublic', '|');
+    }
+  }
+  else {
+    MMT::Exception::Delete->throw($kohaObject->logId().' - Unknown Item class, cannot decide if it is coming from PrettyLib or PrettyCirc');
+  }
 
-  $kohaObject->concatenate("Vanha Pretty sijainti '".$locations[0]."'", 'itemnotes_nonpublic', '|');
   return branchLoc(@_);
 }
 

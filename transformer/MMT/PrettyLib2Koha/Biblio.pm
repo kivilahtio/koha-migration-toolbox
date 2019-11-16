@@ -6,6 +6,8 @@ use MMT::Pragmas;
 
 #Local modules
 use MMT::MARC::Record;
+use MMT::MARC::Field;
+use MMT::MARC::Subfield;
 use MMT::PrettyLib2Koha::Biblio::MaterialTypeRepair;
 use MMT::Validator;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
@@ -495,6 +497,33 @@ sub linkTitleExtension($s, $o, $b) {
         $tex->{strValue},
       );
       $log->debug($s->logId." - Linked TitleExtension Field '".$tex->{iMarc}."\$".$tex->{strSubField}."' = '".$tex->{strValue}."'") if $log->is_debug();
+    }
+  }
+}
+
+=head2 linkSerialHoldings
+
+PrettyCirc.CircleStorage contains MARC21 Holdings records for serials storage needs
+
+=cut
+
+sub linkSerialHoldings($s, $o, $b) {
+  if (my $holdings = $b->{CircleStorage}->get($o->{Id})) {
+    for my $h (@$holdings) {
+      # Textual holdings follow the ANSI/NISO Z39.71 or ISO 10324 standard
+      my @textualHoldings = ();
+      push(@textualHoldings, $h->{PeriodVol}) if $h->{PeriodVol};
+      push(@textualHoldings, '('.$h->{PeriodYear}.')') if $h->{PeriodYear};
+
+      my @sfs = (MMT::MARC::Subfield->new('a', join(' ', @textualHoldings)));
+      push(@sfs, MMT::MARC::Subfield->new('z', $h->{PeriodNumber})) if $h->{PeriodNumber};
+      push(@sfs, MMT::MARC::Subfield->new('x', $h->{Notes})) if $h->{Notes};
+
+      $s->{record}->addField(
+        MMT::MARC::Field->new('866', '3', '1', \@sfs)
+      );
+
+      $log->debug($s->logId." - Linked Serial holdings '".join(' | ', map {$_->code().':'.$_->content()} @sfs)."'") if $log->is_debug();
     }
   }
 }

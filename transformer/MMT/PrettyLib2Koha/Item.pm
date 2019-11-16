@@ -56,7 +56,7 @@ sub build($self, $o, $b) {
   $self->set(Id_Location          => 'permanent_location', $o, $b);
   #  \$self->setCcode                                         ($o, $b);
   $self->set(Id_Location          => 'location',           $o, $b);
-  $self->set(Id_Location          => 'sub_location',       $o, $b);
+  #$self->set(Id_Location          => 'sub_location',       $o, $b);
   #$self->set(???                  => 'enumchron',          $o, $b);
   #$self->set(? => datereceived, $o, $b);
   $self->set(Id_Supplier          => 'booksellerid',       $o, $b);
@@ -223,9 +223,28 @@ sub setHoldingbranch($s, $o, $b) {
   $s->{holdingbranch} = $s->{homebranch};
 }
 sub setPermanent_location($s, $o, $b) {
-  my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{Id_Location});
-  $s->{permanent_location} = $branchcodeLocation->{location};
-  $s->{ccode} = $branchcodeLocation->{collectionCode} if $branchcodeLocation->{collectionCode};
+  if (ref($s) eq 'MMT::PrettyLib2Koha::Item') {
+    my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{Id_Location});
+    $s->{permanent_location} = $branchcodeLocation->{location};
+    $s->{ccode} = $branchcodeLocation->{collectionCode} if $branchcodeLocation->{collectionCode};
+    $s->{sub_location} = $branchcodeLocation->{sub_location} if $branchcodeLocation->{sub_location};
+  }
+  elsif (ref($s) eq 'MMT::PrettyCirc2Koha::Item') {
+    # In PrettyCirc the location might be in the CircleStorage (Holdings) -table's Notes-column
+    if (my $holdings = $b->{CircleStorage}->get($o->{Id_Title})) {
+      my $h = $holdings->[0];
+      my $branchcodeLocation = $b->{LocationId}->translate(@_, $h->{Notes});
+      if ($branchcodeLocation->{location} eq 'KONVERSIO') {
+        $log->warn("PrettyCirc subscription location '".$h->{Notes}."' is not found in the PrettyLib locations lists.")
+      }
+      $s->{permanent_location} = 'CIRC-'.($branchcodeLocation->{location} || '');
+      $s->{ccode} = $branchcodeLocation->{collectionCode} if $branchcodeLocation->{collectionCode};
+      $s->{sub_location} = $branchcodeLocation->{sub_location} if $branchcodeLocation->{sub_location};
+    }
+  }
+  else {
+    MMT::Exception::Delete->throw($s->logId().' - Unknown Item class, cannot decide if it is coming from PrettyLib or PrettyCirc');    
+  }
 
   unless ($s->{permanent_location}) {
     MMT::Exception::Delete->throw($s->logId().' - Missing Id_Location|permanent_location! Set a translation table default!');
@@ -234,10 +253,10 @@ sub setPermanent_location($s, $o, $b) {
 sub setLocation($s, $o, $b) {
   $s->{location} = $s->{permanent_location};
 }
-sub setSub_location($s, $o, $b) {
-  my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{Id_Location});
-  $s->{sub_location} = $branchcodeLocation->{sub_location} if $branchcodeLocation->{sub_location};
-}
+#sub setSub_location($s, $o, $b) {
+#  my $branchcodeLocation = $b->{LocationId}->translate(@_, $o->{Id_Location});
+#  $s->{sub_location} = $branchcodeLocation->{sub_location} if $branchcodeLocation->{sub_location};
+#}
 sub setItype($s, $o, $b) {
   $s->{itype} = MMT::PrettyLib2Koha::Biblio::getItemType(@_);
 

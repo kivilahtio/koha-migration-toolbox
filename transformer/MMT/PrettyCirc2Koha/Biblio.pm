@@ -22,11 +22,11 @@ MMT::PrettyLib2Koha::Biblio - Transform biblios
 
 =cut
 
-sub mergeLinks($s, $o, $b) {
-  $s->linkDocuments($o, $b);
-  $s->linkPublishers($o, $b);
-  $s->linkSubjects($o, $b);
+#sub mergeLinks($s, $o, $b) {
+#  $s->linkDocuments($o, $b);
+#  $s->linkPublishers($o, $b);
+#  $s->linkSubjects($o, $b);
   #TODO: Actually the PrettyCirc database has all the linked bibilio tables as the PrettyLib -database.
-}
+#}
 
 return 1;
