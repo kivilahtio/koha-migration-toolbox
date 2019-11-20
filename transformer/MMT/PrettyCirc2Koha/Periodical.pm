@@ -75,7 +75,7 @@ sub setBiblionumber($s, $o, $b) {
 }
 
 sub setSubscriptionid($s, $o, $b) {
-  $s->{subscriptionid} = $s->{biblionumber};
+  $s->{subscriptionid} = $o->{Id_Item};  # In PrettyCirc the Item is the subscription.
 }
 
 sub setItemnumber($s, $o, $b) { #This is used to populate the koha.serialitems -link

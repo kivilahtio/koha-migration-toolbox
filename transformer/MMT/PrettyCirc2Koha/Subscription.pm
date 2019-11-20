@@ -2,6 +2,8 @@ package MMT::PrettyCirc2Koha::Subscription;
 
 use MMT::Pragmas;
 
+use DateTime;
+
 #External modules
 
 #Local modules
@@ -42,9 +44,9 @@ sub analyzePeriodicals($b) {
 }
 
 sub createFillerSubscriptions($b) {
-  while (my ($biblionumber, $s) = each(%subscriptions)) {
+  while (my ($itemnumber, $s) = each(%subscriptions)) {
     build($s, {}, $b);
-    $log->debug("Writing ".$s->{biblionumber}) if $log->is_debug();
+    $log->debug("Writing ".$s->{itemnumber}) if $log->is_debug();
     $b->writeToDisk( $s->serialize() );
   }
 }
@@ -68,8 +70,8 @@ sub analyzePeriodical($o, $b) {
   #Sanitate dates
   $o->{PeriodDate} = MMT::Validator::parseDate($o->{PeriodDate}) if $o->{PeriodDate};
 
-  $subscriptions{$biblionumber} = bless({biblionumber => $biblionumber, itemnumber => $o->{Id_Item}, subscriptionid => $biblionumber}, 'MMT::PrettyCirc2Koha::Subscription') unless $subscriptions{$biblionumber};
-  my $s = $subscriptions{$biblionumber};
+  $subscriptions{$o->{Id_Item}} = bless({biblionumber => $biblionumber, itemnumber => $o->{Id_Item}, subscriptionid => $o->{Id_Item}}, 'MMT::PrettyCirc2Koha::Subscription') unless $subscriptions{$o->{Id_Item}};
+  my $s = $subscriptions{$o->{Id_Item}};
 
   # look for the lowest start date
   $s->{startdate} = '2100-01-01' unless $s->{startdate}; #Seed this value high, so pretty much any real value will be less than this starting date
@@ -140,7 +142,7 @@ sub build($self, $o, $b) {
 }
 
 sub id {
-  return $_[0]->{biblionumber};
+  return $_[0]->{itemnumber};
 }
 
 sub logId($s) {
@@ -173,15 +175,16 @@ sub setSerialsadditems($s, $o, $b) {
   $s->{serialsadditems} = 0;
 }
 sub setStaffdisplaycount($s, $o, $b) {
-  $s->{staffdisplaycount} = 52;
+  $s->{staffdisplaycount} = 300;
 }
 sub setOpacdisplaycount($s, $o, $b) {
-  $s->{opacdisplaycount} = 52;
+  $s->{opacdisplaycount} = 300;
 }
+my $endDate = DateTime->now()->ymd('-');
 sub setEnddate($s, $o, $b) {
   unless ($s->{enddate}) {
     #Voyager seems to have so very few component_pattern.end_date -values that it is better to default it
-    $s->{enddate} = '2018-12-31';
+    $s->{enddate} = $endDate;
   }
 }
 sub setClosed($s, $o, $b) {
