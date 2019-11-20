@@ -200,7 +200,7 @@ TRUNCATE subscription;
 --TRUNCATE subscription_frequencies;
 --TRUNCATE subscription_numberpatterns;
 --TRUNCATE subscriptionhistory;
---TRUNCATE subscriptionroutinglist;
+TRUNCATE subscriptionroutinglist;
 TRUNCATE suggestions;
 --TRUNCATE systempreferences;
 TRUNCATE tags;

@@ -15,20 +15,28 @@ use C4::Context;
 use Bulk::ConversionTable::SubscriptionidConversionTable;
 use Bulk::ConversionTable::BiblionumberConversionTable;
 use Bulk::ConversionTable::ItemnumberConversionTable;
+use Bulk::ConversionTable::BorrowernumberConversionTable;
 
-my ($subscriptionFile, $serialFile);
 our $verbosity = 3;
-my $subscriptionidConversionTableFile = 'subscriptionidConversionTable';
 my $subscriptionidConversionTable;
-my $biblionumberConversionTable = 'biblionumberConversionTable';
-my $itemnumberConversionTable = 'itemnumberConversionTable';
+my %args = (subscriptionfile =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Subscription.migrateme',
+            serialFile       =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Serial.migrateme',
+            routinglistFile  =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Subscriptionroutinglist.migrateme',
+            preserveIds      =>                   $ENV{MMT_PRESERVE_IDS} // 0,
+            subscriptionidConversionTableFile => ($ENV{MMT_WORKING_DIR}//'.').'/subscriptionidConversionTable',
+            biblionumberConversionTable       => ($ENV{MMT_WORKING_DIR}//'.').'/biblionumberConversionTable',
+            itemnumberConversionTable         => ($ENV{MMT_WORKING_DIR}//'.').'/itemnumberConversionTable',
+            borrowernumberConversionTable     => ($ENV{MMT_WORKING_DIR}//'.').'/borrowernumberConversionTable',
+);
+
 
 GetOptions(
-    'subscriptionFile:s'       => \$subscriptionFile,
-    'serialFile:s'             => \$serialFile,
-    'suConversionTable:s'      => \$subscriptionidConversionTableFile,
-    'b|bnConversionTable:s'    => \$biblionumberConversionTable,
-    'i|inConversionTable:s'    => \$itemnumberConversionTable,
+    'subscriptionFile:s'       => \$args{subscriptionFile},
+    'serialFile:s'             => \$args{serialFile},
+    'routinglistFile:s'        => \$args{routinglistFile},
+    'suConversionTable:s'      => \$args{subscriptionidConversionTableFile},
+    'b|bnConversionTable:s'    => \$args{biblionumberConversionTable},
+    'i|inConversionTable:s'    => \$args{itemnumberConversionTable},
     'v|verbosity:i'            => \$verbosity,
 );
 
@@ -38,11 +46,14 @@ NAME
   $0 - Import Subscriptions and Serials en masse
 
 SYNOPSIS
-  perl bulkSubscriptionImport.pl --subscriptionFile /home/koha/pielinen/subs.migrateme \
-    --serialFile /file/path.csv -v $verbosity \
-    --suConversionTable $subscriptionidConversionTableFile \
-    --bnConversionTable $biblionumberConversionTable \
-    --inConversionTable $itemnumberConversionTable
+  perl bulkSubscriptionImport.pl \
+    --subscriptionFile $args{subscriptionidConversionTableFile} \
+    --serialFile $args{serialFile} \
+    --routinglistFile $args{routinglistFile} \
+    -v $verbosity \
+    --suConversionTable $args{subscriptionidConversionTableFile} \
+    --bnConversionTable $args{biblionumberConversionTable} \
+    --inConversionTable $args{itemnumberConversionTable}
 
 
 DESCRIPTION
@@ -53,16 +64,19 @@ DESCRIPTION
     --serialFile filepath
           The perl-serialized HASH of Serials.
 
+    --routinglistFile filepath
+          The perl-serialized HASH of Subscriptionroutinglist.
+
     --suConversionTable filePath
-          Defaults to $subscriptionidConversionTableFile
+          Defaults to $args{subscriptionidConversionTableFile}
           Where to write the converted subscriptionids.
 
     --bnConversionTable filePath
-          Defaults to $biblionumberConversionTable
+          Defaults to $args{biblionumberConversionTable}
           Where to get the converted biblionumbers.
 
     --inConversionTable filePath
-          Defaults to $itemnumberConversionTable
+          Defaults to $args{itemnumberConversionTable}
           Where to get the converted itemnumbers.
 
     -v level
@@ -127,6 +141,16 @@ sub migrate_serialitems($s) {
     };
 }
 
+my $srl_insert_sth = $dbh->prepare("INSERT INTO subscriptionroutinglist
+                                      (borrowernumber, ranking, subscriptionid)
+                                      VALUES (?,?,?)");
+sub migrate_srl($s) {
+    eval {
+        $srl_insert_sth->execute($s->{borrowernumber},$s->{ranking},$s->{subscriptionid})
+          or die "INSERT:ing SRL failed: ".$srl_insert_sth->errstr();
+    };
+}
+
 sub validateAndConvertSubscriptionKeys($s) {
     my $errId = "Subscription sub='".$s->{subscriptionid}."', bib='".$s->{biblionumber}."'";
 
@@ -164,6 +188,25 @@ sub validateAndConvertSerialKeys($s) {
     }
 
     $s->{biblionumber} = $newBiblionumber;
+    $s->{subscriptionid} = $newSubscriptionid;
+    return $s;
+}
+
+sub validateAndConvertSRLKeys($s) {
+    my $errId = "SRL sub='".$s->{subscriptionid}."', bor='".$s->{borrowernumber}."'";
+
+    my $newSubscriptionid = $subscriptionidConversionTable->fetch($s->{subscriptionid});
+    unless ($newSubscriptionid) {
+        WARN "$errId has no new subscriptionid in the subscriptionidConversionTable!";
+        return undef;
+    }
+    my $newBorrowernumber = $borrowernumberConversionTable->fetch($s->{borrowernumber});
+    unless ($newBorrowernumber) {
+        WARN "$errId has no new borrowernumber in the borrowernumberConversionTable!";
+        return undef;
+    }
+
+    $s->{borrowernumber} = $newBorrowernumber;
     $s->{subscriptionid} = $newSubscriptionid;
     return $s;
 }
@@ -209,5 +252,21 @@ while (<$fh>) {
     my $serial = Bulk::Util::newFromBlessedMigratemeRow($_);
     next unless validateAndConvertSerialKeys($serial);
     migrate_serial($serial);
+}
+$fh->close();
+
+
+
+INFO "Opening BorrowernumberConversionTable '$borrowernumberConversionTable' for reading";
+$borrowernumberConversionTable = Bulk::ConversionTable::BorrowernumberConversionTable->new($borrowernumberConversionTable, 'read');
+$fh = Bulk::Util::openFile($routinglistFile);
+$i = 0;
+while (<$fh>) {
+    $i++;
+    INFO "Processed $i Subscriptionroutinglists" if ($i % 1000 == 0);
+
+    my $srl = Bulk::Util::newFromBlessedMigratemeRow($_);
+    next unless validateAndConvertSRLKeys($srl);
+    migrate_srl($srl);
 }
 $fh->close();

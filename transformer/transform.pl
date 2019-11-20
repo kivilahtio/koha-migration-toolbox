@@ -502,6 +502,30 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
   },
 
 
+  '--routinglists' => {
+    help => 'Transform Circle from PrettyCirc extracts to Koha.subscriptionroutinglist',
+    callback => sub {
+      my $confBase = {
+        outputFile => 'Subscriptionroutinglist.migrateme',
+      };
+      my $conf;
+
+      if (MMT::Config->sourceSystemType eq 'PrettyCirc') {
+        $conf = {
+          type => 'Circle',
+          inputFile => 'Circle.csv',
+          repositories => [
+            {name => "circleList", file => 'CircleList.csv', keys => ['Id_Item']},
+          ],
+          translationTables => [],
+        };
+      }
+
+      build($confBase, $conf);
+    },
+  },
+
+
   '--branchtransfers' => {
     help => 'Transform scattered data from Voyager extracts to Koha branchtransfers',
     callback => sub {

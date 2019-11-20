@@ -145,6 +145,7 @@ function migrateBulkScripts {
     ./bulkSubscriptionImport.pl \
         --subscriptionFile $DATA_SOURCE_DIR/Subscription.migrateme \
         --serialFile $DATA_SOURCE_DIR/Serial.migrateme \
+        --routinglistFile $DATA_SOURCE_DIR/Subscriptionroutinglist.migrateme \
         --suConversionTable $WORKING_DIR/subscriptionidConversionTable \
         --bnConversionTable $WORKING_DIR/biblionumberConversionTable \
         --inConversionTable $WORKING_DIR/itemnumberConversionTable \
