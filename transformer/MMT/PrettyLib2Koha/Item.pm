@@ -185,11 +185,11 @@ sub setItemcallnumber($s, $o, $b) {
   my $shelves = $b->{Shelf}->get($o->{Id_Shelf});
   if ($shelves) {
     my $plShelfFilter = MMT::Config::pl_shelf_filter();
-    if ($plShelfFilter && not($shelves->[0]->{Class} =~ /$plShelfFilter/)) {
-      $s->{itemcallnumber} = $shelves->[0]->{Class};
+    if ($plShelfFilter && $shelves->[0]->{Class} =~ /$plShelfFilter/) {
+      $log->debug($s->logId()." itemcallnumber '".$shelves->[0]->{Class}."' filtered. Id_Shelf=".$o->{Id_Shelf});
     }
     else {
-      $log->debug($s->logId()." itemcallnumber '".$shelves->[0]->{Class}."' filtered. Id_Shelf=".$o->{Id_Shelf});
+      $s->{itemcallnumber} = $shelves->[0]->{Class};
     }
   }
 
