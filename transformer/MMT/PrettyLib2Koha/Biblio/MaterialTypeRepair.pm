@@ -41,7 +41,7 @@ sub AT { # ATK-tallenne
 sub CD { # CD-äänilevy
     $leader = '     njm a22     zu 4500';
     $f007   = 'sd f||g|||m|||';
-    $f008   = '      s||||    xxu||nn  ||||||   | eng c';
+    $f008   = '      s||||    xxu||nn  ||||||   | fin c';
 }
 sub DI { # Dia
     $leader = '     ngm a22     zu 4500';
@@ -70,6 +70,9 @@ sub KA { # Kausijulkaisu/Sarjajulkaisu
     $leader = '     nas a22     zu 4500';
     $f008   = '191104b        xxu||||| |||| 00| 0 fin d';
 	$componentPart = 's';
+}
+sub KN { # Kansio
+    KI()
 }
 sub KI { # Kirja
     $leader = '     nam a22     zu 4500';
@@ -125,16 +128,22 @@ sub forceControlFields {
     ($leader, $f007, $f008, $componentPart) = (undef, undef, undef, 'a');
 
     if    ($itemType eq 'KI') { KI() } # PrettyLib 0 => KI
-    elsif ($itemType eq 'CD') { SR() } # PrettyLib 1 => CD
     elsif ($itemType eq 'NU') { NU() } # PrettyLib 2 => NU
     elsif ($itemType eq 'KA') { KA() } # PrettyLib 3 => KA
     elsif ($itemType eq 'ES') { ES() } # PrettyLib 8 => ES
     elsif ($itemType eq 'DV') { DV() } # PrettyLib ? => DV
-    elsif ($itemType eq 'KN') { KI() } # PrettyLib ? => KI # Kansio to Book
-    elsif ($itemType eq 'OP') { KI() } # PrettyLib ? => KI # Opinnäytetyö to Book
     else {
-        $log->warn($s->logId()." Unknown itemtype '$itemType' to force control fields and leader. Defaulting to KI");
-        KI();
+        eval {
+            no strict 'refs';
+            &{__PACKAGE__."::$itemType"}();
+        };
+        if ($@ && $@ =~ /Undefined subroutine/) {
+            $log->warn($s->logId()." Unknown itemtype '$itemType' to force control fields and leader. Defaulting to KI");
+            KI();
+        }
+        elsif($@) {
+            die $@;
+        }
     }
 
     # Set the publication date to 008

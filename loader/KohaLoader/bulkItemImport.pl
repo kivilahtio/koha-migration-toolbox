@@ -142,6 +142,7 @@ sub processRow {
 
 
     #Autoconfigure shelving locations
+    Bulk::AutoConfigurer::addBranch($item->{homebranch}, $item->{holdingbranch});
     Bulk::AutoConfigurer::shelvingLocation($item->{permanent_location}, $item->{location});
     Bulk::AutoConfigurer::itemType($item->{itype});
 
