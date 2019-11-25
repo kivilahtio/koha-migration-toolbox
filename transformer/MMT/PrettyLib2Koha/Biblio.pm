@@ -284,6 +284,7 @@ sub linkClasses($s, $o, $builder) {
           #Classify based on the class classifier rules
           my ($classifiedOk, $field);
           for my $classifier (@{MMT::Config::pl_class_classifiers()}) {
+            last if $classifiedOk;
             if ($class->{Class} =~ /$classifier->{regexp}/) {
               $classifiedOk = 1;
               $log->trace($s->logId()." - Classifier '".$classifier->{regexp}."' matches '".$class->{Class}."'.") if $log->is_trace();
