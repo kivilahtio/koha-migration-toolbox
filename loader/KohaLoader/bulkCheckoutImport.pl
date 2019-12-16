@@ -13,6 +13,7 @@ use C4::Items;
 use C4::Members;
 use Bulk::ConversionTable::ItemnumberConversionTable;
 use Bulk::ConversionTable::BorrowernumberConversionTable;
+use Bulk::Util;
 
 my $importFile = '';
 our $verbosity = 3;
@@ -82,6 +83,13 @@ package C4::Items {
   use warnings 'redefine';
 }
 
+
+
+## Get the id from where we start adding old issues. It is the biggest issue_id in use. It is important the issue_ids don't overlap.
+$old_issue_id = Bulk::Util::getMaxIssueId($dbh);
+
+
+
 my $fh = Bulk::Util::openFile($importFile);
 INFO "Opening BorrowernumberConversionTable '$borrowernumberConversionTable' for reading";
 $borrowernumberConversionTable = Bulk::ConversionTable::BorrowernumberConversionTable->new($borrowernumberConversionTable, 'read');
@@ -91,12 +99,13 @@ $itemnumberConversionTable =     Bulk::ConversionTable::ItemnumberConversionTabl
 my $dbh = C4::Context->dbh;
 my $checkoutStatement = $dbh->prepare(
     "INSERT INTO issues
-        (borrowernumber, itemnumber, issuedate, date_due, branchcode, renewals)
-    VALUES (?,?,?,?,?,?)"
+        (issue_id, borrowernumber, itemnumber, issuedate, date_due, branchcode, renewals)
+    VALUES (?,?,?,?,?,?,?)"
 );
 
 sub migrate_checkout($c) {
     $checkoutStatement->execute(
+        $old_issue_id++,
         $c->{borrowernumber},      # borrowernumber
         $c->{itemnumber},          # itemnumber
         $c->{issuedate},           # issuedate

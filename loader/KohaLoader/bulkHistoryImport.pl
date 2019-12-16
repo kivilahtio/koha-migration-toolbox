@@ -157,12 +157,7 @@ my $statisticsStatement =
 
 
 ## Get the id from where we start adding old issues. It is the biggest issue_id in use. It is important the issue_ids don't overlap.
-my $old_issue_id = $dbh->selectrow_array("SELECT MAX(issue_id) FROM old_issues");
-$old_issue_id = 1 unless $old_issue_id;
-my $issue_id     = $dbh->selectrow_array("SELECT MAX(issue_id) FROM issues");
-$issue_id = 1 unless $issue_id;
-$old_issue_id = ($old_issue_id > $issue_id) ? $old_issue_id : $issue_id;
-$old_issue_id++;
+$old_issue_id = Bulk::Util::getMaxIssueId($dbh);
 
 
 
