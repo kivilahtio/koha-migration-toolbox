@@ -26,67 +26,72 @@ my ($leader, $f007, $f008, $componentPart) = (undef, undef, undef, 'a');
 sub AA { # Äänikirja
     $leader = '     nim a22     zu 4500';
     $f007   = 'sd f||g|||m|||';
-    $f008   = '||||||s||||    fi ||||| ||||||f  | fin||';
+    $f008   = '||||||n||||    fi ||||| ||||||f  |    ||';
 }
 sub AR { # Artikkeli
     $leader = '     naa a22     zu 4500';
     $f007   = 'ta';
-    $f008   = '||||||s||||    xxd|||||||||| ||||||   ||';
+    $f008   = '||||||n||||    xxd|||||||||| ||||||   ||';
 }
 sub AT { # ATK-tallenne
     $leader = '     nmm a22     zu 4500';
     $f007   = 'cd ||||||||';
-    $f008   = '||||||s||||    fi |||||||||| ||||f|fin||';
+    $f008   = '||||||n||||    fi |||||||||| ||||f|   ||';
 }
 sub CD { # CD-äänilevy
     $leader = '     njm a22     zu 4500';
     $f007   = 'sd f||g|||m|||';
-    $f008   = '      s||||    xxu||nn  ||||||   | fin |';
+    $f008   = '      n||||    xxu||nn  ||||||   |     |';
 }
 sub DI { # Dia
     $leader = '     ngm a22     zu 4500';
     $f007   = 'g| ||||||';
-    $f008   = '      s        fi |||       |    d|fin||';
+    $f008   = '      n        fi |||       |    d|   ||';
 }
 sub DV { # DVD, videotallenne
     $leader = '     ngm a22     zu 4500';
     $f007   = 'vd cvaiz|';
-    $f008   = '      s        fi |||       |    v|fin||';
+    $f008   = '      n        fi |||       |    v|   ||';
 }
 sub EA { # Elektroninen aineisto
     EK()
 }
+sub EJ { # Elektroninen kausijulkaisu
+    $leader = '     nas a22     zu 4500';
+    $f007   = 'cr#|||||||||||';
+    $f008   = '      n        xxu|||||o|||| |###|     |';
+}
 sub EK { # E-Kirja
     $leader = '     nam a22     zu 4500';
     $f007   = 'cr |||||||||||';
-    $f008   = '      s           |||| o    |||| ||   ||';
+    $f008   = '      n           |||| o    |||| ||   ||';
 }
 sub ES { # Esine
     $leader = '     nrm a22     zu 4500';
     $f007   = 'z|';
-    $f008   = '      b        xxd||||| |||| 00| 0    ||';
+    $f008   = '      n        xxd||||| |||| 00| 0    ||';
 }
 sub KA { # Kausijulkaisu/Sarjajulkaisu
     $leader = '     nas a22     zu 4500';
-    $f008   = '191104b        xxu||||| |||| 00| 0 fin |';
-	$componentPart = 's';
+    $f008   = '      n        xxu||||| |||| 00| 0     |';
+    $componentPart = 's';
 }
 sub KN { # Kansio
     KI()
 }
 sub KI { # Kirja
     $leader = '     nam a22     zu 4500';
-    $f008   = '||||||s||||    fi |||||||||| ||||||fin||';
+    $f008   = '||||||n||||    fi |||||||||| ||||||   ||';
 }
 sub KR { # Kartta
     $leader = '     nem a22     zu 4500';
     $f007   = 'a| ca|||';
-    $f008   = '      s           ||||| |||| 00|       |';
+    $f008   = '      n           ||||| |||| 00|       |';
 }
 sub LA { # Lautapeli
     $leader = '     nrm a22     zu 4500';
     $f007   = 'zu';
-    $f008   = '      s        fi ||| |      |   g|fin||';
+    $f008   = '      n        fi ||| |      |   g|   ||';
 }
 sub MO {
     KI()
@@ -94,12 +99,12 @@ sub MO {
 sub MV { # Moniviestin
     $leader = '     nom a22     zu 4500';
     $f007   = 'ou';
-    $f008   = '||||||s||||    xxd|||       |    b||||||';
+    $f008   = '||||||n||||    xxd|||       |    b||||||';
 }
 sub NU { # Nuotti
     $leader = '     ncm a22     zu 4500';
     $f007   = 'qu';
-    $f008   = '||||||s||||    fi ||||||||||||||||||||||';
+    $f008   = '||||||n||||    fi ||||||||||||||||||||||';
 };
 sub OP { # Opinnäytetyö
     KI()
@@ -110,7 +115,7 @@ sub PP { # Pienpainate
 sub SR { # Äänite
     $leader = '     njm a22     zu 4500';
     $f007   = 'sd f||g|||m|||';
-    $f008   = '      s||||    xxu||nn  ||||||   | fin |';
+    $f008   = '      n||||    xxu||nn  ||||||   |     |';
 }
 sub ST { # Standardi
     KI()
@@ -118,7 +123,7 @@ sub ST { # Standardi
 sub VI { # Video (VHS)
     $leader = '     ngm a22     zu 4500';
     $f007   = 'vf |ba|||';
-    $f008   = '||||||s||||    xxd|||||||||| ||||v|   ||';
+    $f008   = '||||||n||||    xxd|||||||||| ||||v|   ||';
 }
 
 sub forceControlFields {

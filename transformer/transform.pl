@@ -134,6 +134,7 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
             {name => 'AuthorCross', file => 'AuthorCross.csv', keys => ['Id_Title']},
             {name => 'Class', file => 'Class.csv', keys => ['Id']},
             {name => 'ClassCross', file => 'ClassCross.csv', keys => ['Id_Title']},
+            {name => 'Location',   file => 'Location.csv', keys => ['Id']},
             {name => 'Subjects', file => 'Subject.csv', keys => ['Id']},
             {name => 'SubjectCross', file => 'SubjectCross.csv', keys => ['Id_Title']},
             {name => 'Publishers', file => 'Publisher.csv', keys => ['Id']},
@@ -145,6 +146,7 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
           ],
           translationTables => [
             {name => 'ItemTypes'},
+            {name => 'LocationId'},
           ],
         };
       }
@@ -160,6 +162,7 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
             {name => 'Class', file => 'Class.csv', keys => ['Id']},
             {name => 'Class', file => 'Class.csv', keys => ['Id']},
             {name => 'ClassCross', file => 'ClassCross.csv', keys => ['Id_Title']},
+            {name => 'Location',   file => 'Location.csv', keys => ['Id']},
             {name => 'Subjects', file => 'Subject.csv', keys => ['Id']},
             {name => 'SubjectCross', file => 'SubjectCross.csv', keys => ['Id_Title']},
             {name => 'Publishers', file => 'Publisher.csv', keys => ['Id']},
@@ -171,6 +174,7 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
           ],
           translationTables => [
             {name => 'ItemTypes'},
+            {name => 'LocationId'},
           ],
         };
       }

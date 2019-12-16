@@ -11,6 +11,7 @@ use MMT::MARC::Subfield;
 use MMT::PrettyLib2Koha::Biblio::MaterialTypeRepair;
 use MMT::Validator;
 use MMT::PrettyLib2Koha::Item;
+use MMT::PrettyCirc2Koha::Item;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
 #Inheritance
@@ -543,7 +544,7 @@ sub linkSerialHoldings($s, $o, $b) {
 
 sub getItemType($s, $o, $b) {
 
-  my ($titleType, $item);
+  my ($titleType, $item, $items);
   if (ref($s) =~ /Item/) {
     unless(defined($o->{Id_Title})) {
       die $s->logId()." - Missing 'biblionumber'?";
@@ -558,11 +559,18 @@ sub getItemType($s, $o, $b) {
     unless(defined($titleType)) {
       $log->warn($s->logId().' - Missing TitleType as bibliounmber="'.($o->{Id_Title} // $s->{biblionumber}).'"!');
     }
-    my $items = $b->{Items}->get($s->{biblionumber});
+    $items = $b->{Items}->get($s->{biblionumber});
     $item = $items->[0] if $items;
     #return undef unless $item;
   }
 
+  if ($items) {
+    $item = bless($item, 'MMT::PrettyLib2Koha::Item')  if (ref($s) eq 'MMT::PrettyLib2Koha::Biblio');
+    $item = bless($item, 'MMT::PrettyCirc2Koha::Item') if (ref($s) eq 'MMT::PrettyCirc2Koha::Biblio');
+    die "Unable to bless \$item as PrettyLib or PrettyCirc Item for Biblio '$s'!" unless blessed($item);
+    $item->setPermanent_location($items->[0], $b);
+    return $item->{itype} if ($item->{itype});
+  }
   return $b->{ItemTypes}->translate($s, $item, $b, $titleType); # Try to get the itemtype from the biblio or the item
 }
 
