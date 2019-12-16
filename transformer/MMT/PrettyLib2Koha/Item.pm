@@ -228,6 +228,9 @@ sub setPermanent_location($s, $o, $b) {
     $s->{permanent_location} = $branchcodeLocation->{location};
     $s->{ccode} = $branchcodeLocation->{collectionCode} if $branchcodeLocation->{collectionCode};
     $s->{sub_location} = $branchcodeLocation->{sub_location} if $branchcodeLocation->{sub_location};
+    $s->{itype} = $branchcodeLocation->{itemtype} if $branchcodeLocation->{itemtype};
+    $s->{homebranch} = $branchcodeLocation->{branch} if $branchcodeLocation->{branch};
+    $s->{holdingbranch} = $branchcodeLocation->{branch} if $branchcodeLocation->{branch};
   }
   elsif (ref($s) eq 'MMT::PrettyCirc2Koha::Item') {
     # In PrettyCirc the location might be in the CircleStorage (Holdings) -table's Notes-column
@@ -237,16 +240,23 @@ sub setPermanent_location($s, $o, $b) {
       if ($branchcodeLocation->{location} eq 'KONVERSIO') {
         $log->warn("PrettyCirc subscription location '".$h->{Notes}."' is not found in the PrettyLib locations lists.")
       }
-      $s->{permanent_location} = 'CIRC-'.($branchcodeLocation->{location} || '');
+      $s->{permanent_location} = ($branchcodeLocation->{location} || '');
+#      $s->{permanent_location} = 'CIRC-'.($branchcodeLocation->{location} || '');
       $s->{ccode} = $branchcodeLocation->{collectionCode} if $branchcodeLocation->{collectionCode};
       $s->{sub_location} = $branchcodeLocation->{sub_location} if $branchcodeLocation->{sub_location};
+      $s->{itype} = $branchcodeLocation->{itemtype} if $branchcodeLocation->{itemtype};
+      $s->{homebranch} = $branchcodeLocation->{branch} if $branchcodeLocation->{branch};
+      $s->{holdingbranch} = $branchcodeLocation->{branch} if $branchcodeLocation->{branch};
+    }
+    else {
+      $s->{permanent_location} = 'KONVERSIO';
     }
   }
   else {
     MMT::Exception::Delete->throw($s->logId().' - Unknown Item class, cannot decide if it is coming from PrettyLib or PrettyCirc');    
   }
 
-  unless ($s->{permanent_location}) {
+  unless (defined($s->{permanent_location})) { # It is possible to have an empty location in Koha
     MMT::Exception::Delete->throw($s->logId().' - Missing Id_Location|permanent_location! Set a translation table default!');
   }
 }
@@ -399,9 +409,16 @@ sub setStatuses($s, $o, $b) {
 
 
   if (ref($s) eq 'MMT::PrettyCirc2Koha::Item') {
-    $S = $o->{CircStatus};
-    if ($S == 0) { $s->{withdrawn} = 1 } # TODO: Passive PrettyCirc Items are flagged temporarily. Figure what to do with them.
+    $s->{withdrawn} = 1 if (_circIsPassive($o));
   }
+}
+
+# Used by Biblios to figure out if all of their items are passive, and thus can be deleted.
+sub _circIsPassive($o) {
+  MMT::Exception::Delete->throw("No CircStatus-key?")
+    unless exists($o->{CircStatus});
+  return 1 if ($o->{CircStatus} == 0);
+  return undef;
 }
 
 return 1;

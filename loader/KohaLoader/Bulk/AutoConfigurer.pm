@@ -78,11 +78,11 @@ sub borcat {
 our %branchAutoconfigured;
 sub addBranch {
   my ($homeBranch, $holdingBranch) = @_;
-  if ($branchAutoconfigured{$homeBranch}) {
+  unless ($branchAutoconfigured{$homeBranch}) {
     return C4::Context->dbh()->do("INSERT IGNORE INTO branches (branchcode, branchname) VALUE ('$homeBranch','AUTO-$homeBranch')");
     $branchAutoconfigured{$homeBranch} = 1;
   }
-  if ($branchAutoconfigured{$holdingBranch}) {
+  unless ($branchAutoconfigured{$holdingBranch}) {
     return C4::Context->dbh()->do("INSERT IGNORE INTO branches (branchcode, branchname) VALUE ('$holdingBranch','AUTO-$holdingBranch')");
     $branchAutoconfigured{$holdingBranch} = 1;
   }

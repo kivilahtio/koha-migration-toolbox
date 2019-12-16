@@ -18,13 +18,15 @@ use C4::Items;
 use C4::Members;
 use C4::Biblio;
 
-use ConversionTable::BorrowernumberConversionTable;
-use ConversionTable::ItemnumberConversionTable;
+use Bulk::ConversionTable::BorrowernumberConversionTable;
+use Bulk::ConversionTable::ItemnumberConversionTable;
 
-my ( $input_file, $number, $offset, $help) = (undef,0,0,undef);
-my $framework = '';
-my $borrowernumberConversionTable = 'borrowernumberConversionTable';
-my $itemnumberConversionTable = 'itemnumberConversionTable';
+use Bulk::Util;
+
+my $input_file = ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Statistics.migrateme';
+my ($number, $offset, $help) = (0,0,undef);
+my $borrowernumberConversionTable = ($ENV{MMT_WORKING_DIR}//'.').'/borrowernumberConversionTable';
+my $itemnumberConversionTable = ($ENV{MMT_WORKING_DIR}//'.').'/itemnumberConversionTable';
 
 $|=1;
 
@@ -97,8 +99,8 @@ if ($help || not($input_file)) {
 my $fh = IO::File->new( $input_file, "<:encoding(utf-8)" );
 
 
-$borrowernumberConversionTable = ConversionTable::BorrowernumberConversionTable->new($borrowernumberConversionTable, 'read');
-$itemnumberConversionTable = ConversionTable::ItemnumberConversionTable->new( $itemnumberConversionTable, 'read' );
+$borrowernumberConversionTable = Bulk::ConversionTable::BorrowernumberConversionTable->new($borrowernumberConversionTable, 'read');
+$itemnumberConversionTable = Bulk::ConversionTable::ItemnumberConversionTable->new( $itemnumberConversionTable, 'read' );
 
 
 my $dbh = C4::Context->dbh;
@@ -106,6 +108,7 @@ my $old_issuesStatement =
       $dbh->prepare(
             "INSERT INTO old_issues
                 (
+                    issue_id,
                     borrowernumber,
                     itemnumber,
                     issuedate,
@@ -113,7 +116,7 @@ my $old_issuesStatement =
                     branchcode,
                     date_due
                 )
-            VALUES (?,?,?,?,?,?)"
+            VALUES (?,?,?,?,?,?,?)"
       );
 my $statisticsStatement =
 #COLUMN USAGE EXPLANATIONS
@@ -152,89 +155,61 @@ my $statisticsStatement =
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
       );
 
+
+## Get the id from where we start adding old issues. It is the biggest issue_id in use. It is important the issue_ids don't overlap.
+my $old_issue_id = $dbh->selectrow_array("SELECT MAX(issue_id) FROM old_issues");
+$old_issue_id = 1 unless $old_issue_id;
+my $issue_id     = $dbh->selectrow_array("SELECT MAX(issue_id) FROM issues");
+$issue_id = 1 unless $issue_id;
+$old_issue_id = ($old_issue_id > $issue_id) ? $old_issue_id : $issue_id;
+$old_issue_id++;
+
+
+
+
 sub migrate_history {
     my ( $history, $row ) = @_;
+    my ($item, $borrower);
 
-    my $itemnumber = $itemnumberConversionTable->fetch(  $history->{itemnumber}  );
-    unless ($itemnumber) {
-        warn "\nHistory for legacy itemnumber ".$history->{itemnumber}." and legacy Patron ".$history->{borrowernumber}." has no Item in Koha!\n";
-        next();
+    my $itemnumber = $itemnumberConversionTable->fetch(  $history->{itemnumber}  ) if $history->{itemnumber};
+    if ($itemnumber) {
+        $item = C4::Items::GetItem($itemnumber);
     }
 
-    my $borrowernumber = $borrowernumberConversionTable->fetch( $history->{borrowernumber} );
-    unless ($borrowernumber) {
-        warn "\nHistory for legacy itemnumber ".$history->{itemnumber}." and legacy Patron ".$history->{borrowernumber}." has no Patron in Koha!\n";
-        next();
+    my $borrowernumber = $borrowernumberConversionTable->fetch( $history->{borrowernumber} ) if $history->{borrowernumber};
+    if ($borrowernumber) {
+        $borrower = C4::Members::GetMember(borrowernumber => $borrowernumber);
     }
 
-    my $item = C4::Items::GetItem($itemnumber);
-    if (! $item) {
-        print "\nNO    ITEM    IN KOHA FOR: (SKIPPING)\n$row\n";
-        return;
-    }
-    my $borrower = C4::Members::GetMember(borrowernumber => $borrowernumber);
-    if (! $borrower) {
-        print "\nNO  BORROWER  IN KOHA FOR: (SKIPPING)\n$row\n";
-        return;
-    }
 
-    if ($history->{returndate} && $borrower && $item) {#Don't add not returned (still checked-out) issues to old_issues
+    if ($history->{type} eq 'return' && $borrowernumber && $itemnumber) {
         $old_issuesStatement->execute(
+            $old_issue_id++,
             $borrowernumber,
             $itemnumber,
-            $history->{issuedate},
-            $history->{returndate},
-            $borrower->{branchcode},
-            '2014-05-31',
-        );
-
-        #Create statistics for the issue-event
-        $statisticsStatement->execute(
-            $history->{issuedate},
-            $borrower->{branchcode},
-            undef,
-            0.0000,
-            'issue',
-            'history from PallasPro',
-            $borrower->{categorycode},
-            $itemnumber,
-            $item->{itype},
-            $borrowernumber,
-            undef,
-            undef,
-        );
-
-        #Create statistics for the return-event
-        $statisticsStatement->execute(
-            $history->{returndate},
-            $borrower->{branchcode},
-            undef,
-            0.0000,
-            'return',
-            'history from PallasPro',
-            undef,
-            $itemnumber,
-            undef,
-            undef,
-            undef,
-            undef,
+            $history->{datetime},
+            $history->{datetime},
+            $history->{branch},
+            $history->{datetime},
         );
     }
-    else {
-        print "\nTHIS HISTORY HAS NOT BEEN CHECKED-IN FOR: (SKIPPING)\n$row\n";
-        return;
-    }
+
+    $statisticsStatement->execute(
+        $history->{datetime},
+        $history->{branch},
+        undef,
+        0.0000,
+        $history->{type},
+        undef,
+        ($borrower ? $borrower->{categorycode} : undef),
+        $itemnumber,
+        ($item ? $item->{itype} : undef),
+        $borrowernumber,
+        undef,
+        undef,
+    );
 }
 
-
-sub newFromRow {
-    no strict 'vars';
-    eval shift;
-    my $s = $VAR1;
-    use strict 'vars';
-    warn $@ if $@;
-    return $s;
-}
 
 my $i = 0;
 while (<$fh>) {
@@ -242,10 +217,11 @@ while (<$fh>) {
     print ".";
     print "\n$i" unless $i % 100;
 
-
-    my $history = newFromRow($_);
+    my $history = Bulk::Util::newFromBlessedMigratemeRow($_);
 
     migrate_history($history, $_);
 
     last if $i == $number;
 }
+
+

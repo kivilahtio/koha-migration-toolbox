@@ -126,6 +126,8 @@ function migrateBulkScripts {
     ./bulkPatronImport.pl --messagingPreferencesOnly &> $WORKING_DIR/bulkPatronImportMessagingDefaults.log & #This is forked on the background
     ./bulkPatronImport.pl --uploadSSNKeysOnly &> $WORKING_DIR/bulkPatronImportSSNKeys.log & #This is forked on the background
 
+    ./bulkHistoryImport.pl &> $WORKING_DIR/bulkHistoryImport.log # Histories' issue_id should be less then active checkouts.
+
     ./bulkCheckoutImport.pl -file $DATA_SOURCE_DIR/Issue.migrateme \
         --inConversionTable $WORKING_DIR/itemnumberConversionTable \
         --bnConversionTable $WORKING_DIR/borrowernumberConversionTable \
@@ -152,11 +154,13 @@ function migrateBulkScripts {
         &> $WORKING_DIR/bulkSubscriptionImport.log
 
     ./bulkBranchtransfersImport.pl -file $DATA_SOURCE_DIR/Branchtransfer.migrateme \
-        --inConversionTable $WORKING_DIR/itemnumberConversionTable
+        --inConversionTable $WORKING_DIR/itemnumberConversionTable \
+        &> $WORKING_DIR/bulkBranchtransfersImport.log
+
+    ./bulkBooksellerImport.pl --file $DATA_SOURCE_DIR/Bookseller.migrateme \
         &> $WORKING_DIR/bulkBranchtransfersImport.log
 
     #./bulkRotatingCollectionsImport.pl --file $DATA_SOURCE_DIR/Siirtolaina.migrateme &> $WORKING_DIR/bulkRotatingCollectionsImport.log
-    #./bulkHistoryImport.pl --file /home/koha/pielinen/histories.migrateme &> bulkHistoryImport.log
 }
 
 function cleanPastMigrationWorkspace {

@@ -10,6 +10,7 @@ use MMT::MARC::Field;
 use MMT::MARC::Subfield;
 use MMT::PrettyLib2Koha::Biblio::MaterialTypeRepair;
 use MMT::Validator;
+use MMT::PrettyLib2Koha::Item;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
 #Inheritance
@@ -18,6 +19,7 @@ use base qw(MMT::KohaObject);
 
 #Exceptions
 use MMT::Exception::Delete;
+use MMT::Exception::Delete::Silently;
 
 =head1 NAME
 
@@ -42,6 +44,8 @@ sub build($s, $o, $b) {
   unless ($s->{biblionumber}) {
     MMT::Exception::Delete->throw(error => "Missing field 001 with record:\n".Data::Printer::np($o)."\n!!");
   }
+
+  dropPassiveCirc($s, $o, $b) if (ref($s) eq 'MMT::PrettyCirc2Koha::Biblio');
 
   sanitateInput($o);
 
@@ -560,6 +564,33 @@ sub getItemType($s, $o, $b) {
   }
 
   return $b->{ItemTypes}->translate($s, $item, $b, $titleType); # Try to get the itemtype from the biblio or the item
+}
+
+=head2 dropPassiveCirc
+
+PrettyCirc Biblios that have only passive Items/Subscriptions, are dropped.
+Unless they have holdings information.
+
+=cut
+
+sub dropPassiveCirc($s, $o, $b) {
+  my $kill = undef;
+
+  my $items = $b->{Items}->get($s->{biblionumber});
+  if ($items) {
+    my @activeItems = grep {
+      not(MMT::PrettyLib2Koha::Item::_circIsPassive($_))
+    } @$items;
+    $kill = 1 if not(@activeItems);
+  }
+  else {
+    $kill = 1;
+  }
+  if ($kill) {
+    unless (my $holdings = $b->{CircleStorage}->get($o->{Id})) {
+      MMT::Exception::Delete->throw(error => "This PrettyCirc Biblio is completely passive, dropping it.")
+    }
+  }
 }
 
 =head2 _setF001

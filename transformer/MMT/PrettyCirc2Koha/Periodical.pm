@@ -79,8 +79,11 @@ sub setSubscriptionid($s, $o, $b) {
 }
 
 sub setItemnumber($s, $o, $b) { #This is used to populate the koha.serialitems -link
-  $s->sourceKeyExists($o, 'Id_Item');
-  $s->{itemnumber} = $o->{Id_Item} || undef; #item_id can also be 0 or '', just normalize it to undef
+  # In PrettyCirc the Item is the subscription. Avoid setting the same itemnumber for all periodicals, this causes serialitems-table to be populated with insane amounts of duplicate itemnumber, because
+  # In PrettyCirc the Item is the subscription, not like in Koha.
+  #$s->sourceKeyExists($o, 'Id_Item');
+  #$s->{itemnumber} = $o->{Id_Item} || undef; #item_id can also be 0 or '', just normalize it to undef
+  $s->{itemnumber} = undef;
 }
 
 #In Koha, the planneddate is the date the serial is expected to arrive to the library.

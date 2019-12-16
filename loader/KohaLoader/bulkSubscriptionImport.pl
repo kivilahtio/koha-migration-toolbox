@@ -18,12 +18,12 @@ use Bulk::ConversionTable::ItemnumberConversionTable;
 use Bulk::ConversionTable::BorrowernumberConversionTable;
 
 our $verbosity = 3;
-my $subscriptionidConversionTable;
 my %args = (subscriptionfile =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Subscription.migrateme',
             serialFile       =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Serial.migrateme',
             routinglistFile  =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Subscriptionroutinglist.migrateme',
             preserveIds      =>                   $ENV{MMT_PRESERVE_IDS} // 0,
             subscriptionidConversionTableFile => ($ENV{MMT_WORKING_DIR}//'.').'/subscriptionidConversionTable',
+            subscriptionidConversionTable     => undef,
             biblionumberConversionTable       => ($ENV{MMT_WORKING_DIR}//'.').'/biblionumberConversionTable',
             itemnumberConversionTable         => ($ENV{MMT_WORKING_DIR}//'.').'/itemnumberConversionTable',
             borrowernumberConversionTable     => ($ENV{MMT_WORKING_DIR}//'.').'/borrowernumberConversionTable',
@@ -47,7 +47,7 @@ NAME
 
 SYNOPSIS
   perl bulkSubscriptionImport.pl \
-    --subscriptionFile $args{subscriptionidConversionTableFile} \
+    --subscriptionFile $args{subscriptionfile} \
     --serialFile $args{serialFile} \
     --routinglistFile $args{routinglistFile} \
     -v $verbosity \
@@ -87,10 +87,10 @@ HELP
 
 require Bulk::Util; #Init logging && verbosity
 
-unless ($subscriptionFile) {
+unless ($args{subscriptionfile}) {
     die "$help\n\n--subscriptionFile is mandatory";
 }
-unless ($serialFile) {
+unless ($args{serialFile}) {
     die "$help\n\n--serialFile is mandatory";
 }
 
@@ -110,7 +110,7 @@ sub migrate_subscription($s) {
       or die "INSERT:ing Subscription failed: ".$sub_insert_sth->errstr();
 
     my $newSubscriptionid = $dbh->last_insert_id(undef, undef, 'subscription', 'subscriptionid') or die("Fetching last insert if failed: ".$dbh->errstr());
-    $subscriptionidConversionTable->writeRow($s->{subscriptionid}, $newSubscriptionid);
+    $args{subscriptionidConversionTable}->writeRow($s->{subscriptionid}, $newSubscriptionid);
 
     $sub_set_serial_sth->execute($s->{biblionumber}) or die("Setting the biblio serial-flag failed: ".$sub_set_serial_sth->errstr());
 }
@@ -154,7 +154,7 @@ sub migrate_srl($s) {
 sub validateAndConvertSubscriptionKeys($s) {
     my $errId = "Subscription sub='".$s->{subscriptionid}."', bib='".$s->{biblionumber}."'";
 
-    my $newBiblionumber = $biblionumberConversionTable->fetch($s->{biblionumber});
+    my $newBiblionumber = $args{biblionumberConversionTable}->fetch($s->{biblionumber});
     unless ($newBiblionumber) {
         WARN "$errId has no new biblionumber in the biblionumberConversionTable!";
         return undef;
@@ -167,19 +167,19 @@ sub validateAndConvertSubscriptionKeys($s) {
 sub validateAndConvertSerialKeys($s) {
     my $errId = "Serial sub='".$s->{subscriptionid}."', ser='".$s->{serialid}."'";
 
-    my $newSubscriptionid = $subscriptionidConversionTable->fetch($s->{subscriptionid});
+    my $newSubscriptionid = $args{subscriptionidConversionTable}->fetch($s->{subscriptionid});
     unless ($newSubscriptionid) {
         WARN "$errId has no new subscriptionid in the subscriptionidConversionTable!";
         return undef;
     }
-    my $newBiblionumber = $biblionumberConversionTable->fetch($s->{biblionumber});
+    my $newBiblionumber = $args{biblionumberConversionTable}->fetch($s->{biblionumber});
     unless ($newBiblionumber) {
         WARN "$errId has no new biblionumber in the biblionumberConversionTable!";
         return undef;
     }
 
     if ($s->{itemnumber}) { #Not all serials have attached Items
-        my $newItemnumber = $itemnumberConversionTable->fetch($s->{itemnumber});
+        my $newItemnumber = $args{itemnumberConversionTable}->fetch($s->{itemnumber});
         unless ($newItemnumber) {
             WARN "$errId has no new itemnumber in the itemnumberConversionTable!";
             return undef;
@@ -195,12 +195,12 @@ sub validateAndConvertSerialKeys($s) {
 sub validateAndConvertSRLKeys($s) {
     my $errId = "SRL sub='".$s->{subscriptionid}."', bor='".$s->{borrowernumber}."'";
 
-    my $newSubscriptionid = $subscriptionidConversionTable->fetch($s->{subscriptionid});
+    my $newSubscriptionid = $args{subscriptionidConversionTable}->fetch($s->{subscriptionid});
     unless ($newSubscriptionid) {
         WARN "$errId has no new subscriptionid in the subscriptionidConversionTable!";
         return undef;
     }
-    my $newBorrowernumber = $borrowernumberConversionTable->fetch($s->{borrowernumber});
+    my $newBorrowernumber = $args{borrowernumberConversionTable}->fetch($s->{borrowernumber});
     unless ($newBorrowernumber) {
         WARN "$errId has no new borrowernumber in the borrowernumberConversionTable!";
         return undef;
@@ -221,14 +221,14 @@ sub validateAndConvertSRLKeys($s) {
 
 
 
-INFO "Opening SubscriptionidConversionTable '$subscriptionidConversionTableFile' for writing";
-$subscriptionidConversionTable = Bulk::ConversionTable::SubscriptionidConversionTable->new($subscriptionidConversionTableFile, 'write');
-INFO "Opening BiblionumberConversionTable '$biblionumberConversionTable' for reading";
-$biblionumberConversionTable = Bulk::ConversionTable::BiblionumberConversionTable->new($biblionumberConversionTable, 'read');
-INFO "Opening ItemnumberConversionTable '$itemnumberConversionTable' for reading";
-$itemnumberConversionTable = Bulk::ConversionTable::ItemnumberConversionTable->new($itemnumberConversionTable, 'read');
+INFO "Opening SubscriptionidConversionTable '$args{subscriptionidConversionTableFile}' for writing";
+$args{subscriptionidConversionTable} = Bulk::ConversionTable::SubscriptionidConversionTable->new($args{subscriptionidConversionTableFile}, 'write');
+INFO "Opening BiblionumberConversionTable '$args{biblionumberConversionTable}' for reading";
+$args{biblionumberConversionTable} = Bulk::ConversionTable::BiblionumberConversionTable->new($args{biblionumberConversionTable}, 'read');
+INFO "Opening ItemnumberConversionTable '$args{itemnumberConversionTable}' for reading";
+$args{itemnumberConversionTable} = Bulk::ConversionTable::ItemnumberConversionTable->new($args{itemnumberConversionTable}, 'read');
 
-my $fh = Bulk::Util::openFile($subscriptionFile);
+my $fh = Bulk::Util::openFile($args{subscriptionfile});
 my $i = 0;
 while (<$fh>) {
     $i++;
@@ -239,11 +239,11 @@ while (<$fh>) {
     migrate_subscription($subscription);
 }
 $fh->close();
-$subscriptionidConversionTable->close();
+$args{subscriptionidConversionTable}->close();
 
-INFO "Opening SubscriptionidConversionTable '$subscriptionidConversionTableFile' for reading";
-$subscriptionidConversionTable = Bulk::ConversionTable::SubscriptionidConversionTable->new($subscriptionidConversionTableFile, 'read');
-$fh = Bulk::Util::openFile($serialFile);
+INFO "Opening SubscriptionidConversionTable '$args{subscriptionidConversionTableFile}' for reading";
+$args{subscriptionidConversionTable} = Bulk::ConversionTable::SubscriptionidConversionTable->new($args{subscriptionidConversionTableFile}, 'read');
+$fh = Bulk::Util::openFile($args{serialFile});
 $i = 0;
 while (<$fh>) {
     $i++;
@@ -257,9 +257,9 @@ $fh->close();
 
 
 
-INFO "Opening BorrowernumberConversionTable '$borrowernumberConversionTable' for reading";
-$borrowernumberConversionTable = Bulk::ConversionTable::BorrowernumberConversionTable->new($borrowernumberConversionTable, 'read');
-$fh = Bulk::Util::openFile($routinglistFile);
+INFO "Opening BorrowernumberConversionTable '$args{borrowernumberConversionTable}' for reading";
+$args{borrowernumberConversionTable} = Bulk::ConversionTable::BorrowernumberConversionTable->new($args{borrowernumberConversionTable}, 'read');
+$fh = Bulk::Util::openFile($args{routinglistFile});
 $i = 0;
 while (<$fh>) {
     $i++;

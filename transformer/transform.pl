@@ -430,6 +430,34 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
   },
 
 
+  '--booksellers' => {
+    help => 'Transform Suppliers from Pretty extracts to Koha',
+    callback => sub {
+      my $confBase = {
+        outputFile => 'Bookseller.migrateme',
+      };
+      my $conf;
+
+      if (MMT::Config->sourceSystemType eq 'Voyager') {
+        die "--bookseller not supported for Voyager";
+      }
+      elsif (MMT::Config->sourceSystemType eq 'PrettyLib') {
+        $conf = {
+          type => 'Supplier',
+          inputFile => 'Supplier.csv',
+        };
+      }
+      elsif (MMT::Config->sourceSystemType eq 'PrettyCirc') {
+        $conf = {
+          type => 'Supplier',
+          inputFile => 'Supplier.csv',
+        };
+      }
+      build($confBase, $conf);
+    },
+  },
+
+
   '--serials' => {
     help => 'Transform serials from Voyager extracts to Koha',
     callback => sub {
@@ -522,6 +550,32 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
       }
 
       build($confBase, $conf);
+    },
+  },
+
+
+  '--history' => {
+    help => 'Transform Transact history from Pretty* extracts to Koha.statistics',
+    callback => sub {
+      my $confBase = {
+        outputFile => 'Statistics.migrateme',
+      };
+      my $conf;
+
+      if (MMT::Config->sourceSystemType eq 'PrettyLib') { # PrettyCirc has the same table but it is empty.
+        $conf = {
+          type => 'Transact',
+          inputFile => 'Transact.csv',
+          repositories => [
+            {name => "Items",     file => 'Item.csv',     keys => ['Id']},
+            {name => "Customers", file => 'Customer.csv', keys => ['Id']},
+          ],
+          translationTables => [
+            {name => 'Branchcodes'},
+          ],
+        };
+        build($confBase, $conf);
+      }
     },
   },
 
