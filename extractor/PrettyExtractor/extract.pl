@@ -84,7 +84,7 @@ USAGE
 
     with parameters
 
-      /c perl C:\Users\hypernovamies\extract.pl -v -e -s -w C:\Users\hypernovamies -c C:\Users\hypernovamies\config.perl -l C:\Users\hypernovamies\extract.log > C:\Users\hypernovamies\extract.log2 2>&1
+      /c perl C:\\Users\\hypernovamies\\extract.pl -v -e -s -w C:\\Users\\hypernovamies -c C:\\Users\\hypernovamies\\config.perl -l C:\\Users\\hypernovamies\\extract.log > C:\\Users\\hypernovamies\\extract.log2 2>&1
 
     Be aware, that all output is buffered. Logfiles are written only after the process exits.
 
@@ -95,7 +95,7 @@ USAGE
 
 ARGUMENTS
 
-  -e, --extract           Exports all DB tables as is based on the config.perl -file.
+  -e, --extract           Exports all DB tables as is based on the config.perl -file. Optionally give the table name to export.
   -i, --introspect        Introspect all the known data sources from ODBC.
   -s, --ship              Send the database dumps to the configured ssh-server.
   -h, --help              Show this help
@@ -110,7 +110,7 @@ HELP
 }
 
 GetOptions(
-    'e|extract'      => \$opExtract,
+    'e|extract:s'    => \$opExtract,
     's|ship'         => \$opShip,
     'i|introspect'   => \$opIntrospect,
     'h|help'         => \$help,
@@ -125,6 +125,7 @@ if ($help) {
     print_usage;
     exit;
 }
+$opExtract = '1' if (defined($opExtract) && $opExtract eq '');
 
 
 my $nl = ($^O =~ /linux/i) ? "\n" : "\r\n";
@@ -144,8 +145,10 @@ if ($dbh->{odbc_has_unicode}) {
 }
 #$dbh->{odbc_utf8_on} = 0;
 $dbh->{odbc_default_bind_type} = SQL_VARCHAR;
-$dbh->{LongReadLen} = 8000;
+$dbh->{LongReadLen} = 80000;
 
+
+my @ignoredTables = ('PrettyLibFiles');
 
 sub configure {
   my ($configPath) = @_;
@@ -181,6 +184,7 @@ sub introspectTables {
         print "---Table: '$tableName'$nl" if $v;
         my $table = $tables->{$tableName};
         print "---Catalog: $catalogName, Schema: $schemaName, Table: $tableName, Type: ".$table->{TABLE_TYPE}."$nl" if $v;
+        next if (($opExtract ne '1' && $opExtract ne $tableName) or ($opExtract eq '1' && grep {$_ eq $tableName} @ignoredTables));
         introspectColumns($dbh, $config, $table);
 
         printTableMetadata($dbh, $config, $table) if $v or $opIntrospect;
@@ -226,11 +230,66 @@ sub exportTable {
   print "-Found columns ".join(",", @columnNames)."$nl" if $v;
   print $FH join(",", @columnNames)."\n"; #Make the .csv header
 
+  # Prepare to check the fetched rows against the counts expected
+  my ($countOfRows, $maxId);
+  eval { # Not all tables have Id-column
+    $countOfRows = _executeSql($dbh, $config, "SELECT COUNT(Id) FROM ".$table->{TABLE_NAME});
+    $countOfRows = $countOfRows->[0]->[0];
+    $maxId = _executeSql($dbh, $config, "SELECT TOP 1 Id FROM ".$table->{TABLE_NAME}." ORDER BY Id DESC");
+    $maxId = $maxId->[0]->[0];
+  };
+  if ($@) { die($@) unless ($@ =~ /Invalid column name 'Id'/); }
+
   my $rows = _executeSql($dbh, $config, "SELECT * FROM ".$table->{TABLE_NAME});
+  $rows = [] unless $rows;
+
+  if ($countOfRows && scalar(@$rows) != $countOfRows) { # Try to recover if we can.
+    print "Fetching table '".$table->{TABLE_NAME}."' failed: Received only '".scalar(@$rows)."$countOfRows'. Trying chunked reading.";
+    my ($fromId, $toId);
+    ($dbh, $config, $table, $rows, $countOfRows, $maxId, $fromId, $toId) = _exportChunked($dbh, $config, $table, $countOfRows, $maxId, undef, undef);
+  }
 
   _writeSql($dbh, $config, $FH, $rows);
 
   close $FH;
+}
+
+my $chunkSize = 1000; # How large chunks we fetch initially, until digging down into smaller bits.
+
+sub _exportChunked {
+  my ($dbh, $config, $table, $rows, $countOfRows, $maxId, $fromId, $toId) = @_;
+  $fromId = 0 if (not(defined($fromId)));
+  $toId = _newChunkTarget($countOfRows, $maxId, $fromId, $toId, undef) if (not(defined($toId)));
+  print "_exportChunked($dbh, $config, $table, $rows, $countOfRows, $maxId, $fromId, $toId)";
+
+  my $expectedCount = _executeSql($dbh, $config, "SELECT COUNT(Id) FROM ".$table->{TABLE_NAME}." WHERE Id >= '$fromId' AND Id < '$toId'");
+  $expectedCount = $expectedCount->[0]->[0];
+  my $newRows = _executeSql($dbh, $config, "SELECT * FROM ".$table->{TABLE_NAME}." WHERE Id >= '$fromId' AND Id < '$toId'"); # Sorry SQL injection, just don't expose this code!
+  $newRows = $newRows->[0]->[0];
+
+  # Succeeded in getting what was expected
+  if ($expectedCount == $newRows) {
+    return ($dbh, $config, $table, $rows, $countOfRows, $maxId, $fromId, $toId) if ($toId > $maxId && $expectedCount == 0); # Exit the recursion here
+    push(@$rows, @$newRows);
+    return _exportChunked($dbh, $config, $table, $rows, $countOfRows, $maxId, $toId, undef); # Swith $toId as $fromId to continue looking for new rows.
+  }
+  else {
+    print "Fetching table '".$table->{TABLE_NAME}."' failed: Received only '".scalar(@$newRows)."$expectedCount'. From '$fromId' to '$toId'. Collected '@$rows' rows.";
+    $toId = _newChunkTarget($countOfRows, $maxId, $fromId, $toId, 'fail');
+    return _exportChunked($dbh, $config, $table, $rows, $countOfRows, $maxId, $fromId, $toId);
+  }
+}
+
+sub _newChunkTarget {
+  my ($countOfRows, $maxId, $fromId, $toId, $failed) = @_;
+
+  my $standardChunkIncrement = int($maxId / ($countOfRows / $chunkSize));
+  unless ($failed) {
+    return $fromId + $standardChunkIncrement;
+  }
+  else {
+    return $fromId + (($toId - $fromId) / 2); # On each failed recursion, logarithmically dig deeper toward the failing record.
+  }
 }
 
 sub exportSql {
@@ -296,4 +355,3 @@ hasPSCP($config) if $config->{pscp_filepath} or $opShip;
 introspectTables($dbh, $config) if $opIntrospect or $opExtract;
 exportSql($dbh, $config, $sql) if $sql;
 ship($config) if $opShip;
-
