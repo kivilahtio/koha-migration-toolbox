@@ -302,9 +302,9 @@ sub setCategorycode($s, $o, $b) {
 }
 
 my @dobParsers = (
+  qr/\b(?<DAY>\d{2})    (?<MON>\d{2})    (?<YEAR>\d{2})    (?<DIV>[-+A])    \d{3}\w\b/x, # a SSN 311298-111A
   qr/\b(?<DAY>\d{1,2})\.(?<MON>\d{1,2})\.(?<YEAR>\d{2})\b/x,       # 10.5.86
   qr/\b(?<DAY>\d{1,2})\.(?<MON>\d{1,2})\.(?<YEAR>\d{4})\b/x,       # 4.12.1965
-  qr/\b(?<DAY>\d{2})    (?<MON>\d{2})    (?<YEAR>\d{2})    (?<DIV>[-+A])    \d{3}\w\b/x, # a SSN 311298-111A
   qr/\b(?<DAY>\d{1,2})  (?<MON>\d{2})    (?<YEAR>\d{2})\b/x,             # 051255 or 51255
   qr/\b(?<DAY>\d{1,2})  (?<MON>\d{2})    (?<YEAR>\d{4})\b/x,             # 05121955 or 5121955
 );
@@ -316,9 +316,9 @@ sub setDateofbirth($s, $o, $b) {
   }
   $dob =~ s/\s//gsm; #Trim all whitespace
 
-  my ($y,$m,$d);
+  my ($y,$m,$d,$D);
   for my $parser (@dobParsers) {
-    last if (($d,$m,$y) = $dob =~ $parser);
+    last if (($d,$m,$y,$D) = $dob =~ $parser);
   }
   unless ($y && $m && $d) {
     $log->warn($s->logId()." - Unable to parse the date of birth from '$dob'");
@@ -327,11 +327,11 @@ sub setDateofbirth($s, $o, $b) {
 
   $d = "0$d"  if length($d) == 1;
   $m = "0$m"  if length($m) == 1;
-  if ($4) { #a SSN divisor is present
-    $y = ($4 eq '+') ? "18$y" :
-         ($4 eq '-') ? "19$y" :
-         ($4 eq 'A') ? "20$y" :
-         ($log->warn($s->logId()." - date of birth is inferred from SSN, but the divider component '$4' is atypical. Defaulting to the 20th century.")) ? "19$y" : "19$y"; #Now this might be considered a bit hacky :D
+  if ($D) { #a SSN divisor is present
+    $y = ($D eq '+') ? "18$y" :
+         ($D eq '-') ? "19$y" :
+         ($D eq 'A') ? "20$y" :
+         ($log->warn($s->logId()." - date of birth is inferred from SSN, but the divider component '$D' is atypical. Defaulting to the 20th century.")) ? "19$y" : "19$y"; #Now this might be considered a bit hacky :D
   }
   else {
     $y = "19$y" if length($y) == 2;
