@@ -132,6 +132,7 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
             {name => 'Documents', file => 'Document.csv', keys => ['Id_Title']},
             {name => 'Authors', file => 'Author.csv', keys => ['Id']},
             {name => 'AuthorCross', file => 'AuthorCross.csv', keys => ['Id_Title']},
+            {name => 'BigText', file => 'BigText.csv', keys => ['Id_Title']},
             {name => 'Class', file => 'Class.csv', keys => ['Id']},
             {name => 'ClassCross', file => 'ClassCross.csv', keys => ['Id_Title']},
             {name => 'Location',   file => 'Location.csv', keys => ['Id']},

@@ -95,6 +95,7 @@ sub sanitateInput($o) {
 
 sub mergeLinks($s, $o, $b) {
   linkAuthors(@_);
+  linkBigTexts(@_);
   linkClasses(@_);
   linkDocuments(@_);
   linkPublishers(@_);
@@ -262,6 +263,27 @@ sub linkAuthors($s, $o, $builder) {
     }
   }
   $s->{record}->addField(MMT::MARC::Field->new('100', '1', '#', \@subfields)) if @subfields;
+}
+
+=head2 linkBigTexts
+
+PrettyLib.BigText -> Summaries -> Field 505
+
+=cut
+
+sub linkBigTexts($s, $o, $builder) {
+  if (my $texts = $builder->{BigText}->get($o->{Id})) {
+    $log->trace($s->logId." - Found '".scalar(@$texts)."' BigTexts.") if $log->is_trace();
+
+    for my $text (@$texts) {
+      my $textFiltered = _ss($text->{TextContent}) if $text->{TextContent};
+      next unless($textFiltered);
+
+      $s->{record}->addField(MMT::MARC::Field->new('505', $text->{Id_Type}, '#', [
+        MMT::MARC::Subfield->new('a', $textFiltered),
+      ]));
+    }
+  }
 }
 
 =head2 linkClasses
