@@ -55,14 +55,13 @@ sub JNSKonsa_itypes($s, $kohaObject, $prettyObject, $builder, $originalValue, $t
     elsif ($an =~ /^lp/i)   { MMT::Exception::Delete::Silently->throw($s->logId()."' LP-items are removed."); } #Feature #95
     elsif ($an =~ /^opin/i) { $it = 'OP' } # Opinnäytetyö
     elsif ($an =~ /^vid/i)  { MMT::Exception::Delete::Silently->throw($s->logId()."' Video-items are silently set to die"); } # Videot poistetaan
-
   }
 
   unless ($it) {
-
     $it = $tableParams->[0];
-
   }
+
+  $kohaObject->{homebranch} = 'JOE_ARK' if ($it eq 'OP');
 
   return $it if $it;
 
