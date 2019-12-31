@@ -238,7 +238,7 @@ sub setDateexpiry($s, $o, $b) {
 }
 sub setContactInfo($s, $o, $b) {
   my ($ok);
-  my @priority = ($o->{bHomeAddress} eq 'true') ? ('HomeAddress', 'PostAddress') : ('PostAddress', 'HomeAddress'); # Gather via this priority table so this can be easily changed based on how PrettyLib has been used.
+  my @priority = (not(defined($o->{bHomeAddress})) or ($o->{bHomeAddress} eq 1)) ? ('HomeAddress', 'PostAddress') : ('PostAddress', 'HomeAddress'); # Gather via this priority table so this can be easily changed based on how PrettyLib has been used.
   my %addresses; $addresses{$_} = {} for @priority; #Gather all different types of PrettyLib-addresses here
 
   if ($o->{PostAddress}) {
