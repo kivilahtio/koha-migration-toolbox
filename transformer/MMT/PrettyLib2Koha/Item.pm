@@ -351,6 +351,25 @@ my %statusMap = (
 my %circStatusMap = ( # Item.CircStatus -column
   0 => 'Passive',
   2 => 'Active',
+ #0 = passiivinen
+ #1 = aktiivinen (ei poist.)
+ #2 = aktiivinen
+ #3 = aktiivinen (lisäpoisto)
+);
+my %circStatus2Map = (
+ #0 = ei kierrossa
+ #1 = lukusalikappale
+ #2 = kierrossa
+ #3 = kierrossa (autom.)
+ #4 = kierrossa (rajoitettu)
+ #5 = elektroninen
+ #6 = suora tilaus
+);
+my %circStatus3Map = (
+ #0 = Ei saapumisseurantaa eikä kustannusseurantaa
+ #1 = Saapumisseuranta tai saapumisvalvonta, ei kustannusseurantaa
+ #2 = Saapumisvalvonta ja kustannusseuranta
+ #3 = Ei saapumisvalvontaa ja on kustannusseuranta
 );
 sub setStatuses($s, $o, $b) {
   my $S = $o->{Status};
@@ -418,6 +437,12 @@ sub _circIsPassive($o) {
   MMT::Exception::Delete->throw("No CircStatus-key?")
     unless exists($o->{CircStatus});
   return 1 if ($o->{CircStatus} == 0);
+  return undef;
+}
+sub _circIsElectronic($o) {
+  MMT::Exception::Delete->throw("No CircStatus2-key?")
+    unless exists($o->{CircStatus2});
+  return 1 if ($o->{CircStatus2} == 5);
   return undef;
 }
 

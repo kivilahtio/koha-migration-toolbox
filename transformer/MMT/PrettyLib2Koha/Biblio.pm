@@ -590,8 +590,9 @@ sub getItemType($s, $o, $b) {
     $item = bless($item, 'MMT::PrettyLib2Koha::Item')  if (ref($s) eq 'MMT::PrettyLib2Koha::Biblio');
     $item = bless($item, 'MMT::PrettyCirc2Koha::Item') if (ref($s) eq 'MMT::PrettyCirc2Koha::Biblio');
     die "Unable to bless \$item as PrettyLib or PrettyCirc Item for Biblio '$s'!" unless blessed($item);
-    $item->setPermanent_location($items->[0], $b);
+    $item->setPermanent_location($item, $b);
     return $item->{itype} if ($item->{itype});
+    return 'EJ' if MMT::PrettyLib2Koha::Item::_circIsElectronic($item) if (ref($s) eq 'MMT::PrettyCirc2Koha::Item');
   }
   return $b->{ItemTypes}->translate($s, $item, $b, $titleType); # Try to get the itemtype from the biblio or the item
 }
