@@ -86,7 +86,7 @@ package C4::Items {
 
 
 ## Get the id from where we start adding old issues. It is the biggest issue_id in use. It is important the issue_ids don't overlap.
-$old_issue_id = Bulk::Util::getMaxIssueId($dbh);
+my $old_issue_id = Bulk::Util::getMaxIssueId($dbh);
 
 
 
