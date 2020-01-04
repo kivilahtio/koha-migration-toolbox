@@ -2,11 +2,11 @@ package MMT::PrettyCirc2Koha::Subscription;
 
 use MMT::Pragmas;
 
+#External modules
 use DateTime;
 
-#External modules
-
 #Local modules
+use MMT::PrettyCirc2Koha::Periodical;
 use MMT::Validator;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
@@ -22,6 +22,8 @@ use MMT::Exception::Delete;
 MMT::PrettyCirc2Koha::Subscription - Transforms a bunch of PrettyCirc data into Koha subscriptions
 
 =cut
+
+our $createClosedSubscriptions = 0;
 
 # Build the subscriptions here based on the individual serials analyzed for each Biblio.
 our %subscriptions;
@@ -87,6 +89,11 @@ sub analyzePeriodical($o, $b) {
   if ($o->{PeriodYear} && $o->{PeriodYear} =~ /^\d\d\d\d/ && $o->{PeriodYear} gt $s->{enddate}) {
     $s->{enddate} = $o->{PeriodYear}.'-12-31';
   }
+
+  # Build subscriptionhistory
+  my $serialseq = MMT::PrettyCirc2Koha::Periodical::_calculateEnumerations($o);
+  $s->{subscriptionhistory} = [] unless $s->{subscriptionhistory};
+  push(@{$s->{subscriptionhistory}}, $serialseq);
 }
 
 =head2 build
@@ -117,7 +124,7 @@ sub build($self, $o, $b) {
   #$self->setInnerloop2          ($o, $b); #| int(11)      | YES  |     | 0       |                |
   #$self->setLastvalue3          ($o, $b); #| int(11)      | YES  |     | NULL    |                |
   #$self->setInnerloop3          ($o, $b); #| int(11)      | YES  |     | 0       |                |
-  #$self->setFirstacquidate      ($o, $b); #| date         | YES  |     | NULL    |                |
+  $self->setFirstacquidate       ($o, $b); #| date         | YES  |     | NULL    |                |
   #$self->setManualhistory       ($o, $b); #| tinyint(1)   | NO   |     | 0       |                |
   #$self->setIrregularity        ($o, $b); #| text         | YES  |     | NULL    |                |
   #$self->setSkip_serialseq      ($o, $b); #| tinyint(1)   | NO   |     | 0       |                |
@@ -139,6 +146,8 @@ sub build($self, $o, $b) {
   #$self->setReneweddate         ($o, $b); #| date         | YES  |     | NULL    |                |
   #$self->setItemtype            ($o, $b); #| varchar(10)  | YES  |     | NULL    |                |
   #$self->setPreviousitemtype    ($o, $b); #| varchar(10)  | YES  |     | NULL    |                |
+
+  $self->setSubscriptionhistory  ($o, $b);
 }
 
 sub id {
@@ -152,11 +161,26 @@ sub logId($s) {
 sub setStartdate($s, $o, $b) {
   unless ($s->{startdate}) {
     #Voyager seems to have so very few subsription.start_date -values that it is better to default it
+    $log->warn($s->logId()." is missing 'startdate'");
     $s->{startdate} = '2000-01-01'; #Koha must have a koha.subscription.startdate
   }
 }
 sub setStatus($s, $o, $b) {
   $s->{status} = 1;
+}
+sub setFirstacquidate($s, $o, $b) {
+  if ($createClosedSubscriptions) {
+    $s->{firstacquidate} = $s->{startdate} if $s->{startdate};
+  }
+  else {
+    my $startOfYear = DateTime->new(
+      year => DateTime->now()->year(),
+      month => 1,
+      day => 1,
+      time_zone => 'Europe/Helsinki',
+    );
+    $s->{firstacquidate} = $startOfYear->iso8601();
+  }
 }
 sub setLocation($s, $o, $b) {
   my $item = $b->{Items}->get($s->{itemnumber})->[0];
@@ -172,7 +196,7 @@ sub setBranchcode($s, $o, $b) {
   }
 }
 sub setSerialsadditems($s, $o, $b) {
-  $s->{serialsadditems} = 0;
+  $s->{serialsadditems} = 1;
 }
 sub setStaffdisplaycount($s, $o, $b) {
   $s->{staffdisplaycount} = 300;
@@ -188,7 +212,18 @@ sub setEnddate($s, $o, $b) {
   }
 }
 sub setClosed($s, $o, $b) {
-  $s->{closed} = 1; #Currently only bare minimums are migrated, so enumeration cannot atm. continue in Koha from where voyager left off.
+  $s->{closed} = ($createClosedSubscriptions) ? 1 : 0; #Currently only bare minimums are migrated, so enumeration cannot atm. continue in Koha from where voyager left off.
+}
+
+=head2 setSubscriptionhistory
+
+To properly operate the subscriptions in Koha, they MUST have matching subscriptiohistory-rows
+
+=cut
+
+sub setSubscriptionhistory($s, $o, $b) {
+  MMT::Exception::Delete->throw($s->logId()." has no subscriptiohistory-key?") unless (exists($s->{subscriptionhistory}));
+  $s->{subscriptionhistory} = join('; ', sort @{$s->{subscriptionhistory}});
 }
 
 return 1;

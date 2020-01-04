@@ -102,6 +102,10 @@ my $sub_insert_sth = $dbh->prepare("INSERT INTO subscription
                                     (librarian,     branchcode, biblionumber,   notes, status,
                                      internalnotes, location,   startdate)
                                     VALUES (?,?,?,?,?,?,?,?)");
+my $subhist_insert_sth = $dbh->prepare("INSERT INTO subscriptionhistory
+                                    (biblionumber, subscriptionid, histstartdate, histenddate,
+                                     missinglist, recievedlist)
+                                    VALUES (?,?,?,?,?,?)");
 my $sub_set_serial_sth = $dbh->prepare("UPDATE biblio
                                         SET serial=1
                                         WHERE biblionumber=?");
@@ -113,6 +117,11 @@ sub migrate_subscription($s) {
     $args{subscriptionidConversionTable}->writeRow($s->{subscriptionid}, $newSubscriptionid);
 
     $sub_set_serial_sth->execute($s->{biblionumber}) or die("Setting the biblio serial-flag failed: ".$sub_set_serial_sth->errstr());
+}
+
+sub migrate_subscriptionhistory($s) {
+    $subhist_insert_sth->execute($s->{biblionumber}, $s->{subscriptionid}, $s->{startdate}, $s->{enddate}, '', $s->{subscriptionhistory})
+      or die "INSERT:ing Subscriptionhistory failed: ".$subhist_insert_sth->errstr();
 }
 
 my $ser_insert_sth = $dbh->prepare("INSERT INTO serial
@@ -237,6 +246,7 @@ while (<$fh>) {
     my $subscription = Bulk::Util::newFromBlessedMigratemeRow($_);
     next unless validateAndConvertSubscriptionKeys($subscription);
     migrate_subscription($subscription);
+    migrate_subscriptionhistory($subscription);
 }
 $fh->close();
 $args{subscriptionidConversionTable}->close();

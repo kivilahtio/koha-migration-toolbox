@@ -125,8 +125,11 @@ sub setStatus($s, $o, $b) {
 }
 
 sub setEnumerations($s, $o, $b) {
-  $s->{serialseq} = join(' : ', grep {$_} ($o->{PeriodYear}, $o->{PeriodVol}, $o->{PeriodNumber}));
+  $s->{serialseq} = _calculateEnumerations($o);
   ($s->{serialseq_x}, $s->{serialseq_y}, $s->{serialseq_z}) = split(' : ', $s->{serialseq});
+}
+sub _calculateEnumerations($o) {
+  return join(' : ', grep {$_} ($o->{PeriodYear}, $o->{PeriodVol}, $o->{PeriodNumber}));
 }
 
 return 1;
