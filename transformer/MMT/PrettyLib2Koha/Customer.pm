@@ -272,6 +272,31 @@ sub setContactInfo($s, $o, $b) {
   unless ($o->{PostAddress} || $o->{HomeAddress}) {
     $log->warn($s->logId()." - Has no address.");
   }
+
+  # PrettyCirc must have the Address-table, PrettyLib may or may not have the Address-table, even if the Id_Address-columns exist
+  $b->{Address} || die('Repository Address is missing!') if (ref($s) eq 'MMT::PrettyCirc2Koha::Customer');
+  if ($b->{Address}) {
+    my @addresses = (
+      $b->{Address}->get($o->{Id_Address}),
+      $b->{Address}->get($o->{Id_Address2}),
+    );
+    @addresses = map {@$_ if $_} @addresses;
+    for my $address (@addresses) {
+      next unless $address;
+      if ($address->{AddType} == 1 || $address->{AddType} == 2) {
+        # Presume these are PrettyCirc Serial routing list routing addresses
+        unless ($address->{Name}) {
+          $log->warn($s->logId()." has an external Address-entry, but it is missing 'Name'?");
+          next;
+        }
+        $s->_addExtendedPatronAttribute('routing_list_address', $address->{Name}, undef); # not repeatable
+        # TODO: $address->{PostAddress}, $address->{Code}
+      }
+      else {
+        $log->fatal($s->logId()." Unknown address type '".$address->{AddType}."'!");
+      }
+    }
+  }
 }
 sub setEmail($s, $o, $b) {
   if ($o->{Email}) {
@@ -413,14 +438,15 @@ sub setSort2($s, $o, $b) {
   $s->{sort2} = $o->{Id};
 }
 
+# Hack: First index (0) of ExtendedPatronAttributes is the repeatability-flag.
 sub _addExtendedPatronAttribute($s, $attributeName, $val, $isRepeatable) {
   my $existingValue = $s->{ExtendedPatronAttributes}->{$attributeName};
   if (not(defined($existingValue))) {
-    $s->{ExtendedPatronAttributes}->{$attributeName} = [$val];
+    $s->{ExtendedPatronAttributes}->{$attributeName} = [$isRepeatable // 0, $val];
   }
   elsif (defined($existingValue) && not($isRepeatable)) {
-    $log->warn("ExtendedPatronAttribute '$attributeName' is overwritten for '".$s->logId()."', old value '$existingValue', new value '$val'");
-    $s->{ExtendedPatronAttributes}->{$attributeName}->[0] = $val;
+    $log->warn("ExtendedPatronAttribute '$attributeName' is overwritten for '".$s->logId()."', old value '@$existingValue', new value '$val'");
+    $existingValue->[1] = $val;
   }
   elsif (defined($existingValue) && $isRepeatable) {
     push(@$existingValue, $val);

@@ -139,11 +139,21 @@ C4::Members::Attributes doesn't have an accessor to simply add a single entry.
 
 =cut
 
+my %attributesInDatabase;
 sub addBorrowerAttribute($s, $patron, $attribute, $value) {
   unless ($s->{sth_addBorrowerAttribute}) {
     $s->{sth_addBorrowerAttribute} = $s->{dbh}->prepare(
       "INSERT INTO borrower_attributes (borrowernumber, code, attribute) VALUES (?, ?, ?)"
     );
+  }
+  unless ($attributesInDatabase{$attribute}) { # Autoload the borrower_attribute_types with caching.
+    my $attr_type = C4::Members::AttributeTypes->fetch($attribute);
+    unless ($attr_type) {
+      $attr_type = C4::Members::AttributeTypes->new($attribute, "AUTO-$attribute");
+      $attr_type->{repeatable} = ($repeatable) ? 1 : 0;
+      $attr_type->store();
+    }
+    $attributesInDatabase{$attribute} = $attr_type;
   }
   $s->{sth_addBorrowerAttribute}->execute($patron->{borrowernumber}, $attribute, $value) or die("Adding borrower_attribute 'SSN' failed for borrowernumber='".$patron->{borrowernumber}."': ".$s->{sth_addBorrowerAttribute}->errstr());
 }

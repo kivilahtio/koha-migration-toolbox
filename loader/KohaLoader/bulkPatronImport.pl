@@ -272,8 +272,9 @@ sub processNewFromRow($patron) {
 
     if ($extendedPatronAttributes) {
         while (my ($attr, $vals) = each(%$extendedPatronAttributes)) {
+            my $isRepeatable = shift @$vals;
             for my $val (@$vals) {
-                $patronImporter->addBorrowerAttribute($patron, $attr, $val);
+                $patronImporter->addBorrowerAttribute($patron, $attr, $val, $isRepeatable);
             }
         }
     }

@@ -325,6 +325,7 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
           inputFile => 'Customer.csv',
           repositories => [
             {name => 'Groups', file => 'Groups.csv',  keys => ['Id']},
+            {name => 'Address', file => 'Address.csv',  keys => ['Id']},
           ],
           translationTables => [
             {name => 'Branchcodes'},
