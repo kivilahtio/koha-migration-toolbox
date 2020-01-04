@@ -242,12 +242,8 @@ PrettyLib.AuthorCross -> Authors -> Field 100
 sub linkAuthors($s, $o, $builder) {
   my (@subfields);
   if (my $authorCrosses = $builder->{AuthorCross}->get($o->{Id})) {
-    if (@$authorCrosses > 1) {
-      $log->error($s->logId()." - Has '".scalar(@$authorCrosses)."' Author field 100s. Only one allowed!");
-    }
-    else {
-      $log->trace($s->logId." - Found '".scalar(@$authorCrosses)."' authors.") if $log->is_trace();
-    }
+    $log->trace($s->logId." - Found '".scalar(@$authorCrosses)."' authors.") if $log->is_trace();
+
     @$authorCrosses = sort {$a->{Pos} <=> $b->{Pos}} @$authorCrosses; # PrettyLib.AuthorCross.Pos seems to denote the ordering of these subject-words.
     for my $authorCross (@$authorCrosses) {
       if (my $authors = $builder->{Authors}->get($authorCross->{Id_Author})) {
@@ -257,12 +253,31 @@ sub linkAuthors($s, $o, $builder) {
             $log->debug($s->logId." - Found an empty Author with Id '".$author->{Id}."'.") if $log->is_debug();
             next;
           }
-          push(@subfields, MMT::MARC::Subfield->new('a', $author->{Author})) if $author->{Author};
+
+          my $fieldCode;
+          if    ($authorCross->{Id_Field} == 23) {
+            $fieldCode = 100;
+          }
+          elsif ($authorCross->{Id_Field} == 24) {
+            $fieldCode = 110;
+          }
+          elsif ($authorCross->{Id_Field} == 25) {
+            $fieldCode = 130;
+          }
+          else {
+            $log->fatal($s->logId()." - Unknown AuthorCross.Id_Field '".$authorCross->{Id_Field}."'!");
+          }
+          my $field = $s->{record}->getUnrepeatableField($fieldCode);
+          $field = $s->{record}->addField(MMT::MARC::Field->new($fieldCode, '1', '#', [])) unless $field;
+          $field->addSubfield(MMT::MARC::Subfield->new('a', $author->{Author}));
+          if (my $sfs = $field->subfields('a')) {
+            $log->error($s->logId()." - Has '".scalar(@$sfs)."' Author field '$fieldCode'. Only one allowed!")
+                if @$sfs > 1;
+          }
         }
       }
     }
   }
-  $s->{record}->addField(MMT::MARC::Field->new('100', '1', '#', \@subfields)) if @subfields;
 }
 
 =head2 linkBigTexts
@@ -592,7 +607,7 @@ sub getItemType($s, $o, $b) {
     die "Unable to bless \$item as PrettyLib or PrettyCirc Item for Biblio '$s'!" unless blessed($item);
     $item->setPermanent_location($item, $b);
     return $item->{itype} if ($item->{itype});
-    return 'EJ' if MMT::PrettyLib2Koha::Item::_circIsElectronic($item) if (ref($s) eq 'MMT::PrettyCirc2Koha::Item');
+    return 'EJ' if (ref($s) eq 'MMT::PrettyCirc2Koha::Item' && MMT::PrettyLib2Koha::Item::_circIsElectronic($item));
   }
   return $b->{ItemTypes}->translate($s, $item, $b, $titleType); # Try to get the itemtype from the biblio or the item
 }
