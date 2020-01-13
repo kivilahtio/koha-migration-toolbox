@@ -148,7 +148,7 @@ $dbh->{odbc_default_bind_type} = SQL_VARCHAR;
 $dbh->{LongReadLen} = 80000;
 
 
-my @ignoredTables = ('PrettyLibFiles');
+my @ignoredTables = ('PrettyLibFiles', 'PrettyCircFiles');
 
 sub configure {
   my ($configPath) = @_;
@@ -238,7 +238,7 @@ sub exportTable {
     $maxId = _executeSql($dbh, $config, "SELECT TOP 1 Id FROM ".$table->{TABLE_NAME}." ORDER BY Id DESC");
     $maxId = $maxId->[0]->[0];
   };
-  if ($@) { die($@) unless ($@ =~ /Invalid column name 'Id'/); }
+  if ($@) { die($@) unless ($@ =~ /SQL-42S22/); } #/Invalid column name 'Id'/
 
   my $rows = _executeSql($dbh, $config, "SELECT * FROM ".$table->{TABLE_NAME});
   $rows = [] unless $rows;
@@ -355,3 +355,5 @@ hasPSCP($config) if $config->{pscp_filepath} or $opShip;
 introspectTables($dbh, $config) if $opIntrospect or $opExtract;
 exportSql($dbh, $config, $sql) if $sql;
 ship($config) if $opShip;
+
+
