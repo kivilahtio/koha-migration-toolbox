@@ -63,6 +63,12 @@ Load the translation instructions from the configuration file
 sub _loadMappings($s) {
   $s->{_mappings} = YAML::XS::LoadFile($s->{_params}->{file}) or die("Failed to load '".$s->{_params}->{file}."'. $!");
   $log->debug($s->logId()." loaded mappings: ".MMT::Validator::dumpObject($s->{_mappings})." from file '".$s->{_params}->{file}."'");
+
+  for my $k (keys %{$s->{_mappings}}) {
+    if ($k !~ /^[a-zA-Z0-9_]+$/g) {
+      die("Mapping '$k' contains invalid characters. For safety reasons use only [a-zA-Z0-9_] as valid codes in Koha");
+    }
+  }
 }
 
 =head2 translate
