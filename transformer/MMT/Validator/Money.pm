@@ -111,6 +111,10 @@ sub money_PrettyLib($kohaObject, $voyagerObject, $builder, $priceCandidate) {
       return "$symbol$price";
     }
   }
+  else {
+    $log->error("Failed to parse Pretty* money '$priceCandidate'");
+    return undef;
+  }
 }
 
 1;

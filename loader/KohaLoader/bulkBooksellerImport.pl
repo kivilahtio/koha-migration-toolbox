@@ -12,7 +12,11 @@ use Log::Log4perl qw(:easy);
 use Getopt::Long;
 use C4::Context;
 
-my $booksellerFile = $ENV{DATA_SOURCE_DIR}.'/Bookseller.migrateme';
+use Bulk::ConversionTable::SubscriptionidConversionTable;
+
+my $booksellerFile = ($ENV{DATA_SOURCE_DIR}//'.').'/Bookseller.migrateme';
+my $booksellerConversionTable = ($ENV{MMT_WORKING_DIR}//'.').'/booksellerConversionTable';
+
 our $verbosity = 3;
 
 my $help = <<HELP;
@@ -29,6 +33,9 @@ DESCRIPTION
     --file filepath
           The perl-serialized HASH of Booksellers.
 
+    --booksellerConversionTable filepath
+          Defaults to '$booksellerConversionTable'
+
     -v level
           Verbose output to the STDOUT,
           Defaults to $verbosity, 6 is max verbosity, 0 is fatal only.
@@ -37,6 +44,7 @@ HELP
 
 GetOptions(
     'file:s'                   => \$booksellerFile,
+    'B|bsConversionTable:s'    => \$booksellerConversionTable,
     'v|verbosity:i'            => \$verbosity,
 );
 
@@ -90,6 +98,10 @@ acqprimary, serialsprimary
 );
 
 
+INFO "Opening BooksellerConversionTable '$booksellerConversionTable' for writing";
+$booksellerConversionTable = Bulk::ConversionTable::SubscriptionidConversionTable->new( $booksellerConversionTable, 'write' );
+
+
 my $i = 0;
 while (<$fh>) {
     $i++;
@@ -107,6 +119,8 @@ $bs->{fax}, $bs->{deliverytime},
     );
     my $booksellerid = $sthBooksellers->{mysql_insertid};
 
+    $booksellerConversionTable->writeRow($bs->{id}, $booksellerid);
+
     my $cs = $bs->{aqcontacts};
     $sthBooksellerContacts->execute(
 undef, $booksellerid, $cs->{name}, $cs->{position},
@@ -115,3 +129,6 @@ $cs->{notes}, $cs->{orderacquisition}, $cs->{claimacquisition}, $cs->{claimissue
 $cs->{acqprimary}, $cs->{serialsprimary},
     );
 }
+
+$booksellerConversionTable->close();
+

@@ -144,6 +144,7 @@ unless ($args{inputMarcFile}) {
 }
 
 my $bimporter = Bulk::BibImporter->new(\%args);
+TODO:: Make sure the biblio_metadata -row is created!
 
 my $disablePrefs = {
   CataloguingLog => {

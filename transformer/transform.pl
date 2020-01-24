@@ -520,6 +520,7 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
           inputFile => 'Periodical.csv',
           repositories => [
             {name => "Items", file => 'Item.csv', keys => ['Id']}, # Translate the biblionumber from the attached items
+            {name => "CircleNewOrder", file => 'CircleNewOrder.csv', keys => ['Id_Item']}, # Subscription information
           ],
           translationTables => [
             {name => 'LocationId'},

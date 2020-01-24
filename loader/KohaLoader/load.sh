@@ -144,6 +144,9 @@ function migrateBulkScripts {
         --bnConversionTable $WORKING_DIR/biblionumberConversionTable \
         &> $WORKING_DIR/bulkHoldsImport.log
 
+    ./bulkBooksellerImport.pl --file $DATA_SOURCE_DIR/Bookseller.migrateme \
+        &> $WORKING_DIR/bulkBooksellerImport.log
+
     ./bulkSubscriptionImport.pl \
         --subscriptionFile $DATA_SOURCE_DIR/Subscription.migrateme \
         --serialFile $DATA_SOURCE_DIR/Serial.migrateme \
@@ -155,9 +158,6 @@ function migrateBulkScripts {
 
     ./bulkBranchtransfersImport.pl -file $DATA_SOURCE_DIR/Branchtransfer.migrateme \
         --inConversionTable $WORKING_DIR/itemnumberConversionTable \
-        &> $WORKING_DIR/bulkBranchtransfersImport.log
-
-    ./bulkBooksellerImport.pl --file $DATA_SOURCE_DIR/Bookseller.migrateme \
         &> $WORKING_DIR/bulkBranchtransfersImport.log
 
     #./bulkRotatingCollectionsImport.pl --file $DATA_SOURCE_DIR/Siirtolaina.migrateme &> $WORKING_DIR/bulkRotatingCollectionsImport.log

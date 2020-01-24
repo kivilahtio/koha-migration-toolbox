@@ -199,7 +199,7 @@ TRUNCATE statistics;
 TRUNCATE subscription;
 --TRUNCATE subscription_frequencies;
 --TRUNCATE subscription_numberpatterns;
---TRUNCATE subscriptionhistory;
+TRUNCATE subscriptionhistory;
 TRUNCATE subscriptionroutinglist;
 TRUNCATE suggestions;
 --TRUNCATE systempreferences;

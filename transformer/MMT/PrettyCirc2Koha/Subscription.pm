@@ -4,10 +4,12 @@ use MMT::Pragmas;
 
 #External modules
 use DateTime;
+use DateTime::Format::MySQL;
 
 #Local modules
 use MMT::PrettyCirc2Koha::Periodical;
 use MMT::Validator;
+use MMT::Validator::Money;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
 #Inheritance
@@ -23,7 +25,6 @@ MMT::PrettyCirc2Koha::Subscription - Transforms a bunch of PrettyCirc data into 
 
 =cut
 
-our $createClosedSubscriptions = 0;
 
 # Build the subscriptions here based on the individual serials analyzed for each Biblio.
 our %subscriptions;
@@ -85,8 +86,11 @@ sub analyzePeriodical($o, $b) {
   }
 
   # look for the biggest end date
-  $s->{enddate} = $o->{PeriodYear} unless $s->{enddate};
-  if ($o->{PeriodYear} && $o->{PeriodYear} =~ /^\d\d\d\d/ && $o->{PeriodYear} gt $s->{enddate}) {
+  $s->{enddate} = '1000-01-01' unless $s->{enddate};
+  if ($o->{PeriodDate} && $o->{PeriodDate} gt $s->{enddate}) {
+    $s->{enddate} = $o->{PeriodDate};
+  }
+  elsif ($o->{PeriodYear} && $o->{PeriodYear} =~ /^\d\d\d\d/ && $o->{PeriodYear} gt $s->{enddate}) {
     $s->{enddate} = $o->{PeriodYear}.'-12-31';
   }
 
@@ -108,15 +112,15 @@ sub build($self, $o, $b) {
 
   #$self->setLibrarian           ($o, $b); #| varchar(100) | YES  |     |         |                |
   $self->setStartdate            ($o, $b); #| date         | YES  |     | NULL    |                |
-  #$self->setAqbooksellerid      ($o, $b); #| int(11)      | YES  |     | 0       |                |
-  #$self->setCost                ($o, $b); #| int(11)      | YES  |     | 0       |                |
+  $self->setAqbooksellerid       ($o, $b); #| int(11)      | YES  |     | 0       |                |
+  $self->setCost                 ($o, $b); #| int(11)      | YES  |     | 0       |                |
   #$self->setAqbudgetid          ($o, $b); #| int(11)      | YES  |     | 0       |                |
   #$self->setWeeklength          ($o, $b); #| int(11)      | YES  |     | 0       |                |
   #$self->setMonthlength         ($o, $b); #| int(11)      | YES  |     | 0       |                |
   #$self->setNumberlength        ($o, $b); #| int(11)      | YES  |     | 0       |                |
   #$self->setPeriodicity         ($o, $b); #| int(11)      | YES  | MUL | NULL    |                |
   #$self->setCountissuesperunit  ($o, $b); #| int(11)      | NO   |     | 1       |                |
-  #$self->setNotes               ($o, $b); #| mediumtext   | YES  |     | NULL    |                |
+  $self->setNotes               ($o, $b); #| mediumtext   | YES  |     | NULL    |                |
   $self->setStatus               ($o, $b); #| varchar(100) | NO   |     |         |                |
   #$self->setLastvalue1          ($o, $b); #| int(11)      | YES  |     | NULL    |                |
   #$self->setInnerloop1          ($o, $b); #| int(11)      | YES  |     | 0       |                |
@@ -158,6 +162,18 @@ sub logId($s) {
   return 'Subscription: '.$s->id();
 }
 
+sub setAqbooksellerid($s, $o, $b) {
+  my $supplierId = $s->_getCircleNewOrder($b, 'Id_Supplier');
+  $s->{aqbooksellerid} = $supplierId if $supplierId;
+}
+sub setCost($s, $o, $b) {
+  my $cost = $s->_getCircleNewOrder($b, 'EstPrice');
+  $s->{cost} = MMT::Validator::Money::money_PrettyLib($s, $o, $b, $cost) if $cost;
+}
+sub setNotes($s, $o, $b) {
+  my $n = $s->_getCircleNewOrder($b, 'Notes');
+  $s->{notes} = $n if $n;
+}
 sub setStartdate($s, $o, $b) {
   unless ($s->{startdate}) {
     #Voyager seems to have so very few subsription.start_date -values that it is better to default it
@@ -169,18 +185,7 @@ sub setStatus($s, $o, $b) {
   $s->{status} = 1;
 }
 sub setFirstacquidate($s, $o, $b) {
-  if ($createClosedSubscriptions) {
-    $s->{firstacquidate} = $s->{startdate} if $s->{startdate};
-  }
-  else {
-    my $startOfYear = DateTime->new(
-      year => DateTime->now()->year(),
-      month => 1,
-      day => 1,
-      time_zone => 'Europe/Helsinki',
-    );
-    $s->{firstacquidate} = $startOfYear->iso8601();
-  }
+  $s->{firstacquidate} = $s->{startdate};
 }
 sub setLocation($s, $o, $b) {
   my $item = $b->{Items}->get($s->{itemnumber})->[0];
@@ -196,23 +201,39 @@ sub setBranchcode($s, $o, $b) {
   }
 }
 sub setSerialsadditems($s, $o, $b) {
-  $s->{serialsadditems} = 1;
+  $s->{serialsadditems} = 0;
 }
 sub setStaffdisplaycount($s, $o, $b) {
-  $s->{staffdisplaycount} = 300;
+  #$s->{staffdisplaycount} = 300; # Use the serials module and syspref defaults
 }
 sub setOpacdisplaycount($s, $o, $b) {
-  $s->{opacdisplaycount} = 300;
+  #$s->{opacdisplaycount} = 300; # Use the serials module and syspref defaults
 }
 my $endDate = DateTime->now()->ymd('-');
+my $endDateContinues = DateTime->now()->set_month(12)->set_day(31)->ymd('-');
+my $closedSubscriptionCutoffDate = DateTime->now()->subtract(months => 6);
 sub setEnddate($s, $o, $b) {
-  unless ($s->{enddate}) {
-    #Voyager seems to have so very few component_pattern.end_date -values that it is better to default it
-    $s->{enddate} = $endDate;
+  my $circleOrderNew_enddate = $s->_getCircleNewOrder($b, 'EndDate');
+  if ($circleOrderNew_enddate) {
+    $s->{enddate} = MMT::Validator::parseDate($circleOrderNew_enddate);
+  }
+  else {
+    unless ($s->{enddate}) {
+      $s->{enddate} = $endDate;
+      $s->{closed} = 1;
+    }
   }
 }
 sub setClosed($s, $o, $b) {
-  $s->{closed} = ($createClosedSubscriptions) ? 1 : 0; #Currently only bare minimums are migrated, so enumeration cannot atm. continue in Koha from where voyager left off.
+  return if $s->{closed};
+
+  my $ed = DateTime::Format::MySQL->parse_date($s->{enddate});
+  if (DateTime->compare($ed, $closedSubscriptionCutoffDate) > 0) { # current enddate is newer than the closed cutoff date
+    $s->{closed} = 0;
+  }
+  else {
+    $s->{closed} = 1;
+  }
 }
 
 =head2 setSubscriptionhistory
@@ -224,6 +245,17 @@ To properly operate the subscriptions in Koha, they MUST have matching subscript
 sub setSubscriptionhistory($s, $o, $b) {
   MMT::Exception::Delete->throw($s->logId()." has no subscriptiohistory-key?") unless (exists($s->{subscriptionhistory}));
   $s->{subscriptionhistory} = join('; ', sort @{$s->{subscriptionhistory}});
+}
+
+
+
+sub _getCircleNewOrder($s, $b, $attribute) {
+  my $c = $b->{CircleNewOrder}->get($s->{itemnumber});
+  if ($c && $c->[0]) {
+    return $c->[0]->{$attribute} if $attribute;
+    return $c->[0];
+  }
+  return undef;
 }
 
 return 1;

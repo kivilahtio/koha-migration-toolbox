@@ -27,6 +27,7 @@ my %args = (subscriptionfile =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.'
             biblionumberConversionTable       => ($ENV{MMT_WORKING_DIR}//'.').'/biblionumberConversionTable',
             itemnumberConversionTable         => ($ENV{MMT_WORKING_DIR}//'.').'/itemnumberConversionTable',
             borrowernumberConversionTable     => ($ENV{MMT_WORKING_DIR}//'.').'/borrowernumberConversionTable',
+            booksellerConversionTable         => ($ENV{MMT_WORKING_DIR}//'.').'/booksellerConversionTable',
 );
 
 
@@ -37,6 +38,7 @@ GetOptions(
     'suConversionTable:s'      => \$args{subscriptionidConversionTableFile},
     'b|bnConversionTable:s'    => \$args{biblionumberConversionTable},
     'i|inConversionTable:s'    => \$args{itemnumberConversionTable},
+    'B|bsConversionTable:s'    => \$args{booksellerConversionTable},
     'v|verbosity:i'            => \$verbosity,
 );
 
@@ -54,6 +56,7 @@ SYNOPSIS
     --suConversionTable $args{subscriptionidConversionTableFile} \
     --bnConversionTable $args{biblionumberConversionTable} \
     --inConversionTable $args{itemnumberConversionTable}
+    --bsConversionTable $args{booksellerConversionTable}
 
 
 DESCRIPTION
@@ -99,9 +102,9 @@ my $dbh=C4::Context->dbh();
 
 
 my $sub_insert_sth = $dbh->prepare("INSERT INTO subscription
-                                    (librarian,     branchcode, biblionumber,   notes, status,
-                                     internalnotes, location,   startdate)
-                                    VALUES (?,?,?,?,?,?,?,?)");
+                                    (librarian,     branchcode, biblionumber,   notes, status, internalnotes, location,
+                                     startdate, firstacquidate, closed, cost, aqbooksellerid, enddate)
+                                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)");
 my $subhist_insert_sth = $dbh->prepare("INSERT INTO subscriptionhistory
                                     (biblionumber, subscriptionid, histstartdate, histenddate,
                                      missinglist, recievedlist)
@@ -109,8 +112,12 @@ my $subhist_insert_sth = $dbh->prepare("INSERT INTO subscriptionhistory
 my $sub_set_serial_sth = $dbh->prepare("UPDATE biblio
                                         SET serial=1
                                         WHERE biblionumber=?");
+
+my $subhist_create_missing = $dbh->prepare #TODO: all subscriptions must have a subscriptionhistory-entry! It could be missing! How to create it ! Use Koha C4::Serial for it!
+
 sub migrate_subscription($s) {
-    $sub_insert_sth->execute('0', $s->{branchcode}, $s->{biblionumber}, $s->{notes}, $s->{status}, $s->{internalnotes}, $s->{location}, $s->{startdate})
+    $sub_insert_sth->execute('0', $s->{branchcode}, $s->{biblionumber}, $s->{notes}, $s->{status}, $s->{internalnotes}, $s->{location},
+                                  $s->{startdate}, $s->{firstacquidate}, $s->{closed}, $s->{cost}, $s->{aqbooksellerid}, $s->{enddate})
       or die "INSERT:ing Subscription failed: ".$sub_insert_sth->errstr();
 
     my $newSubscriptionid = $dbh->last_insert_id(undef, undef, 'subscription', 'subscriptionid') or die("Fetching last insert if failed: ".$dbh->errstr());
@@ -168,8 +175,15 @@ sub validateAndConvertSubscriptionKeys($s) {
         WARN "$errId has no new biblionumber in the biblionumberConversionTable!";
         return undef;
     }
-
     $s->{biblionumber} = $newBiblionumber;
+
+    my $newAqbooksellerid = $args{booksellerConversionTable}->fetch($s->{aqbooksellerid});
+    unless ($newAqbooksellerid) {
+        WARN "$errId has no new Aqbooksellerid in the booksellerConversionTable!";
+        return undef;
+    }
+    $s->{aqbooksellerid} = $newAqbooksellerid;
+
     return $s;
 }
 
@@ -236,6 +250,8 @@ INFO "Opening BiblionumberConversionTable '$args{biblionumberConversionTable}' f
 $args{biblionumberConversionTable} = Bulk::ConversionTable::BiblionumberConversionTable->new($args{biblionumberConversionTable}, 'read');
 INFO "Opening ItemnumberConversionTable '$args{itemnumberConversionTable}' for reading";
 $args{itemnumberConversionTable} = Bulk::ConversionTable::ItemnumberConversionTable->new($args{itemnumberConversionTable}, 'read');
+INFO "Opening BooksellerConversionTable '$args{booksellerConversionTable}' for reading";
+$args{booksellerConversionTable} = Bulk::ConversionTable::SubscriptionidConversionTable->new($args{booksellerConversionTable}, 'read');
 
 my $fh = Bulk::Util::openFile($args{subscriptionfile});
 my $i = 0;
@@ -280,3 +296,4 @@ while (<$fh>) {
     migrate_srl($srl);
 }
 $fh->close();
+

@@ -95,7 +95,7 @@ sub sanitateInput($o) {
 
 sub mergeLinks($s, $o, $b) {
   linkAuthors(@_);
-  linkBigTexts(@_);
+  linkBigTexts(@_) if (ref($s) eq 'MMT::PrettyLib2Koha::Biblio');
   linkClasses(@_);
   linkDocuments(@_);
   linkPublishers(@_);
@@ -254,25 +254,38 @@ sub linkAuthors($s, $o, $builder) {
             next;
           }
 
-          my $fieldCode;
+          my ($fieldCode, $i1, $i2);
           if    ($authorCross->{Id_Field} == 23) {
             $fieldCode = 100;
+            $i1 = 0;
+            $i2 = '#';
           }
           elsif ($authorCross->{Id_Field} == 24) {
-            $fieldCode = 110;
+            $fieldCode = 700;
+            $i1 = 0;
+            $i2 = '#';
           }
           elsif ($authorCross->{Id_Field} == 25) {
-            $fieldCode = 130;
+            $fieldCode = 110;
+            $i1 = 2;
+            $i2 = '#';
           }
           else {
             $log->fatal($s->logId()." - Unknown AuthorCross.Id_Field '".$authorCross->{Id_Field}."'!");
           }
-          my $field = $s->{record}->getUnrepeatableField($fieldCode);
-          $field = $s->{record}->addField(MMT::MARC::Field->new($fieldCode, '1', '#', [])) unless $field;
-          $field->addSubfield(MMT::MARC::Subfield->new('a', $author->{Author}));
-          if (my $sfs = $field->subfields('a')) {
-            $log->error($s->logId()." - Has '".scalar(@$sfs)."' Author field '$fieldCode'. Only one allowed!")
-                if @$sfs > 1;
+          if ($fieldCode eq '700') {
+            $s->{record}->addField(MMT::MARC::Field->new($fieldCode, $i1, $i2, [
+              MMT::MARC::Subfield->new('a', $author->{Author}),
+            ]));
+          }
+          else {
+            my $field = $s->{record}->getUnrepeatableField($fieldCode);
+            $field = $s->{record}->addField(MMT::MARC::Field->new($fieldCode, $i1, $i2, [])) unless $field;
+            $field->addSubfield(MMT::MARC::Subfield->new('a', $author->{Author}));
+            if (my $sfs = $field->subfields('a')) {
+              $log->error($s->logId()." - Has '".scalar(@$sfs)."' Author field '$fieldCode'. Only one allowed!")
+                  if @$sfs > 1;
+            }
           }
         }
       }

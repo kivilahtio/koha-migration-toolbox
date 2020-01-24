@@ -83,7 +83,7 @@ package C4::Items {
   use warnings 'redefine';
 }
 
-
+my $dbh = C4::Context->dbh;
 
 ## Get the id from where we start adding old issues. It is the biggest issue_id in use. It is important the issue_ids don't overlap.
 my $old_issue_id = Bulk::Util::getMaxIssueId($dbh);
@@ -96,7 +96,6 @@ $borrowernumberConversionTable = Bulk::ConversionTable::BorrowernumberConversion
 INFO "Opening ItemnumberConversionTable '$itemnumberConversionTable' for reading";
 $itemnumberConversionTable =     Bulk::ConversionTable::ItemnumberConversionTable->new($itemnumberConversionTable, 'read');
 
-my $dbh = C4::Context->dbh;
 my $checkoutStatement = $dbh->prepare(
     "INSERT INTO issues
         (issue_id, borrowernumber, itemnumber, issuedate, date_due, branchcode, renewals)

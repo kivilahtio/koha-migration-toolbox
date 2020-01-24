@@ -151,8 +151,8 @@ sub filetype($file) {
 =cut
 
 sub parseDate($dateStr) {
-  if ($dateStr =~ /^\s*(\d{4})-(\d{2})-(\d{2})/) { #ISO-8601 Date
-    return $dateStr;
+  if ($dateStr =~ /^\s*((\d{4})-(\d{2})-(\d{2}))/) { #ISO-8601 Date
+    return $1;
   }
   elsif ($dateStr =~ /^\s*
                       (\d{1,2})\.(\d{1,2})\.(\d{4}) #DMY

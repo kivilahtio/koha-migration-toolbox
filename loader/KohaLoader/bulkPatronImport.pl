@@ -223,7 +223,7 @@ sub processNewFromRow($patron) {
         eval { $patron->{borrowernumber} = $patronImporter->AddMember($patron) };
 
         if ($@) {
-            if ($@ =~ /Duplicate entry '.*?' for key 'cardnumber'/) {
+            if ($@ =~ /Duplicate entry '.*?' for key 'cardnumber'/gsm) {
                 WARN "Patron cn:'$patron->{cardnumber}' has a duplicate cardnumber|userid. Prepending 'TUPLA_' and retrying.";
                 # Duplicate cardnumber? Mark the cardnumber as duplicate and retry.
                 $patron->{userid} .= '_TUPLA' if $patron->{userid} eq $patron->{cardnumber};

@@ -289,7 +289,7 @@ sub setContactInfo($s, $o, $b) {
           $log->warn($s->logId()." has an external Address-entry, but it is missing 'Name'?");
           next;
         }
-        $s->_addExtendedPatronAttribute('routing_list_address', $address->{Name}, undef); # not repeatable
+        $s->_addExtendedPatronAttribute('RLIST_ADDR', $address->{Name}, undef); # not repeatable
         # TODO: $address->{PostAddress}, $address->{Code}
       }
       else {

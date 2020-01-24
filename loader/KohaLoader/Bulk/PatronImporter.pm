@@ -122,6 +122,9 @@ sub addBorrowerDBI($s, $patron) {
     if (Bulk::AutoConfigurer::borrower($patron, $@)) {
       $s->{sth_addBorrower}->execute(@params) or die("Adding borrower failed: ".$s->{sth_addBorrower}->errstr());
     }
+    else {
+      die $@;
+    }
   }
 
   my $borrowernumber = $s->{dbh}->last_insert_id(undef, undef, 'borrowers', undef);
@@ -140,7 +143,7 @@ C4::Members::Attributes doesn't have an accessor to simply add a single entry.
 =cut
 
 my %attributesInDatabase;
-sub addBorrowerAttribute($s, $patron, $attribute, $value) {
+sub addBorrowerAttribute($s, $patron, $attribute, $value, $isRepeatable) {
   unless ($s->{sth_addBorrowerAttribute}) {
     $s->{sth_addBorrowerAttribute} = $s->{dbh}->prepare(
       "INSERT INTO borrower_attributes (borrowernumber, code, attribute) VALUES (?, ?, ?)"
@@ -150,7 +153,8 @@ sub addBorrowerAttribute($s, $patron, $attribute, $value) {
     my $attr_type = C4::Members::AttributeTypes->fetch($attribute);
     unless ($attr_type) {
       $attr_type = C4::Members::AttributeTypes->new($attribute, "AUTO-$attribute");
-      $attr_type->{repeatable} = ($repeatable) ? 1 : 0;
+      $attr_type->{repeatable} = ($isRepeatable) ? 1 : 0;
+      $attr_type->{unique_id} = 0;
       $attr_type->store();
     }
     $attributesInDatabase{$attribute} = $attr_type;
