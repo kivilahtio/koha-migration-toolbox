@@ -120,7 +120,7 @@ sub build($self, $o, $b) {
   #$self->setNumberlength        ($o, $b); #| int(11)      | YES  |     | 0       |                |
   #$self->setPeriodicity         ($o, $b); #| int(11)      | YES  | MUL | NULL    |                |
   #$self->setCountissuesperunit  ($o, $b); #| int(11)      | NO   |     | 1       |                |
-  $self->setNotes               ($o, $b); #| mediumtext   | YES  |     | NULL    |                |
+  #$self->setNotes               ($o, $b); #| mediumtext   | YES  |     | NULL    |                |
   $self->setStatus               ($o, $b); #| varchar(100) | NO   |     |         |                |
   #$self->setLastvalue1          ($o, $b); #| int(11)      | YES  |     | NULL    |                |
   #$self->setInnerloop1          ($o, $b); #| int(11)      | YES  |     | 0       |                |
@@ -136,7 +136,7 @@ sub build($self, $o, $b) {
   #$self->setNumberpattern       ($o, $b); #| int(11)      | YES  | MUL | NULL    |                |
   #$self->setLocale              ($o, $b); #| varchar(80)  | YES  |     | NULL    |                |
   #$self->setDistributedto       ($o, $b); #| text         | YES  |     | NULL    |                |
-  #$self->setInternalnotes       ($o, $b); #| longtext     | YES  |     | NULL    |                |
+  $self->setInternalnotes       ($o, $b); #| longtext     | YES  |     | NULL    |                |
   #$self->setCallnumber          ($o, $b); #| text         | YES  |     | NULL    |                |
   $self->setLocation             ($o, $b); #| varchar(80)  | YES  |     |         |                |
   $self->setBranchcode           ($o, $b); #| varchar(10)  | NO   |     |         |                |
@@ -170,9 +170,9 @@ sub setCost($s, $o, $b) {
   my $cost = $s->_getCircleNewOrder($b, 'EstPrice');
   $s->{cost} = MMT::Validator::Money::money_PrettyLib($s, $o, $b, $cost) if $cost;
 }
-sub setNotes($s, $o, $b) {
+sub setInternalnotes($s, $o, $b) {
   my $n = $s->_getCircleNewOrder($b, 'Notes');
-  $s->{notes} = $n if $n;
+  $s->{internalnotes} = $n if $n;
 }
 sub setStartdate($s, $o, $b) {
   unless ($s->{startdate}) {
