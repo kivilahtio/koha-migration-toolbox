@@ -41,6 +41,8 @@ Creates a MARC::Record from a tabular data structure.
 =cut
 
 sub build($s, $o, $b) {
+TODO:: Convert FinMARC -> MARC21
+
   $s->{biblionumber} = $o->{Id};
   unless ($s->{biblionumber}) {
     MMT::Exception::Delete->throw(error => "Missing field 001 with record:\n".Data::Printer::np($o)."\n!!");
