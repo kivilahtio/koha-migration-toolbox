@@ -349,6 +349,9 @@ sub setDateofbirth($s, $o, $b) {
     $log->warn($s->logId()." - Unable to parse the date of birth from '$dob'");
     return undef;
   }
+  if ($y eq '00') { $log->warn($s->logId()." - dob '$dob' has zero year! Adjusting to 01.");  $y = '01'; }
+  if ($m eq '00') { $log->warn($s->logId()." - dob '$dob' has zero month! Adjusting to 01."); $m = '01'; }
+  if ($d eq '00') { $log->warn($s->logId()." - dob '$dob' has zero day! Adjusting to 01.");   $d = '01'; }
 
   $d = "0$d"  if length($d) == 1;
   $m = "0$m"  if length($m) == 1;
@@ -539,7 +542,7 @@ sub _extractCity($s, $o, $b, $cityField) {
       (\w{3,})   #This is the city, I presume
       (?:\D|\b)  #City might be typoed, so extract it only if it is not a part of a bigger word
       /x) {
-    return $1;
+    return $2;
   }
   else {
     $log->warn($s->logId()." - 'city' cannot be extracted from '$cityField'-field '".$o->{$cityField}."'");
