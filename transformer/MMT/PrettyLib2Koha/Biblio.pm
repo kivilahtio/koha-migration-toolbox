@@ -34,6 +34,7 @@ my %f001s;
 =head2 build
 
 Creates a MARC::Record from a tabular data structure.
+FinMARC -> MARC21 conversion is done post-transformation using USERMARCON
 
  @param1 {HASHRef} PrettyLib csv record row
  @param2 {TBuilder}
@@ -41,7 +42,6 @@ Creates a MARC::Record from a tabular data structure.
 =cut
 
 sub build($s, $o, $b) {
-TODO:: Convert FinMARC -> MARC21
 
   $s->{biblionumber} = $o->{Id};
   unless ($s->{biblionumber}) {
@@ -53,6 +53,11 @@ TODO:: Convert FinMARC -> MARC21
   sanitateInput($o);
 
   $s->{record} = MMT::MARC::Record->new();
+  # Creates FinMARC which is later converted to MARC21
+  parseFxxx(@_); # Turn tabular field definitions to MARC::Fields
+  linkTitleExtension(@_) unless (ref($s) eq 'MMT::PrettyCirc2Koha::Biblio');
+
+  ## Everything from now-on is MARC21
 
   # Gather information needed to build the leader
   my %leader;
@@ -61,8 +66,6 @@ TODO:: Convert FinMARC -> MARC21
   $s->{record}->addUnrepeatableSubfield('040', 'c', MMT::Config::organizationISILCode());
 
   $s->{record}->modTime($o->{UpdateDate} || $o->{SaveDate}); # Set 005
-
-  parseFxxx(@_); # Turn tabular field definitions to MARC::Fields
 
   _setF001($s, $o->{F001} || $s->id); # Enforce Field 001
 
@@ -75,8 +78,6 @@ TODO:: Convert FinMARC -> MARC21
   $s->mergeLinks($o, $b);
 
   $s->{record}->addUnrepeatableSubfield('942', 'c', getItemType(@_));
-
-  fixMARCProblems(@_);
 
   MMT::PrettyLib2Koha::Biblio::MaterialTypeRepair::forceControlFields(@_);
 }
@@ -95,6 +96,15 @@ sub sanitateInput($o) {
   }
 }
 
+=head2 mergeLinks
+
+Merges Biblio join tables to the MARC::Record.
+The source tables don't have FinMARC information embedded, so we do implicit MARC21-conversion here.
+
+So these subroutines need to generate MARC21-data!
+
+=cut
+
 sub mergeLinks($s, $o, $b) {
   linkAuthors(@_);
   linkBigTexts(@_) if (ref($s) eq 'MMT::PrettyLib2Koha::Biblio');
@@ -103,7 +113,6 @@ sub mergeLinks($s, $o, $b) {
   linkPublishers(@_);
   linkSeries(@_);
   linkSubjects(@_);
-  linkTitleExtension(@_) unless (ref($s) eq 'MMT::PrettyCirc2Koha::Biblio');
   linkSerialHoldings(@_) if     (ref($s) eq 'MMT::PrettyCirc2Koha::Biblio');
 }
 
@@ -172,8 +181,8 @@ sub _parseDatafield($s, $o, $b, $code, $data) {
 
   if (@subfields) {
     my $field = MMT::MARC::Field->new(_ss( $code),
-                                          ($indicator1 ? _ss($indicator1) : ''),
-                                          ($indicator2 ? _ss($indicator2) : ''),
+                                          ($indicator1 ? _si($indicator1) : ''),
+                                          ($indicator2 ? _si($indicator2) : ''),
                                           \@subfields);
     $s->{record}->addField($field);
     normalizeLanguageCodes($field) if $code eq '041';
@@ -987,9 +996,19 @@ sub _ss($text) {
   return $text;
 }
 
-sub fixMARCProblems($s, $o, $b) {
-  # JNSKons 300$d is deprecated, move it to 300$3
-  $s->{record}->relocateSubfield('300', '300', 'd', 'e');
+=head2 _si
+
+Sanitate an indicator
+
+=cut
+
+sub _si($i) {
+  if ($i =~ /^[0-9 |#]$/) {
+    return _ss($i);
+  }
+  else {
+    $log->warn("Bad indicator '".sprintf("%X", $i)."'");
+  }
 }
 
 return 1;

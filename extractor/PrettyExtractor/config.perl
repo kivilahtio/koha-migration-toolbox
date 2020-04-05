@@ -36,6 +36,8 @@ return {
 
   # Where the PSCP-program is?
   # This is used to ship the database dumps via ssh to the remote fileserver.
+  # You can download a new version of pscp from here, if the included version is not compatible with your system:
+  #    https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html
   pscp_filepath => 'pscp.exe',
 
   # User on the remote file server
