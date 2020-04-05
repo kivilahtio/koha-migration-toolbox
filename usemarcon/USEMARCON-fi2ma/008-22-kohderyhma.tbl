@@ -1,0 +1,7 @@
+008-22-kohderyhma.tbl
+
+j | j
+k | d          // Ongelma: Finmarc=oppi-/koulukirjat, MARC 21=adolescent (14-17)
+s | f
+0x20 | 0x7c
+#DEFAULT | 0x7c

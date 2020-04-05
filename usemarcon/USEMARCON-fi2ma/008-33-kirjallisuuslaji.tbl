@@ -1,0 +1,18 @@
+008-33-kirjallisuuslaji.tbl
+
+b | 0x31
+d | d
+e | e
+f | f
+h | h
+i | i
+j | j
+k | d
+m | m
+p | p
+s | s
+t | 0x30        // lisäksi 008/24(BK)=z
+w | 0x30	// lisäksi 008/24(BK)=u
+x | 0x30        // lisäksi 008/24(BK)=l
+0x20 | 0x7c
+#DEFAULT | 0x7c

@@ -1,0 +1,11 @@
+008-32-arvostelukoodi.tbl
+
+e | E l o k u v a 0x2d a r v o s t e l u 0x2e
+k | K i r j a l l i s u u s a r v o s t e l u 0x2e
+l | K u v a t a i d e a r v o s t e l u 0x2e
+m | M u s i i k k i a r v o s t e l u 0x2e
+n | T e a t t e r i t a i d e a r v o s t e l u 0x2e
+r | R a d i o 0x2d 0x20 t a i 0x20 t v 0x2d o h j e l m a n 0x20 a r v o s t e l u 0x2e
+t | T a n s s i t a i d e a r v o s t e l u 0x2e
+v | V a l o k u v a t a i d e a r v o s t e l u 0x2e
+// Jos tyhjä tai x, ei konversiota lainkaan.

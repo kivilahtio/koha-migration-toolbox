@@ -1,0 +1,11 @@
+008-23-CF-ilmiasu.tbl
+
+
+d | q
+m | q
+t | q
+s | q
+i | o
+z | 0x20
+0x20 | 0x7c
+#DEFAULT | 0x7c

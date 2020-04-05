@@ -1,0 +1,38 @@
+Merkistömuunnos (merkistökorjauksia)
+
+0x41 0xCC 0x8A    |   0xC3 0x85        // Å
+0x41 0xCC 0x88    |   0xC3 0x84        // Ä
+0x4F 0xCC 0x88    |   0xC3 0x96        // Ö
+0x61 0xCC 0x8A    |   0xC3 0xA5        // å
+0x61 0xCC 0x88    |   0xC3 0xA4        // ä
+0x6F 0xCC 0x88    |   0xC3 0xB6        // ö
+0x00              |   0x20             // NULL (NUL) --> SPACE
+0x01              |   0x20             // START OF HEADING (SOH) --> SPACE
+0x02              |   0x20             // START OF TEXT (STX) --> SPACE
+0x03              |   0x20             // END OF TEXT (ETX) --> SPACE
+0x04              |   0x20             // END OF TRANSMISSION (EOT) --> SPACE
+0x05              |   0x20             // ENQUIRY (ENQ) --> SPACE
+0x06              |   0x20             // ACKNOWLEDGE (ACK) --> SPACE
+0x07              |   0x20             // BELL (BEL) --> SPACE
+0x08              |   0x20             // BACKSPACE (BS) --> SPACE
+0x09              |   0x20             // CHARACTER TABULATION (HT) --> SPACE
+0x0A              |   0x20             // LINE FEED (LF) --> SPACE
+0x0B              |   0x20             // LINE TABULATION (VT) --> SPACE
+0x0C              |   0x20             // FORM FEED (FF) --> SPACE
+0x0D              |   0x20             // CARRIAGE RETURN (CR) --> SPACE
+0x0E              |   0x20             // SHIFT OUT (SO) --> SPACE
+0x0F              |   0x20             // SHIFT IN (SI) --> SPACE
+0x10              |   0x20             // DATALINK ESCAPE (DLE) --> SPACE
+0x11              |   0x20             // DEVICE CONTROL ONE (DC1) --> SPACE
+0x12              |   0x20             // DEVICE CONTROL TWO (DC2) --> SPACE
+0x13              |   0x20             // DEVICE CONTROL THREE (DC3) --> SPACE
+0x14              |   0x20             // DEVICE CONTROL FOUR (DC4) --> SPACE
+0x15              |   0x20             // NEGATIVE ACKNOWLEDGE (NAK) --> SPACE
+0x16              |   0x20             // SYNCHRONOUS IDLE (SYN) --> SPACE
+0x17              |   0x20             // END OF TRANSMISSION BLOCK (ETB) --> SPACE
+0x18              |   0x20             // CANCEL (CAN) --> SPACE
+0x19              |   0x20             // END OF MEDIUM (EM) --> SPACE
+0x1A              |   0x20             // SUBSTITUTE (SUB) --> SPACE
+0x7F              |   0x20             // DELETE (DEL) --> SPACE
+
+#DEFAULT          |   COPY

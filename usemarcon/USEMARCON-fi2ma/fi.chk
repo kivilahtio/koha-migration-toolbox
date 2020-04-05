@@ -1,0 +1,767 @@
+FINMARC(98) FORMAT CHECKING FILE
+
+// Record control number
+001?| I1= | I2= |
+
+// Linking information codes
+006*| I1= | I2= |
+
+// Information codes
+008?| I1= | I2= |
+
+// Finnish National Serial Number
+012?| I1=_0 | I2=_0 | $a_ |
+
+// FINUC Number
+014?| I1=_0 | I2=_0 | $a_ |
+
+// Finnish National Serial Number
+015?| I1=_0 | I2=_01 | $a_ |
+
+// International Standard Book Number (ISBN)
+021*| I1=_0 | I2=_01 | $a? | $c? | $d? | $e? | $z? |
+
+// International Standard Serial Number (ISSN)
+022?| I1=_01 | I2=_0 | $a? | $y? | $z? |
+
+// International Standard Recording Code (ISRC)
+024*| I1=_0 | I2=_01 | $a? | $z* |
+
+// International Standard Music Number (ISMN)
+025*| I1=_0 | I2=_01 | $a? | $c? | $d? | $e? | $z? |
+
+// International Standard Report Number (ISRN)
+027*| I1=_0 | I2=_0 | $a? |
+
+// Publisher Number
+028*| I1=_0 | I2=_01 | $a? | $e* | $b? | $c? | $d? |
+
+// EAN-code
+029?| I1=_0 | I2=_01 | $a? |
+
+// Local field: BTJ-koodi
+031*| I1=_ | I2=_ | $a_ |
+
+// Date/Time and Place of an Event
+033*| I1=_0 | I2=_01 | $a? | $b? |
+
+// Scale and coordinates
+034*| I1=012 | I2=_0 | $a? | $b? | $c? | $d? | $e? | $f? | $g? | $h? | $j? | $k? | $l? | $n? | $p? |
+ 
+// System control number of bibliographic record
+035?| I1=_0 | I2=_0 | $a? |
+
+// Finnish National Grid Coordinate System
+039*| I1=_0 | I2=_0 | $a? | $b? | $d? | $e? | $f? | $g? |
+
+// Cataloguing source
+040?| I1=_0 | I2=_0 | $a? | $b? |
+
+// Languages
+041?| I1=_01 | I2=_0 | $a? | $b? | $c? |
+
+// Inspection or inventory
+044?| I1=_0 | I2=_01 | $a? | $b? | $c? | $d? |
+
+// Date or time period of content, mapping or composing
+045?| I1=_012 | I2=_0 | $a* | $b* | $c? |
+
+// Geographic classification code
+052?| I1=_0 | I2=_0 | $a? | $b? |
+
+// Local classification
+053*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+054*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+055*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+056*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+057*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+058*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+059*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+060*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+061*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+062*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+063*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+064*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+065*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+066*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+067*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+068*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+069*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+070*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+071*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+072*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+073*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+074*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+075*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+076*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+077*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+078*| I1=_01 | I2=_0 | $a_ |
+
+// Local classification
+079*| I1=_01 | I2=_0 | $a_ |
+
+// Universal Decimal Classification
+080*| I1=_0 | I2=_0 | $a_ |
+
+// Klassifikationssystem for svenska bibliotek
+081*| I1=_0 | I2=_0 | $a_ |
+
+// Dewey Decimal Classification 
+082*| I1=_0 | I2=_0 | $a_ |
+
+// LC-classification
+083*| I1=_0 | I2=_0 | $a_ |
+
+// NLM-classification
+090*| I1=_0 | I2=_0 | $a_ |
+
+// AMS-Classification
+092*| I1=_0 | I2=_0 | $a_ |
+
+// ACM-Classification
+093*| I1=_0 | I2=_0 | $a_ |
+
+// FDC-classification
+094*| I1=_0 | I2=_0 | $a_ |
+
+// BBK-classification
+095*| I1=_0 | I2=_0 | $a_ |
+
+// YKL-classification
+098*| I1=_01 | I2=_0 | $a_ |
+
+// Personal name main entry heading
+100?| I1=_0123 | I2=_0 | $a_ | $h? | $c? | $f? | $x? |
+
+// Corporate name main entry heading
+110?| I1=_012 | I2=_0 | $p? | $a_ | $c* | $i? | $k? | $j? | $f? | $x? |
+
+// Conference, congress, meeting, etc. name main entry heading
+111?| I1=_0 | I2=_0 | $a_ | $c* | $i? | $k? | $j? | $f? | $x? |
+
+// Abbreviated key-title
+210?| I1=_0 | I2=_0 | $a_ | $b? | $c? |
+
+// Key-title
+222?| I1=_01 | I2=_0123456789 | $a_ | $b? |
+
+// Uniform title-excluding collective title
+240?| I1=_012 | I2=_0123456789 | $a_ | $n? | $f? | $i? | $j? | $k? | $m? | $p? | $q? | $t? | $g* | $s* | $u? | $l? | $o? | $v? | $w? |
+
+// Title of original
+241*| I1=_01 | I2=_0123456789 | $a_ |
+ 
+// Translation of title for component part
+242?| I1=_0 | I2=_0 | $a_ |
+
+// Title and statement of responsibility area
+245_| I1=_012 | I2=_0123456789 | $a+ | $z? | $b* | $n? | $g? | $h? | $r* | $c* | $d* | $e* | $y? |
+
+// Varying form of title
+246*| I1=0134 | I2=_0123456789 | $a? | $z? | $b* | $n? | $g? | $h? | $d? | $e* | $y? |
+
+// Second level and subsequent level title and statement of responsibility information relating to a multipart item
+248*| I1=_0 | I2=_0 | $g? | $h? | $b* | $r* | $c* | $d* | $e* | $x? | $y? | $z* |
+
+// Edition area
+250*| I1=_0 | I2=_01 | $a_ | $c? | $r* |
+
+// Musical presentation area for scores
+254?| I1=_0 | I2=_01 | $a? | $r* |
+
+// Numbering statement
+255?| I1=_0 | I2=_0 | $a? | $b? | $r? |
+
+// Mathematical data area (cartographic materials)
+256*| I1=_0 | I2=_01 | $a? | $b? | $c? | $d? |
+
+// Electronic resource characteristics
+258?| I1=_0 | I2=_01 | $a_ | $b? |
+
+// Publication, distribution, etc. area
+260*| I1=_0 | I2=_01 | $a* | $b* | $c* | $r? | $e* | $f* | $g? |
+
+// Physical description area
+300*| I1=_0 | I2=_01 | $z? | $a? | $b? | $c? | $d* |
+
+// Running time
+306*| I1=_0 | I2=_01 | $a_ |
+
+// Organization and arrangement of material
+351?| I1=_0 | I2=_01 | $a_ |
+
+// Series statement: corporate name in added entry form
+410*| I1=_012 | I2=_01 | $a_ | $c* | $g? | $h? | $r? | $w? | $v? | $x? | $y? | $z* |
+
+// Series statement: title of series in added entry heading form
+440*| I1=_01 | I2=_0123456789 | $a_ | $b? | $d? | $n? | $g? | $h? | $r? | $w? | $v? | $x? | $y? | $z* |
+
+// Series area: title of series not in added entry heading form
+490*| I1=_01 | I2=_1 | $a_ | $g? | $h? | $r? | $w? | $v? | $x? | $y? | $z* |
+
+// General notes - keyword indexed
+500*| I1=_0 | I2=_01 | $a_ |
+
+// General notes - keyword not indexed
+501*| I1=_0 | I2=_01 | $a_ |
+
+// Dissertation note
+502?| I1=_0 | I2=_01 | $a_ | $b? | $c? | $d? |
+
+// Bibliography and index note
+504?| I1=_0 | I2=_01 | $a_ |
+
+// Contents note
+505?| I1=_0 | I2=_01 | $a_ |
+
+// Summary note
+506*| I1=_0 | I2=_1 | $a_ | $b? |
+
+// Restriction on access note
+507?| I1=_0 | I2=_01 | $a_ | $b? | $c? |
+
+// Thesis note
+509?| I1=_0 | I2=_01 | $a_ | $b? | $c? | $d? |
+
+// Citations/References note
+510?| I1=_0 | I2=_01 | $a_ | $c? |
+
+// Participant or performer note
+511*| I1=_0 | I2=_01 | $a_ |
+
+// Abstract
+519*| I1=_0 | I2=_01 | $a_ |
+
+// Accompanying materials and supplements note
+520?| I1=_0 | I2=_01 | $a_ |
+
+// Note concerning musical instruments
+526?| I1=_0 | I2=_0 | $a_ | $b? |
+
+// Beginning words of a song
+528*| I1=_0 | I2=_0123456789 | $a_ |
+
+// Other versions available note
+529*| I1=_0 | I2=_01 | $a_ |
+
+// Note concerning the item described
+530?| I1=_0 | I2=_01 | $a_ |
+
+// Original version note
+534?| I1=_0 | I2=_0 | $a? | $t? | $b? | $m? | $c? | $e? | $f? | $l? | $k? | $x? |
+
+// Numbers borne by the item note
+538*| I1=_0 | I2=_01 | $a? | $b? |
+
+// Information about title of the component part
+539?| I1=_0 | I2=_0 | $a_ |
+
+// Series key title note
+540*| I1=_01 | I2=_01 | $a_ | $c* | $b? | $d? | $n? | $g? | $h? | $w? | $v? | $x? | $y? | $z* |
+
+// Immediate source of acquisition note
+541?| I1=_0 | I2=_01 | $a_ | $b? | $c? | $d? |
+ 
+// Biographical or historical note
+545?| I1=_0 | I2=_01 | $a_ |
+
+// System requirements note
+548*| I1=_0 | I2=_01 | $a_ |
+
+// Issuing body note
+550*| I1=_0 | I2=_01 | $a* |
+
+// Old Fennica publisher note
+552?| I1=_0 | I2=_0 | $a_ | $b? |
+
+// Old Fennica reference note
+553?| I1=_0 | I2=_0 | $a_ |
+
+// Old Fennica literature note
+554?| I1=_0 | I2=_0 | $a_ |
+
+// Note concerning reprintings of work
+555?| I1=_0 | I2=_0 | $a_ |
+
+// Note for the component part about reviewed item
+560*| I1=_0 | I2=_0 | $a_ | $d? | $j? | $k? |
+
+// Provenance note
+561?| I1=_0 | I2=_01 | $a_ |
+
+// Action note
+563?| I1=_0 | I2=_01 | $a_ |
+
+// Local note 
+565*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+566*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+567*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+568*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+569*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+570*| I1=_0 | I2=_0 | $a_ |
+
+// Local field: KV/BTJ-linkki
+571*| I1=_ | I2=_ | $a? | $b? | $c? | $d? | $e? | $f? | $g? | $i? | $k? | $l? | $m? | $p? | $s? | $t? | $u* | $x* | 
+
+// Local note 
+572*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+573*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+574*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+575*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+576*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+577*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+578*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+579*| I1=_0 | I2=_0 | $a_ |
+
+// Local note (Abilita) 
+580*| I1=_0 | I2=_0 | $a_ | $b* | $c* | $d* | $e* | $f* | $g* | 
+
+// Local note 
+581*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+582*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+583*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+584*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+585*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+586*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+587*| I1=_0 | I2=_0 | $a? |
+
+// Local note 
+588*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+589*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+590*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+591*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+592*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+593*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+594*| I1=_0 | I2=_01 | $a_ |
+
+// Local note 
+595*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+596*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+597*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+598*| I1=_0 | I2=_0 | $a_ |
+
+// Local note 
+599*| I1=_0 | I2=_0 | $a_ |
+
+// Personal name subject heading
+600*| I1=_0123 | I2=_0 | $a_ | $h? | $c? | $f? | $t? | $x? | $y? | $z? |
+
+// Corporate name subject heading
+610*| I1=_012 | I2=_0 | $p? | $a_ | $c* | $i? | $k? | $j? | $f? | $t? | $x* | $y* | $z* |
+
+// Uniform title subject heading
+640*| I1=_0 | I2=_0123456789 | $a_ | $n? | $f? | $i? | $j? | $k? | $m? | $p? | $q? | $t? | $g* | $s* | $u? | $l? | $o? | $v? | $w? |  $x? | $y? | $z? |
+
+// Topical Library of Congress subject heading
+650*| I1=_0 | I2=_0 | $a_ | $x* | $y* | $z* |
+
+// Finnish general thesaurus
+652*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* | 
+
+// Finnish music thesaurus
+653*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* | 
+
+// Finnish fiction thesaurus
+654*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* | 
+
+// Geographical subject headings
+655*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* | 
+
+// Swedish general thesaurus
+656*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* |
+
+// Swedish music thesaurus
+657*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* |
+
+// Swedish fiction thesaurus
+658*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* |
+
+// Index terms for education and psychology
+660*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* |
+
+// Legal subject headings
+665*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* |
+
+// Thesaurus of the social sciences
+670*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* |
+
+// Religion indexes subject headings
+680*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? | $x* | $y* | $z* |
+
+// Svenska ämnesord
+681*| I1=_ | I2=_ | $a+ | $b? | $x* | $y* | $z* |
+
+// Forestry subject headings
+685*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* |
+
+// Agricultural subject headings
+686*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* |
+
+// Medical subject headings
+690*| I1=_0 | I2=_0 | $a_ | $b? |
+
+// Local subject heading (JYK)
+692*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* |
+
+// Local subject heading 
+693*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* |
+
+// Local subject heading 
+694*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* |
+
+// Finnish subject heading
+695*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* |
+
+// Swedish subject heading
+696*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* |
+
+// English subject heading
+697*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* |
+
+// Local subject heading 
+698*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* |
+
+// Local subject heading 
+699*| I1=_0 | I2=_0 | $a_ | $b? | $x* | $y* | $z* |
+
+// Personal name added entry heading
+700*| I1=_0123 | I2=_01 | $a_ | $h? | $c? | $f? | $t? | $x? |
+
+// Corporate name added entry heading
+710*| I1=_012 | I2=_019 | $p? | $a_ | $c* | $i? | $k? | $j? | $f? | $t? | $x? |
+
+// Conference, congress, meeting, etc. name added entry heading
+711*| I1=_0 | I2=_01 | $a_ | $c* | $i? | $k? | $j? | $f? | $t? | $x? |
+
+// Statement for authorship
+720*| I1=_0 | I2=_0 | $a_ |
+
+// Title added entry heading - excluding uniform titles
+745*| I1=_0 | I2=_0123456789 | $a_ | $n? | $d? |
+ 
+// Title in original language
+759?| I1=_0 | I2=_0123456789 | $a_ | $n? | $g? | $h? | $b? | $w? |
+
+// Main series
+760?| I1=_0 | I2=_0123456789 | $a_ | $n? | $g? | $h? | $b? | $w? |
+ 
+// Subseries
+762*| I1=_0 | I2=_0123456789 | $a_ | $n? | $g? | $h? | $b? | $w? |
+
+// Title in other language
+769*| I1=_0 | I2=_0123456789 | $a_ | $n? | $g? | $h? | $b? | $w? |
+ 
+// Host item for the component part
+773?| I1=_0 | I2=_0 | $7_ | $w? | $a? | $s? | $t? | $c? | $i? | $b? | $e? | $d? | $j? | $k? | $u? | $x? | $z* | $m? | $n? | $p? |  $h? | $g? | $v? | $o? |
+
+// Additional physical form entry
+776*| I1=_0 | I2=_0123456789 | $a_ | $n? | $g? | $h? | $b? | $w? |
+
+// Main publication of supplement
+779?| I1=_0 | I2=_0123456789 | $a_ | $n? | $g? | $h? | $b? | $w? |
+
+// Former title
+780*| I1=01456 | I2=_0123456789 | $a_ | $n? | $g? | $h? | $b? | $w? |
+ 
+// Former title
+785*| I1=0145678 | I2=_0123456789 | $a_ | $n? | $g? | $h? | $b? | $w? |
+
+// Related title
+787*| I1=_0 | I2=_0123456789 | $a_ | $n? | $g? | $h? | $b? | $w? |
+ 
+// Related title
+789?| I1=_0 | I2=_0123456789 | $a_ | $n? | $g? | $h? | $b? | $w? |
+
+//790 Local link
+790*| I1=_ | I2=_ | $a_ | 
+
+// Corporate series added entry heading
+810*| I1=_012 | I2=_0 | $a_ | $c* | $n? | $b? | $g? | $h? | $r? | $w? | $v? | $x? | $y? | $z* |
+
+// Series title added entry heading
+840*| I1=_0 | I2=_0123456789 | $a_ |  $b? | $d? | $n? | $g? | $h? | $r? | $w? | $v? | $x? | $y? | $z* |
+
+//Electronic location and access
+856*| I1=012347 | I2=_0 | $u? | $g? | $a? | $b? | $c? | $d? | $f? | $h? | $i? | $j? | $k? | $l? | $m? | $n? | $o? | $p? | $q? | $r? | $s? | $t? | $v? | $x? | $z? | $2? |
+
+//UDK-luokka
+872*| I1=_ | I2=_ | $a_ |
+
+//Deweyn luokitus
+882*| I1=_ | I2=_ | $a_ |
+
+//LC luokitus
+883*| I1=_ | I2=_ | $a_ |
+
+//National Library of Medicine -luokitus
+890*| I1=_ | I2=4 | $a_ |
+
+//AMS-luokitus
+892*| I1=_ | I2=4 | $a_ |
+
+//ACM-luokitus
+893*| I1=_ | I2=4 | $a_ |
+
+//FCD-luokitus
+894*| I1=_ | I2=4 | $a_ |
+
+//BBK-luokitus
+895*| I1=_ | I2=4 | $a_ |
+
+//YKL-luokitus
+898*| I1=_ | I2=4 | $a_ |
+
+//Kirjastokohtainen luokitus
+899*| I1=_ | I2=43 | $a_ |
+
+// Reference from a personal name
+900*| I1=_0123 | I2=_01 | $a_ | $h? | $c? | $f? | $t? | $y? |
+
+// Reference from a corporate name
+910*| I1=_012 | I2=_01 | $p? | $a_ | $c* | $i? | $k? | $j? | $f? | $t? | $y? |
+
+// Reference from the name of a conference, congress, meeting, etc.
+911*| I1=_0 | I2=_01 | $a_ | $c* | $i? | $k? | $j? | $f? | $t? | $y_ |
+
+// Local code (Fennica) 
+935?| I1=_0 | I2=_0 | $a_ |
+
+// Reference from a title of a work
+945*| I1=_01 | I2=_0123456789 | $a? | $y? |
+
+// Local shelving marks
+950*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? | $x? | $z? | $h? |
+
+// Local shelving marks
+951*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+952*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+953*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+954*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+955*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+956*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+957*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? | $e? |
+
+// Local shelving marks
+958*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+959*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+960*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+961*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+962*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+963*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+964*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+965*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+966*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+967*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+968*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+969*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks (not converted)
+970*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks (not converted)
+971*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks (not converted)
+972*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks (not converted)
+974*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks (not converted)
+975*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks (not converted)
+976*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks (not converted)
+977*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks (not converted)
+978*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks (not converted)
+979*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+980*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+981*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+982*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+986*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+987*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? | $f? |
+
+// Local shelving marks
+988*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+989*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+990*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+991*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Local shelving marks
+992*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Library codes for the Union Catalogue and local shelving marks (b,c,d)
+995*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? |
+
+// Library codes for the Union Catalogue and local shelving marks (b)
+996*| I1=_0 | I2=_0 | $a_ | $b? |
+
+// Library codes for the Union Catalogue
+997*| I1=_0 | I2=_0 | $a_ |
+
+// Library codes for the Union Catalogue
+998*| I1=_0 | I2=_0 | $a_ |
+
+// Local field
+999*| I1=_0 | I2=_0 | $a_ | $b? | $c? | $d? | $e? | $f? | $g? | $h? | $i? | $j? | $k? | $l? | $m? | $n? | $o? | $u? |
+

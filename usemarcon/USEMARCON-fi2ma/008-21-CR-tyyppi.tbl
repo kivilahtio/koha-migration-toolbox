@@ -1,0 +1,9 @@
+008-21-CR-tyyppi.tbl
+
+m | m
+n | n
+p | p
+z | 0x20
+x | 0x20
+0x20 | 0x7c
+#DEFAULT | 0x7c

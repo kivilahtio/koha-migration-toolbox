@@ -1,0 +1,9 @@
+007-10-h-laatu.tbl
+
+a | a
+b | b
+c | c
+d | z
+z | z
+0x20 | 0x7c
+#DEFAULT | 0x7c

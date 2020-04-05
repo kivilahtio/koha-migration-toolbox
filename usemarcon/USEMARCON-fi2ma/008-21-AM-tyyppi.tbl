@@ -1,0 +1,9 @@
+008-21-AM-tyyppi.tbl
+
+a | V a l t i o n 0x20 v i r a n o m a i s e n 0x20 a r k i s t o 0x2e
+b | K u n n a l l i s e n 0x20 v i r a n o m a i s e n 0x20 a r k i s t o 0x2e
+c | K i r k o l l i n e n 0x20 a r k i s t o 0x2e
+d | Y k s i t y i s a r k i s t o 0x2e
+z | A r k i s t o a i n e i s t o 0x2e
+k | A r k i s t o a i n e i s t o k o k o e l m a 0x2e // myös osakohteista on pakko tehdä kokoelmia (pc)...
+// Jos tyhjä, ei konversiota lainkaan.

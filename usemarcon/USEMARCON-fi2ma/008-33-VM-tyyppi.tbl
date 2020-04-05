@@ -1,0 +1,23 @@
+008-33-VM-tyyppi.tbl
+
+a    | s
+b    | t
+c    | z	// + 008/29(VM) a
+d    | z	// + 008/29(VM) b
+e    | m
+f    | z
+g    | k
+h    | i
+i    | a
+j    | i
+k    | c
+l    | i
+m    | z
+n    | v
+o    | v
+p    | r
+q    | b
+r    | g
+z    | z
+0x20 | 0x7c
+#DEFAULT | 0x20

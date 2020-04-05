@@ -1,0 +1,13 @@
+007-06-a-valmistusmenetelma.tbl
+
+a | z
+b | z
+c | b
+d | z
+e | d
+f | z
+g | z
+u | u
+z | z
+0x20 | 0x7c
+#DEFAULT | 0x7c

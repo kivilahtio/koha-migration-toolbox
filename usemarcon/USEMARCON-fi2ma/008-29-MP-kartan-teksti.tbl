@@ -1,0 +1,5 @@
+008-29-MP-kartan-teksti.tbl
+
+a | K a r t a s s a 0x20 k e r t o v a a 0x20 t e k s t i 0xc3 0xa4 0x2e
+b | K a r t a n 0x20 o h e i s j u l k a i s u s s a 0x20 t e k s t i 0xc3 0xa4 0x2e
+// Jos tyhjä, ei konversiota lainkaan.

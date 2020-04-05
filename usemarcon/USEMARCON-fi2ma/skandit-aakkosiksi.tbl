@@ -1,0 +1,8 @@
+skandit-aakkosiksi.tbl -- RegExp-lista, jolla muunnetaan ääkköset aakkosiksi.
+
+'\c3\a5' | 'a'
+'\c3\a4' | 'a'
+'\c3\b6' | 'o'
+'\c3\85' | 'A'
+'\c3\84' | 'A'
+'\c3\96' | 'O'

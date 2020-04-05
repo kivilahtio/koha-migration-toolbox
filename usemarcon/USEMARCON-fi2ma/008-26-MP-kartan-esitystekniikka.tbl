@@ -1,0 +1,16 @@
+008-26-MP-kartan-esitystekniikka.tbl
+
+a | K a r t a n 0x20 e s i t y s t e k n i i k k a 0x3a 0x20 a n a g l y f i k u v a 0x28 k a k s i v 0xc3 0xa4 r i l a s i t 0x29 0x2e
+b | K a r t a n 0x20 e s i t y s t e k n i i k k a 0x3a 0x20 p o l a r o i t u 0x2e
+c | K a r t a n 0x20 e s i t y s t e k n i i k k a 0x3a 0x20 m a a s t o k a r t t a 0x2e
+d | K a r t a n 0x20 e s i t y s t e k n i i k k a 0x3a 0x20 d i a g r a m m i k a r t t a 0x2e
+e | K a r t a n 0x20 e s i t y s t e k n i i k k a 0x3a 0x20 v i r t a u s n u o l i k a r t t a 0x2e
+f | K a r t a n 0x20 e s i t y s t e k n i i k k a 0x3a 0x20 p i s t e k a r t t a 0x2e
+h | K a r t a n 0x20 e s i t y s t e k n i i k k a 0x3a 0x20 a l u e l u o k i t u s k a r t t a 0x2e
+i | K a r t a n 0x20 e s i t y s t e k n i i k k a 0x3a 0x20 l e v i n n e i s y y s k a r t t a 0x2e
+k | K a r t a n 0x20 e s i t y s t e k n i i k k a 0x3a 0x20 k 0xc3 0xa4 y r 0xc3 0xa4 k a r t t a 0x2e
+n | K a r t a n 0x20 e s i t y s t e k n i i k k a 0x3a 0x20 k u v a k a r t t a 0x2e
+o | K a r t a n 0x20 e s i t y s t e k n i i k k a 0x3a 0x20 k o h o k a r t t a 0x2e
+p | K a r t a n 0x20 e s i t y s t e k n i i k k a 0x3a 0x20 m i e l l e k a r t t a 0x2e
+q | K a r t a n 0x20 e s i t y s t e k n i i k k a 0x3a 0x20 v i i s t o k u v a k a r t t a 0x2e
+// Jos u tai tyhjä, ei konversiota lainkaan.

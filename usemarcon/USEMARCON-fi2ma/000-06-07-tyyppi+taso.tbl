@@ -1,0 +1,59 @@
+000-06-07-tyyppi+taso.tbl
+
+a a | a a
+a b | a b
+a m | a m
+a s | a s
+b a | p c        // myös osakohteista tehtävä kokoelmia, koska 7XX-kenttää ei voi luoda. Onneksi marginaalinen aineisto.
+b b | p c        // myös osakohteista tehtävä kokoelmia, koska 7XX-kenttää ei voi luoda. Onneksi marginaalinen aineisto.
+b m | p c
+b s | p c
+c a | c a
+c b | c b
+c m | c m
+c s | c s
+d a | d a
+d b | d a        // muunnetaan, koska loogisesti mahdoton.
+d m | d m
+d s | d m        // muunnetaan, koska loogisesti mahdoton.
+e a | e a
+e b | e b
+e m | e m
+e s | e s
+f a | f a
+f b | f a        // muunnetaan, koska loogisesti mahdoton.
+f m | f m
+f s | f m        // muunnetaan, koska loogisesti mahdoton.
+g a | g a
+g b | g b
+g m | g m
+g s | g s
+h a | a a
+h b | a b
+h m | a m
+h s | a s
+i a | i a
+i b | i b
+i m | i m
+i s | i s
+j a | j a
+j b | j b
+j m | j m
+j s | j s
+k a | k a
+k b | k b
+k m | k m
+k s | k s
+m a | o a
+m b | o b
+m m | o m
+m s | o s
+r a | r a
+r b | r b
+r m | r m
+r s | r s
+t a | t a
+t b | t a         // muunnetaan, koska loogisesti mahdoton.
+t m | t m
+t s | t m         // muunnetaan, koska loogisesti mahdoton. 
+#DEFAULT | a m

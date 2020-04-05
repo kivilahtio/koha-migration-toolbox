@@ -1,0 +1,24 @@
+008-18-CR-ilmestymistiheys.tbl
+
+l | k
+d | d
+i | i
+c | c
+w | w
+j | j
+e | e
+s | s
+m | m
+b | b
+v | q
+q | q
+t | t
+f | f
+a | a
+g | g
+h | h
+z | z
+k | 0x20 
+x | u
+0x20 | 0x7c
+#DEFAULT | 0x7c

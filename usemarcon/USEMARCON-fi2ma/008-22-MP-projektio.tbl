@@ -1,0 +1,38 @@
+008-22-MP-projektio.tbl
+
+a a | a a
+a b | a b
+a c | a c
+a d | a d
+a f | a f
+a u | a u
+c a | c a
+c b | c b
+c c | c c
+c p | c p
+c u | c u
+b a | b a
+b b | b b
+b c | b c
+b d | b d
+b e | b e
+b f | b f
+b g | b g
+b h | b h
+b i | b i
+b u | b u
+d a | d a
+d b | d b
+d c | d c
+d d | d d
+d e | d e
+d f | d f
+d g | d g
+d h | d h
+d i | b a
+d j | z z
+d k | z z
+d l | d l
+z z | z z
+0x20 0x20 | 0x7c 0x7c
+#DEFAULT  | 0x7c 0x7c

@@ -1,0 +1,17 @@
+008-24-CR-sisalto.tbl
+
+a | b
+b | c
+c | i
+g | r
+h | y
+i | s
+k | 0x35
+m | l
+n | f
+q | q
+r | k
+s | 0x36
+z | 0x7c    
+0x20 | 0x7c
+#DEFAULT | 0x7c

@@ -1,0 +1,14 @@
+007-07-m-leveys.tbl
+
+a | a
+b | b
+c | c
+d | d
+e | e
+f | f
+g | g
+h | z   
+j | z 
+z | z
+0x20 | 0x7c
+#DEFAULT | 0x7c 

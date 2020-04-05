@@ -1,0 +1,12 @@
+008-18-MU-musiikinlaji.tbl
+
+a  | 0x7c 0x7c
+b  | g m
+c  | f m
+d  | r c
+e  | j z
+f  | p p
+g  | m p
+h  | 0x7c 0x7c  // + 008/22=j
+0x20 0x20 | 0x7c 0x7c
+#DEFAULT  | 0x7c 0x7c
