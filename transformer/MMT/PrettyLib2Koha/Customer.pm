@@ -10,6 +10,7 @@ use DateTime;
 
 #Local modules
 use MMT::Anonymize;
+use MMT::Validator;
 use MMT::Validator::Phone;
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
 
@@ -213,10 +214,16 @@ sub setInitials($s, $o, $b) {
   push(@parts, split(/\s+|[,.-]+/, $s->{surname})) if $s->{surname};
   $s->{initials} = join('.', map {uc substr($_, 0, 1)} @parts);
 }
+
+my $dateenrolledDefault = DateTime->new(year => 1985, month => 1, day => 1)->ymd('-');
 sub setDateenrolled($s, $o, $b) {
   $s->{dateenrolled} = $o->{SaveDate};
   unless ($s->{dateenrolled}) {
-    $log->warn($s->logId()." - Is missing dateenrolled");
+    $log->warn($s->logId()." - Is missing dateenrolled. Defaulting to '$dateenrolledDefault'");
+    $s->{dateenrolled} = $dateenrolledDefault;
+  }
+  else {
+    $s->{dateenrolled} = MMT::Validator::parseDate($s->{dateenrolled});
   }
 }
 sub setDateexpiry($s, $o, $b) {
@@ -365,7 +372,7 @@ sub setDateofbirth($s, $o, $b) {
     $y = "19$y" if length($y) == 2;
   }
 
-  $s->{dateofbirth} = "$y-$m-$d"; #ISO8601
+  $s->{dateofbirth} = MMT::Validator::parseDate("$y-$m-$d"); #ISO8601
 }
 sub setUserid($s, $o, $b) {
   $s->{userid} = ($o->{Code}) ?  $o->{Code} :

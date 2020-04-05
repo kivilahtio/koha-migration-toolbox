@@ -5,6 +5,7 @@ use MMT::Pragmas;
 #External modules
 use File::Basename;
 use Data::Printer colored => 1;
+use DateTime;
 
 #Local modules
 my $log = Log::Log4perl->get_logger(__PACKAGE__);
@@ -151,8 +152,15 @@ sub filetype($file) {
 =cut
 
 sub parseDate($dateStr) {
-  if ($dateStr =~ /^\s*((\d{4})-(\d{2})-(\d{2}))/) { #ISO-8601 Date
-    return $1;
+  my @dc;
+  if ($dateStr =~ /^\s*
+                      (\d{4})-(\d{2})-(\d{2}) #ISO-8601 Date
+                      (?:
+                        [T ]
+                        (\d{1,2}):(\d{1,2}):(\d{1,2}) #HMS
+                      )?$
+                      /x) {
+    @dc = ($1,$2,$3,$4,$5,$6)
   }
   elsif ($dateStr =~ /^\s*
                       (\d{1,2})\.(\d{1,2})\.(\d{4}) #DMY
@@ -161,17 +169,31 @@ sub parseDate($dateStr) {
                         (\d{1,2}):(\d{1,2}):(\d{1,2}) #HMS
                       )?$
                       /x) {
-    return "$3-".
-           (length($2) == 1 ? "0$2" : "$2").'-'.
-           (length($1) == 1 ? "0$1" : "$1").' '.
-           (length($4) == 1 ? "0$4" : "$4").':'.
-           (length($5) == 1 ? "0$5" : "$5").':'.
-           (length($6) == 1 ? "0$6" : "$6");
+    @dc = ($3,
+           (length($2) == 1 ? "0$2" : "$2"),
+           (length($1) == 1 ? "0$1" : "$1"),
+           (length($4) == 1 ? "0$4" : "$4"),
+           (length($5) == 1 ? "0$5" : "$5"),
+           (length($6) == 1 ? "0$6" : "$6"));
   }
   else {
     $log->error("Unknown date format '$dateStr'!");
     return $dateStr;
   }
+  # Make sure the Date which looks like a date is actually a valid calendar day. DateTime used by Koha crashes Koha if there are invalid calendar dates.
+  my $dt;
+  eval {
+    $dt = DateTime->new(year => $dc[0],
+                        month => $dc[1],
+                        day => $dc[2],
+                        hour => $dc[3] || 0,
+                        minute => $dc[4] || 0,
+                        second => $dc[5] || 0,)
+  };
+  if ($@) {
+    $log->error("Parsed date string '$dateStr' as '@dc', but this is not a valid calendar date!");
+  }
+  return $dt->iso8601();
 }
 
 sub _parameterValidationFailed($message, $variable, $opts) {

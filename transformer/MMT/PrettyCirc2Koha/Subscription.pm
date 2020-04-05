@@ -180,6 +180,9 @@ sub setStartdate($s, $o, $b) {
     $log->warn($s->logId()." is missing 'startdate'");
     $s->{startdate} = '2000-01-01'; #Koha must have a koha.subscription.startdate
   }
+  else {
+    MMT::Validator::parseDate($s->{startdate});
+  }
 }
 sub setStatus($s, $o, $b) {
   $s->{status} = 1;
