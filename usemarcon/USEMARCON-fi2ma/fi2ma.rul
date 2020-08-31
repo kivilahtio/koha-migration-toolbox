@@ -13,409 +13,17 @@ versio 8.11.2012 - Kansalliskirjasto
                                         If (S != '') Then 'FI-' + S; \
                                         RegReplaceTable('skandit-aakkosiksi.tbl')
 
-// *** 000 LEADER = NIMIÖ *** merkkipaikat 00-23
 
-
-000             | 005             | Year+Month+Day+Hour+Minute+Second+'.0'
-000/1-5/        | 000/1-5/        | S
-000/6/          | 000/6/          | S; Replace (' ' By 'c')
-000/7-8/        | 000/7-8/        | Table ('000-06-07-tyyppi+taso.tbl') // Info: l jätetty taulukosta pois, ks. alla. Oletuksena 'am', jos input tyhjÃ¤.
-000/7/          | 000/7/          | If (S = 'l' And @008/22/ = 'd') Then 'a'
-000/7/          | 000/7/          | If (S = 'l' And @008/22/ != 'd') Then 'm'
-000/7/          | 007/1-14/       | If (S = 'l') Then 'c|||||||||||||'
-000/7/          | 007/1-13/       | If (S = 'h') Then 'hu|||||||||||'
-000/8/          | 000/8/          | If (@000/7/ = 'l') Then S
-// Info: Kun 310 $a:ssa fraasi 'Päivitetään jatkuvasti' (Fennica), muutetaan kohteeksi 'i'.
-000/8/          | 000/8/          | If (S = 's' And RegFind(@310$a, '[Pp]\c3\a4ivitet\c3\a4\c3\a4n jatkuvasti') >= 0) Then 'i'
-000/8/          | 006/1-18/       | If (@000/8/ = 's' And @000/7/ != 'a' And @000/7/ != 'd' And @000/7/ != 'f' And @000/7/ != 't') Then 's|||||||||||||||||'
-000/9/          | 000/9/          | ' '
-000/10/         | 000/10/         | 'a'
-000/11-12/      | 000/11-12/      | '22'
-000/13-17/      | 000/13-17/      | S
-000/18/         | 000/18/         | Table ('000-17-koodaustaso.tbl')
-000/19/         | 000/19/         | 'a'
-000/20/         | 000/20/         | ' '
-000/21-24/      | 000/21-24/      | '4500'
-
-001(1)          | 001(1)          | S
-
-
-// *** 008 INFORMAATIOKOODIT *** merkkipaikat 00-39
-
-008             | 008/1-40/       | '||||||||||||||||||||||||||||||||||||||||'
-
-// 008 ALL MATERIALS = KAIKKI AINEISTOT
-
-008/1-6/        | 008/1-6/        | S
-008/7/          | 008/7/          | If (S = 'x') Then 'u' Else S
-008/8-11/       | 008/8-11/       | S; Replace (' ' By 'u')
-008/12-15/      | 008/12-15/      | If (@008/7/ = 's') Then '    ' Else If (@008/7/ = 'x') Then 'uuuu' Else S
-008/16-18/      | 008/16-18/      | Table ('008-15-maakoodit.tbl')
-008/40/         | 008/40/         | If (@000/18/ = '5') Then ' ' Else 'c'
-
-// 008 (BK) BOOKS = KIRJAT
-#if (InTable(@000/7-8/, '000-06-07.tbl'))
-008/23/         | 008/23/         | Table ('008-22-kohderyhma.tbl')
-008/24/         | 008/24/         | Table ('008-23-BK-ilmiasu.tbl')
-008/24/         | 904(new)$a      | If (S = 'p' or S = 'r') Then S
-008/25/         | 008/25/         | Table ('008-24-BK-sisalto.tbl')
-008/26/         | 008/26/         | If (@008/25/ != ' ') Then Table ('008-25-BK-sisalto.tbl')
-008/27-28/      | 008/27-28/      | If (@008/25/ != ' ') Then '  '
-008/29/         | 008/29/         | Table ('008-28-virallisjulkaisut.tbl')
-008/30/         | 008/30/         | If (S != ' ') Then S
-008/31/         | 008/31/         | If (S != ' ') Then S
-008/32/         | 008/32/         | If (S != ' ') Then S
-008/33/         | 008/25/         | If (S != ' ') Then 'o'
-008/33/         | 500(new)$a      | If (InTable(S, '008-32-arvostelukoodi.tbl')) Then Table ('008-32-arvostelukoodi.tbl')
-008/33/         | 008/33/         | '|'
-008/34/         | 008/34/         | Table ('008-33-kirjallisuuslaji.tbl')
-008/34/         | 008/25/         | If (@008/34/ = 't') Then 'z' Else If (@008/34/ = 'w') Then 'u' Else If (@008/34/ = 'x') Then 'l' 
-008/34/         | 008/34/         | If ((@008/34/ = ' ') And (RegFind(@098$a, '[8][012345].')) >= 0) '1'
-008/35/         | 008/35/         | If (S != ' ') Then S
-// 008 --> 007
-008/24/         | 007/1-13/       | If (S = 'a') Then 'hu|||||||||||'
-008/24/         | 007/1-13/       | If (S = 'b') Then 'he|||||||||||'
-008/24/         | 007/1-2/        | If (S = 'd') Then 'tb'
-008/24/         | 007/1-10/       | If (S = 'f') Then 'fb||||||||'
-008/24/         | 007/1-6/        | If (S = 'g') Then 'ku||||'
-008/24/         | 007/1-9/        | If (S = 'h') Then 'gu||||||'
-008/24/         | 007/1-14/       | If (S = 'm') Then 'cu||||||||||||'
-008/24/         | 007/1-8/        | If (S = 'k') Then 'au||||||'
-008/24/         | 007/1-14/       | If (S = 'v') Then 'su|||||||||||'
-008/24/         | 007/1-2/        | If (S = 'y') Then 'ou'
-#endif
-
-// Moniviestin, muutos 000/06=m (BK) -> 000/06=o (VM)
-#if (@000/7/ = 'm')
-008/23/         | 008/23/         | Table ('008-22-kohderyhma.tbl')
-008/24/         | 008/30/         | Table ('008-23-BK-ilmiasu.tbl')
-008/24/         | 008/34/         | Table ('008-23-p-ilmiasu.tbl')
-// 008 --> 006
-008/25/         | 006/1-18/       | If (S != ' ' Or @008/29-35/ != '       ') Then 'a|||||||||||||||||'
-008/25/         | 006/8/          | If (S != ' ' Or @008/29-35/ != '       ') Then Table ('008-24-BK-sisalto.tbl')
-008/26/         | 006/9-11/       | If ((@008/25/ != ' ' Or @008/29-35/ != '       ') And @008/25/ != 'h' And @008/25/ != 'u' And @008/25/ != ' ') Then '   '
-008/29/         | 006/12/         | If ((@008/25/ != ' ' Or @008/29-35/ != '       ') And S != ' ') Then Table ('008-28-virallisjulkaisut')
-008/30/         | 006/13/         | If ((@008/25/ != ' ' Or @008/29-35/ != '       ') And S != ' ') Then S
-008/31/         | 006/14/         | If ((@008/25/ != ' ' Or @008/29-35/ != '       ') And S != ' ') Then S
-008/32/         | 006/15/         | If ((@008/25/ != ' ' Or @008/29-35/ != '       ') And S != ' ') Then S
-008/33/         | 006/8/          | If ((@008/25/ != ' ' Or @008/29-35/ != '       ') And S != ' ') Then 'o'
-008/34/         | 006/17/         | If (@008/25/ != ' ' Or @008/29-35/ != '       ') Then Table ('008-33-kirjallisuuslaji.tbl')
-008/35/         | 006/18/         | If ((@008/25/ != ' ' Or @008/29-35/ != '       ') And S != ' ') Then S
-// 008 --> 007
-008/24/         | 007/1-13/       | If (S = 'a' Or S = 'b') Then 'hu|||||||||||'
-008/24/         | 007/1-2/        | If (S = 'd') Then 'tb'
-008/24/         | 007/1-10/       | If (S = 'f') Then 'fb||||||||'
-008/24/         | 007/1-6/        | If (S = 'g') Then 'ku||||'
-008/24/         | 007/1-9/        | If (S = 'h') Then 'gu||||||'
-008/24/         | 007/1-14/       | If (S = 'm') Then 'cu||||||||||||'
-008/24/         | 007/1-8/        | If (S = 'k') Then 'au||||||'
-008/24/         | 007/1-14/       | If (S = 'v') Then 'su|||||||||||'
-008/24/         | 007/1-2/        | If (S = 'y') Then 'ou'
-#endif
-
-// 008 (CR) CONTINUING RESOURCES = JATKUVAT JULKAISUT
-#if (@000/7-8/ = 'ab' Or @000/7-8/ = 'as')
-008/19/         | 008/19/         | Table ('008-18-CR-ilmestymistiheys.tbl')
-008/22/         | 008/22/         | Table ('008-21-CR-tyyppi.tbl')
-008/23/         | 008/23/         | '|'
-008/24/         | 008/24/         | Table ('008-23-CR-ilmiasu.tbl')
-008/25/         | 008/25/         | Table ('008-24-CR-sisalto.tbl')
-008/29/         | 008/29/         | Table ('008-28-virallisjulkaisut.tbl')
-008/30/         | 008/30/         | If (S != ' ') Then S
-008/34/         | 008/34/         | S; Replace (' ' By '|')
-008/35/         | 008/35/         | If (%000/8/ = 'i') Then '1' Else '0'
-// 008 --> 007
-008/24/         | 007/1-13/       | If (S = 'a') Then 'hu|||||||||||'
-008/24/         | 007/1-10/       | If (S = 'f') Then 'fb||||||||'
-008/24/         | 007/1-6/        | If (S = 'g') Then 'ku||||'
-008/24/         | 007/1-14/       | If (S = 'm' Or S = 't' Or S = 's' Or S = 'i') Then 'cu||||||||||||'
-008/24/         | 007/1-14/       | If (S = 'v') Then 'su|||||||||||'
-008/24/         | 007/1-2/        | If (S = ' ') Then 'tu'
-008/24/         | 007/2/          | If ((S = 'm' Or S = 't' Or S = 's' Or S = 'i') And InTable(S, '008-23-CR-ilmiasu-to-007-01.tbl')) Then Table ('008-23-CR-ilmiasu-to-007-01.tbl')
-008/25/         | 655(new)I1      | If (InTable(S, '008-24-CR-muototermi.tbl')) Then ' '
-008/25/         | 655(newest)I2   | If (InTable(S, '008-24-CR-muototermi.tbl')) Then '7'
-008/25/         | 655(newest)$a   | If (InTable(S, '008-24-CR-muototermi.tbl')) Then Table('008-24-CR-muototermi.tbl')
-008/25/         | 655(newest)$2   | If (InTable(S, '008-24-CR-muototermi.tbl')) Then 'ysa'
-008/29/         | 655(new)I1      | If (InTable(S, '008-28-CR-muototermi.tbl')) Then ' '
-008/29/         | 655(newest)I2   | If (InTable(S, '008-28-CR-muototermi.tbl')) Then '7'
-008/29/         | 655(newest)$a   | If (InTable(S, '008-28-CR-muototermi.tbl')) Then Table('008-28-CR-muototermi.tbl')
-008/29/         | 655(newest)$2   | If (InTable(S, '008-28-CR-muototermi.tbl')) Then 'ysa'
-008/30/         | 655(new)I1      | If (InTable(S, '008-29-CR-muototermi.tbl')) Then ' '
-008/30/         | 655(newest)I2   | If (InTable(S, '008-29-CR-muototermi.tbl')) Then '7'
-008/30/         | 655(newest)$a   | If (InTable(S, '008-29-CR-muototermi.tbl')) Then Table('008-29-CR-muototermi.tbl')
-008/30/         | 655(newest)$2   | If (InTable(S, '008-29-CR-muototermi.tbl')) Then 'ysa'
-008/31/         | 655(new)I1      | If (InTable(S, '008-30-CR-muototermi.tbl')) Then ' '
-008/31/         | 655(newest)I2   | If (InTable(S, '008-30-CR-muototermi.tbl')) Then '7'
-008/31/         | 655(newest)$a   | If (InTable(S, '008-30-CR-muototermi.tbl')) Then Table('008-30-CR-muototermi.tbl')
-008/31/         | 655(newest)$2   | If (InTable(S, '008-30-CR-muototermi.tbl')) Then 'ysa'
-#endif
-
-
-// 008 (MP) MAPS = KARTAT
-#if (@000/7/ = 'e' Or @000/7/ = 'f')
-008/19/         | 008/19/         | If (S = 'l') Then 'z' Else If (S != ' ') Then S
-008/20/         | 008/20/         | If (@008/20/ != ' ') Then Table ('008-19-MP-korkeustiedot.tbl')
-008/21/         | 008/21/         | If (@008/20/ != ' ') Then Table ('008-19-MP-korkeustiedot.tbl')
-008/22/         | 500(new)$a      | If (InTable(S, '008-26-MP-kartan-esitystekniikka.tbl')) Then Table ('008-26-MP-kartan-esitystekniikka.tbl')
-008/23-24/      | 008/23-24/      | Table ('008-22-MP-projektio.tbl')
-008/25/         | 500(new)$a      | If (InTable(S, '008-24-MP-0-meridiaani.tbl')) Then Table ('008-24-MP-0-meridiaani.tbl')
-008/26/         | 008/26/         | Table ('008-25-MP-karttatyyppi.tbl')
-008/29/         | 008/29/         | Table ('008-28-virallisjulkaisut.tbl')
-008/31/         | 500(new)$a      | If (InTable(S, '008-29-MP-kartan-teksti.tbl')) Then Table ('008-29-MP-kartan-teksti.tbl')
-008/32/         | 008/32/         | Table ('008-31-MP-sijaintihakemisto.tbl')
-// 008 --> 007
-008/26/         | 007/1-6/        | If (S = 'd') Then 'du||||'
-008/26/         | 007/1-6/        | If (S = 'e') Then 'ad||||'
-008/26/         | 007/1-8/        | If (S != 'd' And S != 'e') Then 'au||||||'
-008/27/         | 007/7/          | Table ('007-06-a-valmistusmenetelma.tbl')
-008/30/         | 007/4/          | S; Replace ('b' By 'c');
-                                    Replace (' ' By '|')
-008/33/         | 007/5/          | Table ('007-04-a-valmistusmateriaali.tbl')
-#endif
-
-// 008 (MU) MUSIC = MUSIIKKI
-#if (@000/7/ = 'c' Or @000/7/ = 'd' Or @000/7/ = 'i' Or @000/7/ = 'j')
-008/21/         | 008/19-20/      | Table ('008-18-MU-musiikinlaji.tbl')
-008/22/         | 008/21/         | Table ('008-20-nuottijulkaisun-tyyppi.tbl')
-008/23/         | 008/23/         | If (@008/21/ = 'h') Then 'j' Else Table ('008-22-kohderyhma.tbl')
-008/24/         | 008/24/         | If (@000/7/ = 'c' Or @000/7/ = 'd') Then Table ('008-23-MU-ilmiasu.tbl')
-008/26/         | 008/25/         | If (S = 'a' Or S = 'b') Then 'z'
-008/28/         | 008/32/         | '|'
-008/34/         | 008/31-32/      | Table ('008-30-MU-kirjallisuuslaji.tbl')
-// 008 --> 007
-008/24          | 007/1-2/        | If ((@000/7/ = 'c' Or @000/7/ = 'd') And S = ' ') Then 'qu'
-008/24/         | 007/1-13/       | If ((@000/7/ = 'c' Or @000/7/ = 'd') And (S = 'a' Or S = 'b')) Then 'hu|||||||||||'
-008/24/         | 007/1-2/        | If ((@000/7/ = 'c' Or @000/7/ = 'd') And S = 'd') Then 'tb'
-008/24/         | 007/1-9/        | If ((@000/7/ = 'c' Or @000/7/ = 'd') And S = 'e') Then 'vd|||||||'
-008/24/         | 007/1-10/       | If ((@000/7/ = 'c' Or @000/7/ = 'd') And S = 'f') Then 'fb||||||||'
-008/24/         | 007/1-14/       | If ((@000/7/ = 'c' Or @000/7/ = 'd') And S = 'm') Then 'cu||||||||||||'
-008/24/         | 007/1-14/       | If (@000/7/ = 'i' Or @000/7/ = 'j') Then 's|||||||||||||'
-008/24          | 007/2/          | If (@000/7/ = 'i' Or @000/7/ = 'j') Then Table ('007-01-s-erityismaare.tbl')
-008/27/         | 007/14/         | If (Not ((@000/7/ = 'c' Or @000/7/ = 'd') And (S = ' ') Or (S = 'd'))) Then S; Replace (' ' By '|')
-008/29/         | 007/4/          | If (Not ((@000/7/ = 'c' Or @000/7/ = 'd') And (S = ' ') Or (S = 'd'))) Then Table ('007-03-s-nopeus.tbl')
-008/30/         | 007/5/          | If (Not ((@000/7/ = 'c' Or @000/7/ = 'd') And (S = ' ') Or (S = 'd'))) Then S; Replace (' ' By '|')
-008/31/         | 007/7/          | If (Not ((@000/7/ = 'c' Or @000/7/ = 'd') And (S = ' ') Or (S = 'd'))) Then Table ('007-06-s-mitat.tbl')
-008/32/         | 007/8/          | If (Not ((@000/7/ = 'c' Or @000/7/ = 'd') And (S = ' ') Or (S = 'd'))) Then Table ('007-07-s-nauhan-leveys.tbl')
-008/33/         | 007/11/         | If (Not ((@000/7/ = 'c' Or @000/7/ = 'd') And (S = ' ') Or (S = 'd'))) Then Table ('007-10-s-materiaali.tbl')
-008/35/         | 007/9/          | If (Not ((@000/7/ = 'c' Or @000/7/ = 'd') And (S = ' ') Or (S = 'd'))) Then Table ('007-08-s-raitojen-maara.tbl')
-008/36/         | 007/10/         | If (Not ((@000/7/ = 'c' Or @000/7/ = 'd') And (S = ' ') Or (S = 'd'))) Then S; Replace (' ' By '|')
-008/37/         | 007/13/         | If (Not ((@000/7/ = 'c' Or @000/7/ = 'd') And (S = ' ') Or (S = 'd'))) Then S; Replace (' ' By '|')
-#endif
-
-// 007 (sd) Äänilevy
-#if ((@000/7/ = 'i' Or @000/7/ = 'j') And @008/24/ = 'q')
-008/24/         | 007/2/          | 'd'
-008/29/         | 007/4/          | If (S = 'b' Or S = 'c') Then S
-008/33/         | 007/11/         | 'p'
-008/27/         | 007/14/         | 'e'
-#endif
-
-// 007 (sr) CD-levy
-#if ((@000/7/ = 'i' Or @000/7/ = 'j') And @008/24/ = 'r')
-008/24/         | 007/2/          | 'd'
-008/31/         | 007/07/         | 'g'
-008/33/         | 007/11/         | 'm'
-008/27/         | 007/14/         | 'd'
-#endif
-
-// 007 (ss) C-kasetti
-#if ((@000/7/ = 'i' Or @000/7/ = 'j') And @008/24/ = 's')
-008/24/         | 007/2/          | 's'
-008/31          | 007/7/          | 'j'
-#endif
-
-// 007 (sf) DAT
-#if ((@000/7/ = 'i' Or @000/7/ = 'j') And @008/24/ = 't')
-008/24/         | 007/2/          | 's'
-008/27/         | 007/14/         | 'd'
-#endif
-
-// 008 (VM) VISUAL MATERIALS = VISUAALINEN AINEISTO
-
-#if (@000/7/ = 'g' Or @000/7/ = 'k' Or @000/7/ = 'r')
-008/21/         | 008/35/         | If (S = 'c') Then 'a' Else '|'
-008/23/         | 008/23/         | S; Replace (' ' By '|')
-008/24/         | 008/34/         | If (S != 'c' Or S != 'd') Then Table ('008-33-VM-tyyppi.tbl')
-008/24/         | 008/30/         | If (S = 'c' Or S = 'd') Then Table ('008-29-VM-form.tbl')
-008/26/         | 500(new)$a      | If (InTable(S, '008-23-VM-liiteaineisto.tbl')) Then Table ('008-23-VM-liiteaineisto.tbl')
-008/28/         | 008/24/         | ' '
-// 008 --> 007
-008/30/         | 007/4/          | Table ('007-03-v-varit')
-#endif
-
-
-//008/24 = Visuaalisen aineiston ilmiasu
-// Dia
-#if (@000/7/ = 'k' And @008/24/ = 'a')
-008/24/         | 007/1-9/        | 'gs|||||||'
-#endif
-
-// Kalvo
-#if (@000/7/ = 'k' And @008/24/ = 'b')
-008/24/         | 007/1-9/        | 'gt|||||||'
-#endif
-
-
-// Mikrotallenne, muutos 000/06-07=ha tai hm (VM) -> 000/06-07=aa tai am (BK)
-// Mikrotallenne, muutos 000/06-07=hb tai hs (VM) -> 000/06-07=ab tai as (CR)
-// <-- BK:lle ja CR:lle soveltuu samat sÃ¤Ã¤nnÃ¶t.
-#if (@000/7/ = 'h' And @008/24/ = 'c' Or @008/24/ = 'd')
-008/23/         | 008/23/         | If (@000/8/ = 'a' Or @000/8/ = 'm') Then Table ('008-22-kohderyhma.tbl')
-008/23/         | 008/23/         | If (@000/8/ != 'a' And @000/8/ != 'm') Then ' '
-008/34/         | 008/24/         | Table ('008-33-h-ilmiasu.tbl')
-//008 -> 007
-008/24/         | 007/1-13/       | If (@000/7/ = 'h' And @008/24/ = 'd') Then 'he|||||||||||'
-008/31/         | 007/6/          | S; Replace (' ' By '|')
-008/32          | 007/5/          | S; Replace (' ' By '|')
-008/33/         | 007/11/         | Table ('007-10-h-laatu.tbl')
-#endif
-
-// Filmi
-#if (@000/7/ = 'g' And @008/24/ = 'e')
-008/24/         | 007/1-23/       | 'mu|||||||||||||||||||||'
-008/22/         | 007/13/         | Table ('007-filmipohja.tbl')
-008/25/         | 007/17/         | Table ('007-16-m-taydellisyys.tbl')
-008/32/         | 007/8/          | Table ('007-07-m-leveys.tbl')
-008/34/         | 007/5/          | S; Replace (' ' By '|')
-008/35/         | 007/7/          | Table ('007-06-m-aanilahde.tbl')
-008/36/         | 007/12/         | Table ('007-11-m-sukupolvi.tbl')
-008/37/         | 007/11/         | S; Replace (' ' By '|')
-#endif
-
-// Hologrammi
-#if (@000/7/ = 'g' And @008/24/ = 'f')
-008/24/         | 007/1-9/        | 'gu|||||||'
-#endif
-
-// Graafinen lehti
-#if (@000/7/ = 'k' And @008/24/ = 'g')
-008/24/         | 007/1-6/        | 'kj||||'
-008/29/         | 007/5/          | If (@008/29/ = 'b') Then 'c' Else If (@008/29/ = 'f') Then 'v' Else S
-#endif
-
-// Juliste
-#if (@000/7/ = 'k' And @008/24/ = 'h')
-008/24/         | 007/1-6/        | 'kk||||'
-008/29/         | 007/5/          | If (@008/29/ = 'b') Then 'c' Else If (@008/29/ = 'f') Then 'v' Else S
-#endif
-
-// Maalaus
-#if (@000/7/ = 'k' And @008/24/ = 'i')
-008/24/         | 007/1-6/        | 'ke||||'
-008/29/         | 007/5/          | If (@008/29/ = 'b') Then 'c' Else If (@008/29/ = 'f') Then 'v' Else S
-#endif
-
-// Piirros
-#if (@000/7/ = 'k' And @008/24/ = 'j')
-008/24/         | 007/1-6/        | 'kd||||'
-008/29/         | 007/5/          | If (@008/29/ = 'b') Then 'c' Else If (@008/29/ = 'f') Then 'v' Else S
-#endif
-
-// Painokuva
-#if (@000/7/ = 'k' And @008/24/ = 'k')
-008/24/         | 007/1-6/        | 'kf||||'
-008/29/         | 007/5/          | If (@008/29/ = 'b') Then 'c' Else If (@008/29/ = 'f') Then 'v' Else S
-#endif
-
-// Valokuva
-#if (@000/7/ = 'k' And @008/24/ = 'l')
-008/24/         | 007/1-6/        | 'kv||||'
-008/29/         | 007/5/          | If (@008/29/ = 'b') Then 'c' Else If (@008/29/ = 'f') Then 'v' Else S
-#endif
-
-// Optinen levy
-#if (@000/7/ = 'g' And @008/24/ = 'm')
-008/24/         | 007/1-9/        | 'vd|||||||'
-008/27/         | 007/5/          | Table ('007-04-v-jarjestelma.tbl');
-                                    If (RegFind(@300$z, '[dD][vV][dD]') >= 0) 'v';
-                                    If (RegFind(@300$z, '[bB][lL][uU]\-?[rR][aA][yY]') >= 0) 's'
-008/30/         | 007/4/          | Table ('007-03-v-varit')
-#endif
-
-//Videokasetti
-#if (@000/7/ = 'g' And @008/24/ = 'n')
-008/24/         | 007/1-9/        | 'vf|||||||'
-008/27/         | 007/5/          | Table ('007-04-v-jarjestelma.tbl')
-008/30/         | 007/4/          | Table ('007-03-v-varit')
-#endif
-
-// Videokela
-#if (@000/7/ = 'g' And @008/24/ = 'o')
-008/24/         | 007/1-9/        | 'vr|||||||'
-008/27/         | 007/5/          | Table ('007-04-v-jarjestelma.tbl')
-008/30/         | 007/4/          | Table ('007-03-v-varit')
-#endif
-
-// Esine, peli, muu
-#if (@000/7/ = 'r' And (@008/24/ = 'p' Or @008/24/ = 'r' Or @008/24/ = 'z'))
-008/24/         | 007/1-2/        | 'zu'
-#endif
-
-// Kooste
-#if ((@000/7/ = 'g' Or @000/7/ = 'k' Or @000/7/ = 'r') And @008/24/ = 'q')
-008/24/         | 007/1-2/        | 'ou'
-#endif
-
-
-
-// 008 (AM) ARCHIVAL MATERIALS = ARKISTOAINEISTO
-// muutos 000/06-07=ba, bm, bb tai bs (AM) --> 000/06-07=pc (MX)  [Kaikista arkistoaineistoista tulee kokoelmia (pc).]
-#if (@000/7/ = 'b')
-008/22/         | 500(new)$a      | If (InTable(S, '008-21-AM-tyyppi.tbl')) Then Table ('008-21-AM-tyyppi.tbl')
-008/24/         | 008/24/         | Table ('008-23-AM-ilmiasu.tbl')
-// 008 --> 007
-008/24/         | 007/1-9/        | If (S = 'a' Or S = 'b') Then 'gu||||||'
-008/24/         | 007/1-13/       | If (S = 'c' Or S = 'd') Then 'hu|||||||||||'
-008/24/         | 007/1-10/       | If (S = 'f') Then 'fb||||||||'
-008/24/         | 007/1-6/        | If (S = 'j' Or S = 'l') Then 'ku||||'
-008/24/         | 007/1-14/       | If (S = 'm' Or S = 'o') Then 'cu||||||||||||'
-008/24/         | 007/1-9/        | If (S = 'n') Then 'vf|||||||'
-008/24/         | 007/1-8/        | If (S = 'q') Then 'au||||||'
-008/24/         | 007/1-2/        | If (S = 'r') Then 'qu'
-008/24/         | 007/1-14/       | If (S = 'v') Then 'su|||||||||||'
-008/24/         | 007/2/          | If (InTable(S, '008-23-AM-ilmiasu-to-007-01.tbl')) Then Table ('008-23-AM-ilmiasu-to-007-01.tbl')
-#endif
-
-// 008 (CF) COMPUTER FILES = ELEKTRONINEN AINEISTO
-// Seuraavilla kolmilla ehdoilla koko 008: 1. tuloksena BK, 2. tuloksena CR, 3. tuloksena CF
-// 1. If (@000/7/ = 'l') And (@000/8/ = 'a' Or @000/8/ = 'm') And (@008/22/ = 'd')
-// 2. If (@000/7/ = 'l') And (@000/8/ = 'b' Or @000/8/ = 's') And (@008/22/ = 'd')
-// 3. If (@000/7/ = 'l') And (@008/22/ != 'd')
-
-// 1. 000/06-07 la tai lm (CF) --> aa tai am (BK)
-#if (@000/7/ = 'l' And (@000/8/ = 'a' Or @000/8/ = 'm') And @008/22/ = 'd')
-008/23/         | 008/23/         | Table ('008-22-kohderyhma.tbl')
-008/24/         | 008/24/         | 's'
-008/25/         | 008/25/         | Table ('008-24-BK-sisalto.tbl')
-008/26/         | 008/26/         | If (@008/26/ != ' ') Then Table ('008-25-BK-sisalto.tbl')
-008/27-28/      | 008/27-28/      | If (@008/26/ != ' ') Then '  '
-008/29/         | 008/29/         | If (S != ' ') Then S
-008/34/         | 008/34/         | Table ('008-33-kirjallisuuslaji.tbl')
-008/34/         | 008/25/         | If (@008/34/ = 't') Then 'z' Else If (@008/34/ = 'w') Then 'u' Else If (@008/34/ = 'x') Then 'l'
-// 008 --> 007
-008/24/         | 007/2/          | Table ('008-23-CF-ilmiasu-to-007.tbl')
-#endif
-
-// 2. 000/06-07 lb tai ls (CF) --> ab tai as (CR)
-#if (@000/7/ = 'l' And (@000/8/ = 'b' Or @000/8/ = 's') And @008/22/ = 'd')
-008/19/         | 008/19/         | Table ('008-18-CR-ilmestymistiheys.tbl')
-008/24/         | 008/24/         | 's'
-008/25/         | 008/25/         | Table ('008-24-CR-sisalto.tbl')
-008/29/         | 008/29/         | If (S != ' ') Then S
-// 008 --> 007
-008/24/         | 007/2/          | Table ('008-23-CF-ilmiasu-to-007.tbl')
-#endif
-
-// 3. 000/06-07 la tai lm (CF) --> ma tai mm (CF)
-#if (@000/7/ = 'l' And @008/22/ != 'd')
-008/22/         | 008/27/         | If (S != ' ') Then S Else '|'
-008/23/         | 008/23/         | Table ('008-22-kohderyhma.tbl')
-008/29/         | 008/29/         | If (S != ' ') Then S
-// 008 --> 007
-008/24/         | 007/2/          | Table ('008-23-CF-ilmiasu-to-007.tbl')
-#endif
-
-// *** VAIHTUVAMITTAISET KENTÄT ***
+000             | 000             | S
+001             | 001             | S
+002             | 002             | S
+003             | 003             | S
+004             | 004             | S
+005             | 005             | S
+006             | 006             | S
+007             | 007             | S
+008             | 008             | S
+009             | 009             | S
 
 
 012$a           | 015(new)$a      | S + '$2skl'
@@ -427,6 +35,8 @@ versio 8.11.2012 - Kansalliskirjasto
 015I1           | 015I1           | ' '
 015I2           | 015I2           | ' '
 015$a           | 015(new)$a      | S + '$2skl'
+
+020             | 020             | S
 
 021I1             | <P20I1          | ' '
 021I2             | <P20I2          | ' '
@@ -523,9 +133,7 @@ P20               | 020(new)        | S;
 
 039             | 039             | S
 
-040$a           | 040$a           | KirjastotunnusISILiksi
-040$b           | 040$d           | KirjastotunnusISILiksi
-
+040             | 040             | S
 
 041I1           | 041I1           | If (I1=' ') Then '0' Else S
 041I2           | 041I2           | ' '
@@ -664,6 +272,8 @@ AAF             | 084(new)        | S + '$2kssb'
 083I2           | 050I2           | '0'
 083$a           | 050$a           | S
 
+084             | 084             | S
+
 085$a           | 080(new)$a      | S;
                                     Replace ('(' By '$x(');
                                     Replace ('-' By '$x-');
@@ -695,37 +305,8 @@ AAEI2           | 084(newest)I2   | S
 AAE             | 084(newest)     | S + '$2ykl'
 //Info: 098-kenttä hyllyluokituksena voidaan lisäksi konvertoida sijaintikenttään 852 $h.  Osakenttään $a konvertoidaan kirjaston ISIL-tunnus.
 
-
-100I1           | 100I1           | If (I1=1 Or I1=2) Then '1' Else S
-100I2           | 100I2           | ' '
-100$a           | <E00$a          | S
-100$h           | <E00$a          | + ', '+S; RegReplace('\\s*\\([^\\.]{2,} [^\\.]{2,}\\)\$', '')
-100$f           | <E00$c          | S
-100$c           | <E00$d          | S
-100$x           | <E00$e          | S; RegReplace('^\\((.*)\\)\$', '\\1')
-E00             | 100             | S;
-                                    MoveBefore ('d', $e);
-                                    MoveBefore ('c', $d);
-                                    Replace ('$c' By ',$c');
-                                    Replace ('$d' By ',$d');
-                                    Replace ('$e' By ',$e');
-                                    If (((RegFind('.*\\$(.)') < 0) Or (RegMatch(1) != '4')) And RegFind('\\.\$') < 0 And RegFind('\\-\$') < 0) S + '.'
-
-110I1           | 110I1           | If (S = '1') Then '1' Else If ((S = '2' Or S = ' ') And (RegFind(@110$a, ', ') >= 0)) Then '0' Else '2'
-110I2           | 110I2           | ' '
-110$p           | <E10$a          | S
-110$a           | <E10$a          | If Exists($p) Then $p +'. '+S Else S  
-110$c           | <E10$b          | S
-110$i           | <E10$n          | '(' + S + ')'
-110$k           | <E10$d          | '(' + S + ')'
-110$j           | <E10$c          | '(' + S + ')'
-110$f           | <E10$a          | + ' (' + S + ')'
-110$x           | <E10$e          | S; RegReplace('^\\((.*)\\)\$', '\\1')
-E10             | 110             | If (((RegFind('.*\\$(.)') < 0) Or (RegMatch(1) != '4')) And RegFind('\\.\$') < 0 And RegFind('\\)\$') < 0) Then S + '.' Else S;
-                                    Replace ('$b' By '.$b');
-                                    Replace (')$d(' By ' :$d', Strict);
-                                    Replace (')$c(' By ' :$c', Strict);
-                                    Replace ('$e' By ',$e')
+100             | 100             | S
+110             | 110             | S
 
 111I1           | 111I1           | If (RegFind(@111$a, ', ') >= 0) Then '0' Else '2'
 111I2           | 111I2           | ' '
@@ -893,6 +474,8 @@ F45             | 245             | S;
 
                                     If ($c Precedes $n) Replace ('$n' By '. ', Strict) Else Replace ('$n' By '.$n')
 
+246             | 246             | S
+
 // Info: Käsitellään 248
 248$g           | <I48$G          | S; RegReplaceTable('roomalaiset-arabialaisiksi.tbl')
 248$h           | <I48$H          | S
@@ -1056,6 +639,7 @@ E60             | 260             | If (RegFind('[)\\.\\-\\]]\$') < 0) Then S + 
 300$b           | <F30$b          | S
 300$c           | <F30$c          | S
 300$d           | <F30$e          | S
+300$e           | <F30$e          | S // PrettyLib uses $e instead of $d
 F30             | 300             | If (RegFind('[\\)\\.]\$') < 0) Then S + '.' Else S;
                                     ReplaceOcc ('$b' By ', ','>1', Strict);
                                     Replace ('$b' By ' :$b', Strict);
@@ -1067,10 +651,15 @@ F30             | 300             | If (RegFind('[\\)\\.]\$') < 0) Then S + '.' 
 306I2           | 306I2           | ' '   
 306$a           | 306$a           | S
 
+336             | 336             | S
+337             | 337             | S
+338             | 338             | S
+
 351I1           | 351I1           | ' '
 351I2           | 351I2           | ' '
 351$a           | 351$a           | If (RegFind('[\\)\\.]\$') < 0) Then S + '.' Else S
 
+382             | 382             | S
 
 410I1           | <G90I1          | S
 410I2           | <G90I2          | S
@@ -2039,6 +1628,8 @@ M30             | 830             | If (RegFind('\\.\$') < 0) Then S + '.' Else 
 911$f      | 911$g         | S
 911$t      | 911$t         | S
 911$y      | 911$y         | S
+
+942        | 942           | S
 
 945I1      | 940I1         | If (I1=0 Or I1=' ') Then ' ' Else S 
 945I2      | 940I2         | If (I2=0 Or I1=' ') Then '0' Else S 
