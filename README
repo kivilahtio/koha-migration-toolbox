@@ -23,13 +23,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 1) Introduction
 
-    This Voyager ETL-program is written by the National Library of Finland,
+    This Voyager ETL-program is written by the National Library of Finland and Hypernova Oy
     based on the Voyager scripts by ByWater Solutions.
-    These scripts are for use in 
+    These scripts are for use in
     migration and support of the Koha integrated library system.  We
-    give them to the community, in the hope that others find them 
+    give them to the community, in the hope that others find them
     useful.  Most should be fairly self-explanatory; if you have specific
     questions, please direct them to the committers.
+
+1.1) Credits
+
+    To the National Library of Finland and Ere Maijala for providing the excellent USEMARCON
+    FinMARC to MARC21 conversion package.
 
 2) Submitting patches
 
