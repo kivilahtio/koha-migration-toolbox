@@ -51,5 +51,15 @@ return {
 
   # In which directory the DB dump should be put into?
   ssh_shipping_dir => 'private/PKKS',
+
+  # Encrypt the cleartext passwords in the PrettyLib DB, so they will never leave the server unprotected.
+  # Requires the Perl module
+  #   Crypt::Eksblowfish::Bcrypt
+  # to be installed
+  # The value must be 0, or the cost of the hashing operation from 1-9. 8 takes ~1s per customer in the DB
+  # Be aware, if this setting is on, the conversion pipeline cannot enforce proper password hygiene standards,
+  # such as the password being longer than 1 character.
+  # Passwords of length 1 can happen in some libraries with old library systems.
+  bcrypt_customer_passwords => 2,
 };
 

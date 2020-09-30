@@ -29,6 +29,7 @@ use File::stat;
 use Getopt::Long qw(:config no_ignore_case bundling);
 use Data::Dumper;
 $Data::Dumper::Sortkeys = 1;
+use List::Util;
 
 my $opExtract;
 my $opIntrospect;
@@ -249,6 +250,10 @@ sub exportTable {
     ($dbh, $config, $table, $rows, $countOfRows, $maxId, $fromId, $toId) = _exportChunked($dbh, $config, $table, $countOfRows, $maxId, undef, undef);
   }
 
+  if ($config->{bcrypt_customer_passwords}) {
+    _bcryptCustomerPasswords($rows, \@columnNames);
+  }
+
   _writeSql($dbh, $config, $FH, $rows);
 
   close $FH;
@@ -340,6 +345,26 @@ sub _writeSql {
       }
     }
     print $FH join(",", @$row)."\n";
+  }
+}
+
+sub _bcryptCustomerPasswords {
+  my ($rows, $columnNames) = @_;
+  require Crypt::Eksblowfish::Bcrypt;
+  my $pin_column_idx = List::Util::first {$columnNames->[$_] eq 'PIN'} 0..@$columnNames;
+
+  for my $r (@$rows) {
+    if ($r->[$pin_column_idx]) {
+      $r->[$pin_column_idx] = Crypt::Eksblowfish::Bcrypt::bcrypt(
+        $r->[$pin_column_idx],
+        '$2a'. #NUL appended
+        '$0'.($config->{bcrypt_customer_passwords} || '2'). #cost of hashing
+        '$'.Crypt::Eksblowfish::Bcrypt::en_base64(substr(rand(99999999)x2, 0, 16)) #salt
+      )
+    }
+    else { # sorry users with password of 0
+      $r->[$pin_column_idx] = '!';
+    }
   }
 }
 
