@@ -351,7 +351,11 @@ sub _writeSql {
 sub _bcryptCustomerPasswords {
   my ($rows, $columnNames) = @_;
   require Crypt::Eksblowfish::Bcrypt;
-  my $pin_column_idx = List::Util::first {$columnNames->[$_] eq 'PIN'} 0..@$columnNames;
+  my $pin_column_idx = List::Util::first {$columnNames->[$_] =~ /^PIN$/i} 0..@$columnNames;
+  if (not(defined($pin_column_idx))) {
+    warn("Column 'PIN' not found when encrypting Customer passwords?");
+    return;
+  }
 
   for my $r (@$rows) {
     if ($r->[$pin_column_idx]) {
