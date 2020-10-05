@@ -31,8 +31,18 @@ return {
   # Directory where to export the table dumps
   export_path => "PrettyCircExport",
 
-  # Try some magic to fix encoding issues
-  db_reverse_decoding => 1,
+  # How the characters Perl's ODBC driver receives from PrettyLib/Circ are written to files?
+  # Best to use "raw".
+  # Doing the encoding conversion in the extractor is shoot-and-miss, due to the way Perl's DBD::ODBC handles character encoding, or how the ODBC endpoint announces its encoding or anything in between.
+  # It is better for this extractor.pl to extract something but correctly. The migration pipeline can do any character encoding conversion necessary later.
+  # Valid values to try:
+  #   "encoding(UTF-8)"
+  #   "raw"
+  export_encoding => "raw",
+
+  # Try some magic to fix encoding issues. If 'export_encoding' is "raw", this probably needs to be 0.
+  # Attempts to fix incorrect flagging of possible UTF-8 Strings.
+  db_reverse_decoding => 0,
 
   # Where the PSCP-program is?
   # This is used to ship the database dumps via ssh to the remote fileserver.

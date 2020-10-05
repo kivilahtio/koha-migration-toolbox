@@ -15,10 +15,8 @@
 #
 
 #Pragmas
-use utf8;
 use warnings;
 use strict;
-use open qw(:std :encoding(UTF-8));
 
 #External modules
 use Encode;
@@ -148,6 +146,12 @@ if ($dbh->{odbc_has_unicode}) {
 $dbh->{odbc_default_bind_type} = SQL_VARCHAR;
 $dbh->{LongReadLen} = 80000;
 
+my $encoding = $config->{export_encoding};
+if ($encoding eq 'encoding(UTF-8)') {
+  require utf8;
+  utf8->import();
+}
+
 
 my @ignoredTables = ('PrettyLibFiles', 'PrettyCircFiles');
 
@@ -218,8 +222,6 @@ sub printTableMetadata {
 
 sub exportTable {
   my ($dbh, $config, $table) = @_;
-
-  my $encoding = "encoding(UTF-8)";
 
   my $filePath = join('/', $config->{export_path}, $table->{TABLE_NAME}.'.csv');
   open(my $FH, ">:$encoding", $filePath) or die("Opening file '".$filePath."' for full export failed: $!");
@@ -302,7 +304,7 @@ sub exportSql {
 
   my $rows = _executeSql($dbh, $config, $sql);
   my $filePath = 'extract.csv';
-  open(my $FH, '>:raw', $filePath) or die("Extracting SQL to '".$filePath."' failed: $!");
+  open(my $FH, ">:$encoding", $filePath) or die("Extracting SQL to '".$filePath."' failed: $!");
   _writeSql($dbh, $config, $FH, $rows);
   close($FH);
 }
