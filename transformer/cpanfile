@@ -1,5 +1,6 @@
 requires "Log::Log4perl";
 requires "YAML::XS";
+requires "YAML::LibYAML";
 requires "Email::Valid";
 requires "Getopt::OO";
 requires "Carp::Always::Color";
@@ -14,6 +15,3 @@ requires "IPC::Cmd";
 requires "Import::Into";
 requires "Modern::Perl";
 requires "DateTime::Format::MySQL";
-
-libyaml-perl
-libtext-csv-perl
