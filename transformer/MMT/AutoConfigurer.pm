@@ -20,12 +20,14 @@ Creates unaltered translation tables from table contents
 
 sub configure($rules) {
   for my $rule (@$rules) {
+    my $sourceSystem = MMT::Config->sourceSystemType;
     my $sourceFile =
       (MMT::Validator::checkIsAbsolutePath($rule->{sourceFile})) ? $rule->{sourceFile} :
                                                                   MMT::Config::exportsDir().'/'.$rule->{sourceFile};
     my $destinationFile =
       (MMT::Validator::checkIsAbsolutePath($rule->{destinationFile})) ? $rule->{destinationFile} :
-                                                                  $ENV{MMT_HOME}.'/config/translationTables/'.$rule->{destinationFile};
+                                                                  $ENV{MMT_HOME}.'/config/translationTables/' .
+                                           $sourceSystem . '/' . $rule->{destinationFile};
 
 
     open(my $FHin,  '<:encoding(UTF-8)', $sourceFile)      or $log->logdie("Unable to open file '$sourceFile' for reading: $!");
