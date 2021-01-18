@@ -61,9 +61,11 @@ sub configure($rules) {
 
       my @cols = List::Util::pairmap {$obj->{$a} =~ s/(?:\p{IsCntrl}|\s{2,}|\s+$|^\s+)//gsm; $obj->{$a}} %$obj; # Drop anomalous whitespace in-place and create a list of values for documentation purposes.
 
+      my $kohaValue = $rule->{translationTemplate}->($obj) // 'KONVERSIO';
+      $kohaValue = "'$kohaValue'" if $kohaValue eq '-';
+
       push(@sb, $rule->{sourcePrimaryKeyColumn}->($obj).
-                ': '.
-                ($rule->{translationTemplate}->($obj) // 'KONVERSIO').
+                ": $kohaValue".
                 ' # '.join(", ", @cols)
       );
     }
