@@ -48,7 +48,7 @@ Flesh out the Koha-borrower -object out of the given
 
 sub build($self, $o, $b) {
   unless ($SSN_EXPORT_FH) {
-    my $outputFilePrefix = split('.', $b->{outputFile})[0];
+    my $outputFilePrefix = (split('.', $b->{outputFile}))[0];
     my $file = MMT::Config::kohaImportDir."/$outputFilePrefix.ssn.csv";
     open($SSN_EXPORT_FH, ">:encoding(UTF-8)", $file) or die("Couldn't open the ssn export file '$file' for writing: $!");
     $SSN_EXPORT_FH->autoflush(1);
