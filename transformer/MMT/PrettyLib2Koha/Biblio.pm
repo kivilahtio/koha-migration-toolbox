@@ -372,7 +372,7 @@ sub linkClasses($s, $o, $builder) {
                     $field->addSubfield(MMT::MARC::Subfield->new($code, $value));
                   }
                   else {
-                    $sf->value($value);
+                    $sf->content($value);
                   }
                 }
               }
