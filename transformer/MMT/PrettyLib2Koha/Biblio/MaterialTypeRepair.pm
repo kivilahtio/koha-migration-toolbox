@@ -83,6 +83,9 @@ sub KI { # Kirja
     $leader = '     nam a22     zu 4500';
     $f008   = '||||||n||||    fi |||||||||| ||||||   ||';
 }
+sub KO { # Kokousjulkaisu
+    KI()
+}
 sub KR { # Kartta
     $leader = '     nem a22     zu 4500';
     $f007   = 'a| ca|||';
@@ -93,8 +96,14 @@ sub LA { # Lautapeli
     $f007   = 'zu';
     $f008   = '      n        fi ||| |      |   g|   ||';
 }
-sub MO {
+sub MA { # Määräys
     KI()
+}
+sub MO { # Moniste
+    KI()
+}
+sub MM { # Multimedia
+    AT()
 }
 sub MV { # Moniviestin
     $leader = '     nom a22     zu 4500';
@@ -106,11 +115,20 @@ sub NU { # Nuotti
     $f007   = 'qu';
     $f008   = '||||||n||||    fi ||||||||||||||||||||||';
 };
+sub OM { # Oppimateriaali
+    KI()
+}
 sub OP { # Opinnäytetyö
+    KI()
+}
+sub RA { # Raportti
     KI()
 }
 sub PP { # Pienpainate
     KI()
+}
+sub SA { # Sarjajulkaisu
+    KA()
 }
 sub SR { # Äänite
     $leader = '     njm a22     zu 4500';
@@ -119,6 +137,12 @@ sub SR { # Äänite
 }
 sub ST { # Standardi
     KI()
+}
+sub TK { # Tuotekansio
+    KN()
+}
+sub TU { # Tutkimus
+    OP()
 }
 sub VI { # Video (VHS)
     $leader = '     ngm a22     zu 4500';
