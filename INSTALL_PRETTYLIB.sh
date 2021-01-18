@@ -33,11 +33,12 @@ test $? != 0 && echo "Couldn't cd to app source code directory '$MMT_CODE', fail
 
 
 echo "Installing Perl dependencies to the program dir '$MMT_CODE'"
-cpanm -L extlib --installdeps .
+echo "$MMT_CODE/transformer"
+cpanm -L $MMT_CODE/transformer/extlib --installdeps $MMT_CODE/transformer
 # Ubuntu 18 fails on one of the dependencies, unless --force is used...
 if [ $? != 0 ]
 then
-  echo "Perl dependencies install failed with error code '$?'. Using force." && cpanm -L extlib --force --installdeps .
+  echo "Perl dependencies install failed with error code '$?'. Using force." && cpanm -L $MMT_CODE/transformer/extlib --force --installdeps $MMT_CODE/transformer
   test $? != 0 && echo "Perl dependencies install failed with error code '$?'. Force did not help." && exit 9
 fi
 
