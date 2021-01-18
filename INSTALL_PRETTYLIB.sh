@@ -52,7 +52,7 @@ mkdir -p $PIPELINE_SCRIPTS             || exit 11
 cp -r config $MMT_HOME/                || exit 11
 cp -r tests $MMT_HOME/                 || exit 11
 cp config/seed.gitignore $MMT_HOME/.gitignore || exit 11
-cp $EXTRACTOR_DIR/PrettyLibExtractor/preprocess.sh $MMT_HOME/preprocess.sh || exit 11
+cp $EXTRACTOR_DIR/PrettyExtractor/preprocess.sh $MMT_HOME/preprocess.sh || exit 11
 cp $EXTRACTOR_DIR/$EXTRACTOR_PIPELINE_SCRIPT $PIPELINE_SCRIPTS/ || exit 12
 cp $LOADER_DIR/$LOADER_PIPELINE_SCRIPT $PIPELINE_SCRIPTS/ || exit 12
 
