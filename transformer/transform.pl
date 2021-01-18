@@ -5,7 +5,8 @@
 
 package MAIN;
 #Pragmas
-use lib qw(lib extlib/lib/perl5);
+use FindBin qw($Bin);
+use lib ("$Bin", "$Bin/../lib", "$Bin/extlib/lib/perl5");
 use MMT::Pragmas;
 use MMT::MonkeyPatch;
 
