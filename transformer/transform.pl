@@ -79,19 +79,6 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
             destinationFile => 'borrowers.categorycode.yaml',
             sourcePrimaryKeyColumn => sub { return $_[0]->{Id} },
             translationTemplate => sub { return substr($_[0]->{Name},0,12) },
-          }, {
-            description => "This mapping table is used by the module MMT::TranslationTable::ItemTypes, it defines mappings from PrettyLib.Title.TitleType to koha.items.itype",
-            sourceFile => 'Title.csv',
-            destinationFile => 'itemtypes.yaml',
-            filter => sub { # Filter out unwanted definitions
-              my ($row, $notFiltered) = @_;
-              return undef unless (defined($row->{TitleType}));
-              return undef if (defined($notFiltered->{  $row->{TitleType}  })); # Prevent including duplicate rows.
-              $notFiltered->{$row->{TitleType}} = $row;
-              return $row;
-            },
-            sourcePrimaryKeyColumn => sub { return $_[0]->{TitleType} },
-            translationTemplate =>  sub { return substr($_[0]->{TitleType},0, 12) },
           },
         ]);
       }

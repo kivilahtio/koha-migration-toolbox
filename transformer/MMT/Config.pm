@@ -87,7 +87,7 @@ sub testDir() {
   return $ENV{MMT_HOME}.'/tests';
 }
 sub translationTablesDir() {
-  return $ENV{MMT_HOME}.'/config/translationTables';
+  return $ENV{MMT_HOME}.'/config/translationTables/'.$config->{sourceSystemType};
 }
 sub useHetula() {
   return $config->{useHetula};
