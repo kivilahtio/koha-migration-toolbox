@@ -114,7 +114,7 @@ sub setBarcode($s, $o, $b) {
     $bc = $o->{BarCode} if $o->{BarCode};
   }
 
-  ($bc, $ok) = MMT::Validator::Barcode::validate(@_, $bc);
+  ($bc, $ok) = MMT::Validator::Barcode::validate(@_, $bc) if defined $bc && length($bc)>0;
   $s->{barcode} = $bc;
 
   my $error;

@@ -46,7 +46,7 @@ All strategies share the same subroutine interface:
 =cut
 
 our $validatorStrategy; #Cache the validator strategy. Make it accessible from tests so it can be flushed
-sub validate($kohaObject, $voyagerObject, $builder, $phoneCandidate) {
+sub validate($kohaObject, $voyagerObject, $builder, $barcodeCandidate) {
   unless ($validatorStrategy) {
     $validatorStrategy = __PACKAGE__->can('strategy_'.'Code39');
     die "Unknown Barcode validation strategy '".__PACKAGE__.'::strategy_'.'Code39'."'" unless ($validatorStrategy);
