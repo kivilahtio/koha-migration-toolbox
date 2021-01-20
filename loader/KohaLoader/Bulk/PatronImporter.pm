@@ -167,7 +167,11 @@ sub addDefaultAdmin($s, $defaultAdmin) {
   INFO "Adding default admin";
   my $dbh = C4::Context->dbh;
   my $categorycode = $dbh->selectrow_array("SELECT categorycode from categories LIMIT 1") or warn "Failed to get default admin categorycode ".$dbh->errstr(); #Pick any borrower.categorycode
-  $categorycode = 'ADMIN' unless $categorycode;
+  unless ($categorycode) {
+    $dbh->do("INSERT IGNORE INTO categories (categorycode, description) ".
+                              "VALUE ('ADMIN','AUTO-ADMIN')");
+    $categorycode = 'ADMIN';
+  }
   my $branchcode = $dbh->selectrow_array("SELECT branchcode from branches LIMIT 1") or warn "Failed to get default admin branchcode ".$dbh->errstr(); #Pick any borrower.branchcode
   my %defaultAdmin = (
     cardnumber =>   "kalifi",
