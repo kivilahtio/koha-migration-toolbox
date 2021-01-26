@@ -199,7 +199,7 @@ sub setFirstname($s, $o, $b) {
   $s->{firstname} = join(' ', @names[1..($#names)]); #Slice the tail of @names
 }
 sub setSurname($s, $o, $b) {
-  my @names = split(/\s+/, $o->{Name});
+  my @names = split(/\s+|,/, $o->{Name});
   $s->{surname} = $names[0];
 }
 sub setOthernames($s, $o, $b) { #This is actually the reservation alias in Koha-Suomi Koha.
