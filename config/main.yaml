@@ -46,6 +46,9 @@ defaultReplacementPrice: 25
 # Used primarily in the MARC record transformations.
 organizationISILCode: FI-Hamk
 
+# Set the Patron name initials to F, L (where F = firstname, L = lastname)
+patronInitials: 0
+
 # Set the Patron home library to this value for all patrons. Leave empty to use the LocationId-translation table.
 patronHomeLibrary:
 

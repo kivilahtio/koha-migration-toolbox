@@ -210,9 +210,11 @@ sub setTitle($s, $o, $b) {
 }
 sub setInitials($s, $o, $b) {
   my @parts;
-  push(@parts, split(/\s+|[,.-]+/, $s->{firstname})) if $s->{firstname};
-  push(@parts, split(/\s+|[,.-]+/, $s->{surname})) if $s->{surname};
-  $s->{initials} = join('.', map {uc substr($_, 0, 1)} @parts);
+  if (MMT::Config::patronInitials()) {
+    push(@parts, split(/\s+|[,.-]+/, $s->{firstname})) if $s->{firstname};
+    push(@parts, split(/\s+|[,.-]+/, $s->{surname})) if $s->{surname};
+    $s->{initials} = join('.', map {uc substr($_, 0, 1)} @parts);
+  }
 }
 
 my $dateenrolledDefault = DateTime->new(year => 1985, month => 1, day => 1)->ymd('-');
