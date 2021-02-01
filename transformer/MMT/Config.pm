@@ -77,6 +77,9 @@ sub patronAddExpiryYears() {
 sub patronHomeLibrary() {
   return $config->{patronHomeLibrary};
 }
+sub patronInitials() {
+  return $config->{patronInitials};
+}
 sub phoneNumberValidationStrategy() {
   return $config->{phoneNumberValidationStrategy};
 }
