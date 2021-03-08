@@ -135,13 +135,13 @@ sub setBarcode($s, $o, $b) {
       MMT::Exception::Delete->throw($msg);
     }
     elsif (MMT::Config::emptyBarcodePolicy() eq 'IGNORE') {
-      $log->error($msg) if ($s->{barcode});
+      $log->info($msg) if ($s->{barcode});
       $s->{barcode} = undef;
       #Ignore
     }
     elsif (MMT::Config::emptyBarcodePolicy() eq 'CREATE') {
       my $newBc = $s->createBarcode();
-      $log->error("$msg Created barcode '$newBc'.");
+      $log->info("$msg Created barcode '$newBc'.");
       $s->{barcode} = $newBc;
     }
   }
