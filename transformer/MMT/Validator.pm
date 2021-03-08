@@ -157,7 +157,7 @@ sub parseDate($dateStr) {
                       (\d{4})-(\d{2})-(\d{2}) #ISO-8601 Date
                       (?:
                         [T ]
-                        (\d{1,2}):(\d{1,2}):(\d{1,2}) #HMS
+                        (\d{1,2}):(\d{1,2}):(\d{1,2})(?:\.\d{3})? #HMS.f
                       )?$
                       /x) {
     @dc = ($1,$2,$3,$4,$5,$6)
@@ -175,6 +175,16 @@ sub parseDate($dateStr) {
            (length($4) == 1 ? "0$4" : "$4"),
            (length($5) == 1 ? "0$5" : "$5"),
            (length($6) == 1 ? "0$6" : "$6"));
+  }
+  elsif ($dateStr =~ /^\s*
+                      (\d{4})-(\d{4})-(\d{2})-(\d{2})$ #Y-Y-M-D
+                      /x) {
+    @dc = ($2, $3, $4, undef, undef, undef)
+  }
+  elsif ($dateStr =~ /^\s*
+                      (\d{4})[^0-9].*$ #Y anythingelse
+                      /x) {
+    @dc = ($1, '12', '31', undef, undef, undef)
   }
   else {
     $log->error("Unknown date format '$dateStr'!");

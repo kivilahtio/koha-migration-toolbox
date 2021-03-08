@@ -230,7 +230,10 @@ sub setEnddate($s, $o, $b) {
 sub setClosed($s, $o, $b) {
   return if $s->{closed};
 
-  my $ed = DateTime::Format::MySQL->parse_date($s->{enddate});
+  $s->{enddate} = MMT::Validator::parseDate($s->{enddate});
+  $s->{enddate} =~ s/T/ /;
+
+  my $ed = DateTime::Format::MySQL->parse_datetime($s->{enddate});
   if (DateTime->compare($ed, $closedSubscriptionCutoffDate) > 0) { # current enddate is newer than the closed cutoff date
     $s->{closed} = 0;
   }
