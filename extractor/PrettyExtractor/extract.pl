@@ -392,4 +392,5 @@ introspectTables($dbh, $config) if $opIntrospect or $opExtract;
 exportSql($dbh, $config, $sql) if $sql;
 ship($config) if $opShip;
 
+print "No operation defined, see --help\n" unless $opShip || $opIntrospect || $opExtract || $sql;
 
