@@ -252,7 +252,7 @@ sub exportTable {
     ($dbh, $config, $table, $rows, $countOfRows, $maxId, $fromId, $toId) = _exportChunked($dbh, $config, $table, $countOfRows, $maxId, undef, undef);
   }
 
-  if ($config->{bcrypt_customer_passwords}) {
+  if ($table->{TABLE_NAME} =~ /Customer$/i && $config->{bcrypt_customer_passwords}) {
     _bcryptCustomerPasswords($rows, \@columnNames);
   }
 
