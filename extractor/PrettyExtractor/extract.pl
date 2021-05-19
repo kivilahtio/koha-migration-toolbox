@@ -29,11 +29,11 @@ use Data::Dumper;
 $Data::Dumper::Sortkeys = 1;
 use List::Util;
 
-my $opExtract;
-my $opIntrospect;
-my $opShip;
-my $help;
-my $v;
+my $opExtract = 0;
+my $opIntrospect = 0;
+my $opShip = 0;
+my $help = 0;
+my $v = 0;
 my $sql;
 my $configPath = './config.perl';
 my $workingDir;
@@ -236,14 +236,14 @@ sub exportTable {
   # Prepare to check the fetched rows against the counts expected
   my ($countOfRows, $maxId);
   eval { # Not all tables have Id-column
-    $countOfRows = _executeSql($dbh, $config, "SELECT COUNT(Id) FROM ".$table->{TABLE_NAME});
+    $countOfRows = _executeSql($dbh, $config, "SELECT COUNT(Id) FROM "._absTableName($config, $table->{TABLE_NAME}));
     $countOfRows = $countOfRows->[0]->[0];
-    $maxId = _executeSql($dbh, $config, "SELECT TOP 1 Id FROM ".$table->{TABLE_NAME}." ORDER BY Id DESC");
+    $maxId = _executeSql($dbh, $config, "SELECT TOP 1 Id FROM "._absTableName($config, $table->{TABLE_NAME}).' ORDER BY Id DESC');
     $maxId = $maxId->[0]->[0];
   };
   if ($@) { die($@) unless ($@ =~ /SQL-42S22/); } #/Invalid column name 'Id'/
 
-  my $rows = _executeSql($dbh, $config, "SELECT * FROM ".$table->{TABLE_NAME});
+  my $rows = _executeSql($dbh, $config, "SELECT * FROM "._absTableName($config, $table->{TABLE_NAME}));
   $rows = [] unless $rows;
 
   if ($countOfRows && scalar(@$rows) != $countOfRows) { # Try to recover if we can.
@@ -269,9 +269,9 @@ sub _exportChunked {
   $toId = _newChunkTarget($countOfRows, $maxId, $fromId, $toId, undef) if (not(defined($toId)));
   print "_exportChunked($dbh, $config, $table, $rows, $countOfRows, $maxId, $fromId, $toId)";
 
-  my $expectedCount = _executeSql($dbh, $config, "SELECT COUNT(Id) FROM ".$table->{TABLE_NAME}." WHERE Id >= '$fromId' AND Id < '$toId'");
+  my $expectedCount = _executeSql($dbh, $config, "SELECT COUNT(Id) FROM "._absTableName($config, $table->{TABLE_NAME})." WHERE Id >= '$fromId' AND Id < '$toId'");
   $expectedCount = $expectedCount->[0]->[0];
-  my $newRows = _executeSql($dbh, $config, "SELECT * FROM ".$table->{TABLE_NAME}." WHERE Id >= '$fromId' AND Id < '$toId'"); # Sorry SQL injection, just don't expose this code!
+  my $newRows = _executeSql($dbh, $config, "SELECT * FROM "._absTableName($config, $table->{TABLE_NAME})." WHERE Id >= '$fromId' AND Id < '$toId'"); # Sorry SQL injection, just don't expose this code!
   $newRows = $newRows->[0]->[0];
 
   # Succeeded in getting what was expected
@@ -297,6 +297,11 @@ sub _newChunkTarget {
   else {
     return $fromId + (($toId - $fromId) / 2); # On each failed recursion, logarithmically dig deeper toward the failing record.
   }
+}
+
+sub _absTableName {
+  my ($cfg, $tableName) = @_;
+  return $cfg->{db_catalog}.'.'.$cfg->{db_schema}.'.'.$tableName;
 }
 
 sub exportSql {
