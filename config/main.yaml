@@ -83,6 +83,10 @@ csvInputParams:
     munge_column_names: none
 
 
+# Relative path to USEMARCON INI file in $MMT_CODE/usemarcon directory. Leave empty if you want to skip usemarcon execution.
+# Example: USEMARCON-fi2ma/fi2ma.ini
+usemarconIniFile: ''
+
 ############ PRETTY* -specific configs ################
 
 # Instead of the Item.BarCode use Item.AcqNumIdx to populate koha.items.barcode

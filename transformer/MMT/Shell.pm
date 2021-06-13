@@ -14,8 +14,8 @@ MMT::Shell - Wrapper to run shell scripts
 
 =cut
 
-sub run($cmd) {
-  my($success, $error_code, $full_buf, $stdout_buf, $stderr_buf) = IPC::Cmd::run(command => $cmd, verbose => 1);
+sub run($cmd, $verbosity=1) {
+  my($success, $error_code, $full_buf, $stdout_buf, $stderr_buf) = IPC::Cmd::run(command => $cmd, verbose => $verbosity);
 
   if ($error_code) {
     $log->logdie(

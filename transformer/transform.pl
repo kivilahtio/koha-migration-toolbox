@@ -21,6 +21,7 @@ use MMT::Builder;
 use MMT::Extractor;
 use MMT::Loader;
 use MMT::TBuilder;
+use MMT::Usemarcon;
 use MMT::Voyager2Koha::Biblio;
 
 
@@ -169,6 +170,8 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
       }
 
       build($confBase, $conf);
+
+      MMT::Usemarcon::execute($confBase->{outputFile});
     },
   },
 

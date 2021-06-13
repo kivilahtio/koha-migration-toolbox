@@ -92,6 +92,9 @@ sub translationTablesDir() {
 sub useHetula() {
   return $config->{useHetula};
 }
+sub usemarconIniFile() {
+  return $ENV{MMT_CODE}.'/usemarcon/'.$config->{usemarconIniFile};
+}
 sub workers() {
   return $config->{workers};
 }
