@@ -408,18 +408,44 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
   '--reserves' => {
     help => 'Transform reserves from Voyager extracts to Koha',
     callback => sub {
-      my MMT::Builder $builder = MMT::Builder->new({
-        type => 'Reserve',
-        inputFile => '29-requests.csv',
-        repositories => [
-        ],
-        translationTables => [
-          {name => 'HoldStatuses'},
-          {name => 'CallSlipStatuses'},
-          {name => 'LocationId'},
-        ],
-      });
-      $builder->build();
+      my $confBase = {
+        outputFile => 'Reserve.migrateme',
+      };
+      my $conf;
+
+      if (MMT::Config->sourceSystemType eq 'Voyager') {
+        $conf = {
+          type => 'Reserve',
+          inputFile => '29-requests.csv',
+          repositories => [
+          ],
+          translationTables => [
+            {name => 'HoldStatuses'},
+            {name => 'CallSlipStatuses'},
+            {name => 'LocationId'},
+          ],
+        };
+      }
+      elsif (MMT::Config->sourceSystemType eq 'PrettyLib') {
+        $conf = {
+          type => 'Reserve',
+          inputFile => 'Reservation.csv',
+          translationTables => [
+            {name => 'Branchcodes'},
+          ],
+        };
+      }
+      elsif (MMT::Config->sourceSystemType eq 'PrettyCirc') {
+        $conf = {
+          type => 'Reserve',
+          inputFile => 'Reservation.csv',
+          translationTables => [
+            {name => 'Branchcodes'},
+          ],
+        };
+      }
+
+      build($confBase, $conf);
     },
   },
 

@@ -61,8 +61,10 @@ if [[ "$SOURCE_SYSTEM" =~ "PrettyLib" ]]; then
   MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --booksellers     &> $LOG_DIR/06-booksellers.log
   echo "--history"
   MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --history         &> $LOG_DIR/07-history.log
+  echo "--reserves"
+  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --reserves        &> $LOG_DIR/10-reserves.log
   echo "--load"
-  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --load            &> $LOG_DIR/10-load.log
+  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --load            &> $LOG_DIR/11-load.log
 fi
 
 if [[ "$SOURCE_SYSTEM" =~ "PrettyCirc" ]]; then
@@ -84,8 +86,10 @@ if [[ "$SOURCE_SYSTEM" =~ "PrettyCirc" ]]; then
   MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --subscriptions   &> $LOG_DIR/08-subscriptions.log
   echo "--serials"
   MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --serials         &> $LOG_DIR/09-serials.log
+  echo "--reserves"
+  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --reserves        &> $LOG_DIR/10-reserves.log
   echo "--load"
-  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --load            &> $LOG_DIR/10-load.log
+  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --load            &> $LOG_DIR/11-load.log
 fi
 
 echo ""
