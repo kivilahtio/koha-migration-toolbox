@@ -173,6 +173,8 @@ sub addDefaultAdmin($s, $defaultAdmin) {
     $categorycode = 'ADMIN';
   }
   my $branchcode = $dbh->selectrow_array("SELECT branchcode from branches LIMIT 1") or warn "Failed to get default admin branchcode ".$dbh->errstr(); #Pick any borrower.branchcode
+  my $dt = DateTime->now();
+  my $expiration = $dt->clone()->add(days => 90);
   my %defaultAdmin = (
     cardnumber =>   "kalifi",
     surname =>      "Kalifi",
@@ -184,8 +186,8 @@ sub addDefaultAdmin($s, $defaultAdmin) {
     dateofbirth =>  "1985-09-06",
     branchcode =>   $branchcode,
     categorycode => $categorycode,
-    dateenrolled => "2015-09-25",
-    dateexpiry =>   "2018-09-25",
+    dateenrolled => $dt->iso8601(),
+    dateexpiry =>   $expiration->iso8601(),
     password =>     $password,
     userid =>       $username,
     privacy =>      1,
