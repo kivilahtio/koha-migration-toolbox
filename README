@@ -43,7 +43,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     willing to share, please send them, and we will include them!
     A pull-request would be the most-welcome way to do that.
 
-3) Installation instructions
+3) Supported source library systems
+
+   See config/main.yaml sourceSystemType description
+
+4) Installation instructions
 
 This program is intended to be ran on two separate servers:
 - the source library system ("sourceSystem") database server ("sourceDB-server")
