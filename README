@@ -24,18 +24,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 1) Introduction
 
-    This ETL-program is written by the National Library of Finland and Hypernova Oy
-    based on the Voyager scripts by ByWater Solutions.
-    These scripts are for use in
-    migration and support of the Koha integrated library system.  We
-    give them to the community, in the hope that others find them
-    useful.  Most should be fairly self-explanatory; if you have specific
+    This ETL-program is written by the National Library of Finland and
+    Hypernova Oy based on the Voyager scripts by ByWater Solutions.
+    These scripts are for use in migration and support of the Koha integrated
+    library system. We give them to the community, in the hope that others find
+    them useful. Most should be fairly self-explanatory; if you have specific
     questions, please direct them to the committers.
 
 1.1) Credits
 
-    To the National Library of Finland and Ere Maijala for providing the excellent USEMARCON
-    FinMARC to MARC21 conversion package.
+    To the National Library of Finland and Ere Maijala for providing the
+    excellent USEMARCON FinMARC to MARC21 conversion package.
 
 2) Submitting patches
 
@@ -47,23 +46,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 3) Installation instructions
 
 This program is intended to be ran on two separate servers:
-- the source library system ("sourceSystem") database server ("sourceDB-server") and
+- the source library system ("sourceSystem") database server ("sourceDB-server")
 - the Koha application server
 
 a) Overview of the program flow:
 
-- A small script and the relevant config is put to the sourceDB-server to extract all data
-- Koha-server is configured to access the sourceDB-server via ssh and pulls a DB dump when needed
+- A small script and the relevant config is put to the sourceDB-server to
+  extract all data
+- Koha-server is configured to access the sourceDB-server via ssh and pulls a DB
+  dump when needed
 - Koha is configured with the desired configurations
-- Transformation phase mapping tables and configurations match the configured Koha and sourceSystem instances.
+- Transformation phase mapping tables and configurations match the configured
+  Koha and sourceSystem instances.
 
 - When the migrate-command is given:
 -- Koha-server instructs the sourceDB to hand over the data
 -- Data is pulled to Koha-server and unzipped
 -- Data is transformed using mapping tables and program configurations
 -- Transformed Koha-objects are stored to files
--- All configurations in the Koha Staff Client are backed up, and the Koha DB is cleared
--- Those files are read by bulk*Import.pl -scripts and relevant business objects are written to Koha via the Koha Perl API.
+-- All configurations in the Koha Staff Client are backed up, and the Koha DB is
+   cleared
+-- Those files are read by bulk*Import.pl -scripts and relevant business objects
+   are written to Koha via the Koha Perl API.
 -- ElasticSearch reindexing is triggered.
 
 b) Commands to Run
@@ -83,8 +87,11 @@ and re-run the script.
 0. Install the sourceDB extraction script
 
 - Configure ssh-connection to the sourceDB-server from the Koha-server.
-- Copy the "extractor/<sourceSystem>Extractor" directory to the sourceDB-server and configure the scripts there as per instructions in extractor/<sourceSystem>Extractor/README.
-- Configure the extraction automation script. Set the script used to pull the sourceSystem data dump to the main configuration at
+- Copy the "extractor/<sourceSystem>Extractor" directory to the sourceDB-server
+  and configure the scripts there as per instructions in
+  extractor/<sourceSystem>Extractor/README.
+- Configure the extraction automation script. Set the script used to pull the
+  sourceSystem data dump to the main configuration at
     ~/MMT-<sourceSystem>/config/main.yaml
   For example implementations take a look at
     extract/<sourceSystem>ToKoha_*
@@ -99,24 +106,31 @@ and re-run the script.
 
 2.2 ExtendedPatronAttributes
 
-- KITT2 needs 'statistic', which is repeatable, non-unique, authorized_value-category should be defined and used based on the patron_stat.yaml mapping table.
-- Hetula needs 'SSN', which is non-repeatable, unique anonymized SSN-key reference to the real SSN-value
+- KITT2 needs 'statistic', which is repeatable, non-unique,
+  authorized_value-category should be defined and used based on the
+  patron_stat.yaml mapping table.
+- Hetula needs 'SSN', which is non-repeatable, unique anonymized SSN-key
+  reference to the real SSN-value
 
-3. Extract sourceSystem data and download to the Koha-server, unzip to <sourceSystem>Export-directory
+3. Extract sourceSystem data and download to the Koha-server, unzip to
+   <sourceSystem>Export-directory
 
   see the example pipeline script deployed during INSTALL.sh
 
 3.1. Anonymization
 
-  It is possible to anonymize the Patron data in sourceSystem, to make it's handling less sensitive.
-  see extractor/<sourceSystem>Extractor/extract.pl --help
+  It is possible to anonymize the Patron data in sourceSystem, to make it's
+  handling less sensitive.
+
+  See extractor/<sourceSystem>Extractor/extract.pl --help
   and adjust your pipeline to match
 
 4. transform.pl to transform the data
 
   see migrate.pl and migrate.sh
 
-  It is possible to run multiple ETL-pipelines by setting the MMT_HOME-environment variable.
+  It is possible to run multiple ETL-pipelines by setting the
+  MMT_HOME-environment variable.
 
 5. Load to Koha
 
