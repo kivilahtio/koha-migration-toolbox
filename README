@@ -1,6 +1,6 @@
 ---------------------------------
 
- Voyager->Koha Migration Toolbox
+ Source library system->Koha Migration Toolbox
  Copyright 2018 NatLibFi
  Copyright 2010 ByWater Solutions
 
@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 1) Introduction
 
-    This Voyager ETL-program is written by the National Library of Finland and Hypernova Oy
+    This ETL-program is written by the National Library of Finland and Hypernova Oy
     based on the Voyager scripts by ByWater Solutions.
     These scripts are for use in
     migration and support of the Koha integrated library system.  We
@@ -38,7 +38,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 2) Submitting patches
 
-    No one at ByWater/NatLibFi suggests that these scripts are the be-all,
+    No one suggests that these scripts are the be-all,
     end-all of ILS migration tools; if you have enhancements that you are
     willing to share, please send them, and we will include them!
     A pull-request would be the most-welcome way to do that.
@@ -46,18 +46,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 3) Installation instructions
 
 This program is intended to be ran on two separate servers:
-- the Voyager DB server and
+- the source library system ("sourceSystem") database server ("sourceDB-server") and
 - the Koha application server
 
 a) Overview of the program flow:
 
-- A small script and the relevant config is put to the VoyagerDB-server to extract all data
-- Koha-server is configured to access the VoyagerDB-server via ssh and pulls a DB dump when needed
+- A small script and the relevant config is put to the sourceDB-server to extract all data
+- Koha-server is configured to access the sourceDB-server via ssh and pulls a DB dump when needed
 - Koha is configured with the desired configurations
-- Transformation phase mapping tables and configurations match the configured Koha and Voyager instances.
+- Transformation phase mapping tables and configurations match the configured Koha and sourceSystem instances.
 
 - When the migrate-command is given:
--- Koha-server instructs the VoyagerDB to hand over the data
+-- Koha-server instructs the sourceDB to hand over the data
 -- Data is pulled to Koha-server and unzipped
 -- Data is transformed using mapping tables and program configurations
 -- Transformed Koha-objects are stored to files
@@ -79,18 +79,18 @@ cpanm -L extlib --force --installdeps .
 
 and re-run the script.
 
-0. Install the VoyagerDB extraction script
+0. Install the sourceDB extraction script
 
-- Configure ssh-connection to the Voyager DB-server from the Koha-server.
-- Copy the "extractor/VoyagerExtractor" directory to the VoyagerDB-server and configure the scripts there as per instructions in extractor/VoyagerExtractor/README.
-- Configure the extraction automation script. Set the script used to pull the Voyager data dump to the main configuration at
-    ~/MMT-Voyager/config/main.yaml
+- Configure ssh-connection to the sourceDB-server from the Koha-server.
+- Copy the "extractor/<sourceSystem>Extractor" directory to the sourceDB-server and configure the scripts there as per instructions in extractor/<sourceSystem>Extractor/README.
+- Configure the extraction automation script. Set the script used to pull the sourceSystem data dump to the main configuration at
+    ~/MMT-<sourceSystem>/config/main.yaml
   For example implementations take a look at
-    extract/voyagerToKoha_*
+    extract/<sourceSystem>ToKoha_*
 
 1. Configure mapping tables.
 
-- edit ~/MMT-Voyager/config/translationTables
+- edit ~/MMT-<sourceSystem>/config/translationTables/<sourceSystem>/
 
 2. Configure Koha
 
@@ -101,14 +101,14 @@ and re-run the script.
 - KITT2 needs 'statistic', which is repeatable, non-unique, authorized_value-category should be defined and used based on the patron_stat.yaml mapping table.
 - Hetula needs 'SSN', which is non-repeatable, unique anonymized SSN-key reference to the real SSN-value
 
-3. Extract Voyager data and download to the Koha-server, unzip to VoyagerExport-directory
+3. Extract sourceSystem data and download to the Koha-server, unzip to <sourceSystem>Export-directory
 
   see the example pipeline script deployed during INSTALL.sh
 
 3.1. Anonymization
 
-  It is possible to anonymize the Patron data in Voyager, to make it's handling less sensitive.
-  see extractor/VoyagerExtractor/extract.pl --help
+  It is possible to anonymize the Patron data in sourceSystem, to make it's handling less sensitive.
+  see extractor/<sourceSystem>Extractor/extract.pl --help
   and adjust your pipeline to match
 
 4. transform.pl to transform the data
