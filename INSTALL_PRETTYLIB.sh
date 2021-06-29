@@ -42,6 +42,9 @@ then
   test $? != 0 && echo "Perl dependencies install failed with error code '$?'. Force did not help." && exit 9
 fi
 
+echo "Installing debian packages"
+sudo apt install -y sshpass # Typically used with extractor from legacy systems
+
 
 echo "Configuring application home to '$MMT_HOME'"
 mkdir -p $MMT_HOME                     || exit 11
