@@ -138,9 +138,6 @@ if ($args{uploadSSNKeysOnly}) {
 }
 
 
-$patronImporter->addDefaultAdmin($args{defaultAdmin}) if $args{defaultAdmin};
-
-
 INFO "Opening BorrowernumberConversionTable '$args{borrowernumberConversionTableFile}' for writing";
 my $borrowernumberConversionTable = Bulk::ConversionTable::BorrowernumberConversionTable->new($args{borrowernumberConversionTableFile}, 'write');
 my $now = DateTime->now()->ymd();
@@ -185,6 +182,11 @@ foreach my $patron (@guarantees) {
     processNewFromRow( $patron );
 }
 $borrowernumberConversionTable->close();
+
+
+## Create the default admin after migrating Patrons, so we wont accidentally overwrite legacy borrowernumber==1 with the default admin
+$patronImporter->addDefaultAdmin($args{defaultAdmin}) if $args{defaultAdmin};
+
 
 sub processNewFromRow($patron) {
     bless($patron, 'HASH'); #Unbless so DBIx wont complain
