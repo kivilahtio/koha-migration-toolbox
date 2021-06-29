@@ -25,6 +25,9 @@ our $config;
 sub anonymize() {
   return $config->{anonymize} // 1;
 }
+sub csvInputEncoding() {
+  return $config->{csvInputParams}->{encoding};
+}
 sub csvInputNew() {
   return $config->{csvInputParams}->{new};
 }

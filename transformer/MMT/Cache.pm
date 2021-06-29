@@ -64,7 +64,8 @@ sub _slurpFile($s) {
 }
 sub _slurpCsv($s) {
   my $csv = Text::CSV->new(MMT::Config::csvInputNew());
-  open(my $FH, '<:encoding(UTF-8)', $s->file());
+  my $encoding = MMT::Config::csvInputEncoding();
+  open(my $FH, "<:encoding($encoding)", $s->file());
   eval {
     $csv->header($FH, MMT::Config::csvInputHeader());
   };
