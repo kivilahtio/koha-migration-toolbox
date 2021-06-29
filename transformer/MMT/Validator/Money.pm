@@ -86,7 +86,7 @@ sub money_PrettyLib($kohaObject, $voyagerObject, $builder, $priceCandidate) {
 
   if ($priceCandidate =~ /^
                            (?<SYMBOL>    [-+]       )?
-                           (?<PRICE>     \d+\.?\d*  )
+                           (?<PRICE>     \d*\.?\d*  )
                            (?<CURRENCY>  \D+)?
                           $/x) {
     my ($symbol, $price, $currency) = @+{qw(SYMBOL PRICE CURRENCY)};
