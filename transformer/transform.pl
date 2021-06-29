@@ -21,6 +21,7 @@ use MMT::Builder;
 use MMT::Extractor;
 use MMT::Loader;
 use MMT::TBuilder;
+use MMT::Usemarcon;
 use MMT::Voyager2Koha::Biblio;
 
 
@@ -90,11 +91,10 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
 
   '--biblios' => {
     help => "Transform biblios",
-    #callback => sub {MMT::Voyager2Koha::Biblio::usemarcon()},
     callback => sub {
       my $confBase = {
         type => 'Biblio',
-        outputFile => 'biblios.marcxml',
+        outputFile => 'biblios.marcxml.finmarc',
       };
       my $conf;
 
@@ -169,6 +169,7 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
       }
 
       build($confBase, $conf);
+      MMT::Usemarcon::usemarcon();
     },
   },
 

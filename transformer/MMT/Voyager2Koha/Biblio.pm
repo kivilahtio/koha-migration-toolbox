@@ -206,18 +206,4 @@ sub _linkCreateField($s, $xmlPtr, $b, $sourceFieldCode, $destinationBiblionumber
 ###########################################################################################
 ###########################################################################################
 
-=head2 usemarcon
-
-Use usemarcon to do the transformation.
-
-=cut
-
-sub usemarcon() {
-  my $inputMARCFile = MMT::Config::exportsDir()."/biblios.marcxml";
-  my $outputMARCFile = MMT::Config::kohaImportDir()."/biblios.marcxml";
-  my $cmd = "usemarcon/usemarcon usemarcon/rules-hamk/rules.ini $inputMARCFile $outputMARCFile";
-  my ($success, $error_code, $full_buf, $stdout_buf, $stderr_buf) = MMT::Shell::run($cmd);
-  return !$success; # Getopt::OO callback errors if we return something.
-}
-
 return 1;
