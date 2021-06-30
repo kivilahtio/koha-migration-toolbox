@@ -18,7 +18,7 @@ use Bulk::ConversionTable::ItemnumberConversionTable;
 use Bulk::ConversionTable::BorrowernumberConversionTable;
 
 our $verbosity = 3;
-my %args = (subscriptionfile =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Subscription.migrateme',
+my %args = (subscriptionFile =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Subscription.migrateme',
             serialFile       =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Serial.migrateme',
             routinglistFile  =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Subscriptionroutinglist.migrateme',
             preserveIds      =>                   $ENV{MMT_PRESERVE_IDS} // 0,
@@ -49,7 +49,7 @@ NAME
 
 SYNOPSIS
   perl bulkSubscriptionImport.pl \
-    --subscriptionFile $args{subscriptionfile} \
+    --subscriptionFile $args{subscriptionFile} \
     --serialFile $args{serialFile} \
     --routinglistFile $args{routinglistFile} \
     -v $verbosity \
@@ -90,7 +90,7 @@ HELP
 
 require Bulk::Util; #Init logging && verbosity
 
-unless ($args{subscriptionfile}) {
+unless ($args{subscriptionFile}) {
     die "$help\n\n--subscriptionFile is mandatory";
 }
 unless ($args{serialFile}) {
@@ -113,7 +113,7 @@ my $sub_set_serial_sth = $dbh->prepare("UPDATE biblio
                                         SET serial=1
                                         WHERE biblionumber=?");
 
-my $subhist_create_missing = $dbh->prepare #TODO: all subscriptions must have a subscriptionhistory-entry! It could be missing! How to create it ! Use Koha C4::Serial for it!
+#my $subhist_create_missing = $dbh->prepare #TODO: all subscriptions must have a subscriptionhistory-entry! It could be missing! How to create it ! Use Koha C4::Serial for it!
 
 sub migrate_subscription($s) {
     $sub_insert_sth->execute('0', $s->{branchcode}, $s->{biblionumber}, $s->{notes}, $s->{status}, $s->{internalnotes}, $s->{location},
@@ -177,12 +177,14 @@ sub validateAndConvertSubscriptionKeys($s) {
     }
     $s->{biblionumber} = $newBiblionumber;
 
-    my $newAqbooksellerid = $args{booksellerConversionTable}->fetch($s->{aqbooksellerid});
-    unless ($newAqbooksellerid) {
-        WARN "$errId has no new Aqbooksellerid in the booksellerConversionTable!";
-        return undef;
+    if ($s->{aqbooksellerid}) {
+        my $newAqbooksellerid = $args{booksellerConversionTable}->fetch($s->{aqbooksellerid});
+        unless ($newAqbooksellerid) {
+            WARN "$errId has no new Aqbooksellerid in the booksellerConversionTable!";
+            return undef;
+        }
+        $s->{aqbooksellerid} = $newAqbooksellerid;
     }
-    $s->{aqbooksellerid} = $newAqbooksellerid;
 
     return $s;
 }
@@ -253,7 +255,7 @@ $args{itemnumberConversionTable} = Bulk::ConversionTable::ItemnumberConversionTa
 INFO "Opening BooksellerConversionTable '$args{booksellerConversionTable}' for reading";
 $args{booksellerConversionTable} = Bulk::ConversionTable::SubscriptionidConversionTable->new($args{booksellerConversionTable}, 'read');
 
-my $fh = Bulk::Util::openFile($args{subscriptionfile});
+my $fh = Bulk::Util::openFile($args{subscriptionFile});
 my $i = 0;
 while (<$fh>) {
     $i++;
