@@ -192,16 +192,28 @@ sub parseDate($dateStr) {
   }
   # Make sure the Date which looks like a date is actually a valid calendar day. DateTime used by Koha crashes Koha if there are invalid calendar dates.
   my $dt;
-  eval {
-    $dt = DateTime->new(year => $dc[0],
-                        month => $dc[1],
-                        day => $dc[2],
-                        hour => $dc[3] || 0,
-                        minute => $dc[4] || 0,
-                        second => $dc[5] || 0,)
-  };
-  if ($@) {
-    $log->error("Parsed date string '$dateStr' as '@dc', but this is not a valid calendar date!");
+  for (my $t=0 ; $t<3 ; $t++) {
+    eval {
+      $dt = DateTime->new(year => $dc[0],
+                          month => $dc[1],
+                          day => $dc[2],
+                          hour => $dc[3] || 0,
+                          minute => $dc[4] || 0,
+                          second => $dc[5] || 0,);
+    };
+    if ($@) {
+      if ($@ =~ /Invalid day of month/) {
+        $dc[2] = 1;
+      }
+      elsif ($@ =~ /Validation failed for type named Month/) {
+        $dc[1] = 1;
+      }
+    }
+    last if ($dt);
+  }
+  if (! $dt) {
+    $log->error("Parsed date string '$dateStr' as '@dc', but this is not a valid calendar date!\n$@");
+    return $dateStr;
   }
   return $dt->iso8601();
 }
