@@ -149,6 +149,10 @@ sub _id {
   return $_[0]->{borrowernumber};
 }
 
+sub getDeleteListId($s) {
+  return 'PATR'.($s->id() || 'UNDEF');
+}
+
 sub logId($s) {
   if ($s->{cardnumber} && $s->{cardnumber} !~ /^TEMP/) {
     return $className.': cardnumber='.$s->{cardnumber};

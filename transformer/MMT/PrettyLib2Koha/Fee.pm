@@ -57,6 +57,10 @@ sub logId($s) {
   return 'Fine: '.$s->id();
 }
 
+sub getDeleteListId($s) {
+  return 'FEE_'.($s->id() || 'UNDEF');
+}
+
 sub setBorrowernumber($s, $o, $b) {
   MMT::Exception::Delete->throw("No borrowernumber! Won't migrate fines for nobody.") unless $o->{Id_Customer};
   $s->{borrowernumber} = $o->{Id_Customer};

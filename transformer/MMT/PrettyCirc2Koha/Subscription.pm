@@ -18,6 +18,7 @@ use base qw(MMT::KohaObject);
 
 #Exceptions
 use MMT::Exception::Delete;
+use MMT::Exception::Delete::Silently;
 
 =head1 NAME
 
@@ -48,10 +49,12 @@ sub analyzePeriodicals($b) {
 
 sub createFillerSubscriptions($b) {
   while (my ($itemnumber, $s) = each(%subscriptions)) {
-    build($s, {}, $b);
+    my $serialized = $b->_task($s, {});
+    next unless $serialized;
     $log->debug("Writing ".$s->{itemnumber}) if $log->is_debug();
-    $b->writeToDisk( $s->serialize() );
+    $b->writeToDisk($serialized);
   }
+  $log->info("Transforming Subscriptions complete.")
 }
 
 =head2 analyzePeriodical
@@ -109,6 +112,9 @@ sub analyzePeriodical($o, $b) {
 
 sub build($self, $o, $b) {
   #$self->setKeys                 ($o, $b, [['bib_id' => 'biblionumber'], ['component_id' => 'subscriptionid']]);
+  if ($b->{deleteList}->get('BIBL'.$self->{biblionumber})) {
+    MMT::Exception::Delete::Silently->throw($self->logId()." - Biblio already deleted");
+  }
 
   #$self->setLibrarian           ($o, $b); #| varchar(100) | YES  |     |         |                |
   $self->setStartdate            ($o, $b); #| date         | YES  |     | NULL    |                |
@@ -160,6 +166,10 @@ sub id {
 
 sub logId($s) {
   return 'Subscription: '.$s->id();
+}
+
+sub getDeleteListId($s) {
+  return 'SUBS'.$s->{subscriptionid};
 }
 
 sub setAqbooksellerid($s, $o, $b) {

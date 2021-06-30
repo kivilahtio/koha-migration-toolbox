@@ -49,6 +49,10 @@ sub logId($s) {
   return 'Issue: '.$s->id();
 }
 
+sub getDeleteListId($s) {
+  return 'LOAN'.($s->id() || 'UNDEF');
+}
+
 sub setBiblionumber($s, $o, $b) {
   $s->{biblionumber} = $o->{Id_Title} if $o->{Id_Title}; #Biblionumber is not needed in Koha.issues. Just a handy reference to easily spot issues.
 }

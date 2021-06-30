@@ -14,6 +14,7 @@ use base qw(MMT::KohaObject);
 
 #Exceptions
 use MMT::Exception::Delete;
+use MMT::Exception::Delete::Silently;
 
 =head1 NAME
 
@@ -33,6 +34,10 @@ sub build($self, $o, $b) {
   $self->setSubscriptionid     ($o, $b); #component.subscription_id,
   $self->setSerialid        ($o, $b);
   $self->setItemnumber         ($o, $b);
+  if ($b->{deleteList}->get('BIBL'.$self->{biblionumber})) {
+    MMT::Exception::Delete::Silently->throw($self->logId()." - Biblio already deleted");
+  }
+
   $self->setEnumerations       ($o, $b); #s.enumchron, s.lvl1, s.lvl2, s.lvl3, s.lvl4, s.lvl5, s.lvl6, s.alt_lvl1, s.alt_lvl2, s.chron1, s.chron2, s.chron3, s.chron4, s.alt_chron,
   #  \$self->setSerialseq       ($o, $b);
   #   \$self->setSerialseq_x     ($o, $b);
@@ -54,6 +59,10 @@ sub id {
 
 sub logId($s) {
   return 'Serial: '.$s->id();
+}
+
+sub getDeleteListId($s) {
+  return 'SERI'.$s->{serialid};
 }
 
 sub setSerialid($s, $o, $b) {

@@ -92,6 +92,7 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
   '--biblios' => {
     help => "Transform biblios",
     callback => sub {
+      MMT::DeleteList::FlushDeleteList();
       my $confBase = {
         type => 'Biblio',
         outputFile => 'biblios.marcxml.finmarc',
@@ -547,6 +548,8 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
         my MMT::TBuilder $builder = MMT::TBuilder->new($confBase);
         MMT::PrettyCirc2Koha::Subscription::analyzePeriodicals($builder);
         MMT::PrettyCirc2Koha::Subscription::createFillerSubscriptions($builder);
+        $builder->close();
+        return 0;
       }
     },
   },

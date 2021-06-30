@@ -17,6 +17,7 @@ use base qw(MMT::KohaObject);
 
 #Exceptions
 use MMT::Exception::Delete;
+use MMT::Exception::Delete::Silently;
 
 =head1 NAME
 
@@ -33,6 +34,9 @@ MMT::PrettyLib2Koha::Item - Transforms a bunch of PrettyLib data into a Koha ite
 
 sub build($self, $o, $b) {
   $self->setKeys($o, $b, [['Id' => 'itemnumber'], ['Id_Title' => 'biblionumber']]);
+  if ($b->{deleteList}->get('BIBL'.$self->{biblionumber})) {
+    MMT::Exception::Delete::Silently->throw($self->logId()." - Biblio already deleted");
+  }
 
   $self->set(BarCode              => 'barcode',            $o, $b);
   $self->set(SaveDate             => 'dateaccessioned',    $o, $b);
@@ -94,6 +98,10 @@ sub _id {
 
 sub logId($s) {
   return 'Item: '.$s->id();
+}
+
+sub getDeleteListId($s) {
+  return 'ITEM'.$s->{itemnumber};
 }
 
 sub setBarcode($s, $o, $b) {

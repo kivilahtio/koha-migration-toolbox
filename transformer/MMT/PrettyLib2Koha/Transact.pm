@@ -49,6 +49,10 @@ sub logId($s) {
   return 'Transact: '.$s->id();
 }
 
+sub getDeleteListId($s) {
+  return 'STAT'.($s->id() || 'UNDEF');
+}
+
 sub setItemnumber($s, $o, $b) {
   $s->{itemnumber} = $o->{Id_Item} if $o->{Id_Item};
   MMT::Exception::Delete->throw($s->logId()."' has no itemnumber! Won't migrate loan history of nothing.")

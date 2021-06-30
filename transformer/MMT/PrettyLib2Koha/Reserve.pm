@@ -48,6 +48,10 @@ sub logId($s) {
   return 'Reserve: '.$s->id();
 }
 
+sub getDeleteListId($s) {
+  return 'HOLD'.($s->id() || 'UNDEF');
+}
+
 sub setBiblionumber($s, $o, $b) {
   $s->{biblionumber} = $o->{Id_Title} if $o->{Id_Title};
 }

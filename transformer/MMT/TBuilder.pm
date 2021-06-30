@@ -13,6 +13,7 @@ use Thread::Queue;
 #Local modules
 use MMT::Builder;
 use MMT::Cache;
+use MMT::DeleteList;
 use MMT::Tester;
 my Log::Log4perl $log = Log::Log4perl->get_logger(__PACKAGE__);
 
@@ -103,6 +104,9 @@ sub new($class, $params) {
   $s->{objectClass} = 'MMT::'.MMT::Config->sourceSystemType.'2Koha::'.$s->{type};
   MMT::Builder::__dynaload($s->{objectClass});
 
+  #Prepare the DeleteList for access
+  $s->{deleteList} = MMT::DeleteList->new();
+
   return $s;
 }
 
@@ -192,14 +196,21 @@ sub build($s) {
     # :XXXX
   } #<Thread logic ends
 
+  $s->close();
+
   my $timeneeded = Time::HiRes::gettimeofday - $starttime;
   $log->info("\n$. records done in $timeneeded seconds\n");
 
-  close $s->{outFH};
-  close $s->{inFH} if $s->{inFH};
   $log->info("Built, $w/$i objects survived");
 
   return undef; #Getopt::OO callback errors if we return something.
+}
+
+sub close($s) {
+  $s->{deleteList}->saveList();
+  close $s->{outFH};
+  close $s->{inFH} if $s->{inFH};
+  return $s;
 }
 
 =head2 task
@@ -235,15 +246,21 @@ sub task($s, $textPtr) {
   }
 
   my $ko = $s->{objectClass}->new(); #Instantiate first, so we get better error handling when we can catch the failed object when building it.
+  return $s->_task($ko, $o);
+}
+
+sub _task($s, $ko, $o) {
   eval {
     $ko->build($o, $s);
   };
   if ($@) {
     if (ref($@) eq 'MMT::Exception::Delete') {
       $log->error($ko->logId()." was dropped. Reason: ".$@->error) if $log->is_error();
+      $s->{deleteList}->put($ko, $@);
     }
     elsif (ref($@) eq 'MMT::Exception::Delete::Silently') {
-      $log->debug($ko->logId()." was silently dropped. Reason: ".$@->error) if $log->is_error();
+      $log->debug($ko->logId()." was silently dropped. Reason: ".$@->error) if $log->is_debug();
+      $s->{deleteList}->put($ko, $@);
     }
     else {
       $log->fatal("Received an unhandled exception '".MMT::Validator::dumpObject($@)."'") if $log->is_fatal();

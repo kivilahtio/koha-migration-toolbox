@@ -663,6 +663,10 @@ sub dropPassiveCirc($s, $o, $b) {
   }
 }
 
+sub getDeleteListId($s) {
+  return 'BIBL'.($s->id() || 'UNDEF')
+}
+
 =head2 _setF001
 
 Field 001 has duplicate record control numbers?

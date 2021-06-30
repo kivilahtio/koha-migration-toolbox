@@ -89,6 +89,10 @@ sub logId($s) {
   return 'Supplier: '.$s->id();
 }
 
+sub getDeleteListId($s) {
+  return 'SUPP'.($s->id() || 'UNDEF');
+}
+
 sub setId($s, $o, $b) {
   MMT::Exception::Delete->throw("No Id! Won't migrate Supplier with no Id.") unless $o->{Id};
   $s->{id} = $o->{Id};
