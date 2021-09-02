@@ -133,13 +133,13 @@ sub migrate_subscriptionhistory($s) {
 
 my $ser_insert_sth = $dbh->prepare("INSERT INTO serial
                                 (biblionumber, subscriptionid, status, planneddate, publisheddate,
-                                 serialseq, serialseq_x, serialseq_y, serialseq_z)
+                                 serialseq, serialseq_x, serialseq_y, serialseq_z, notes)
                                 VALUES (?,?,?,?,?,
-                                        ?,?,?,?)");
+                                        ?,?,?,?,?)");
 sub migrate_serial($s) {
     eval {
         $ser_insert_sth->execute($s->{biblionumber},$s->{subscriptionid},$s->{status},      $s->{planneddate}, $s->{publisheddate},
-                                 $s->{serialseq},   $s->{serialseq_x},   $s->{serialseq_y}, $s->{serialseq_z})
+                                 $s->{serialseq},   $s->{serialseq_x},   $s->{serialseq_y}, $s->{serialseq_z}, $s->{notes})
           or die "INSERT:ing Serial failed: ".$ser_insert_sth->errstr();
         $s->{serialid} = $ser_insert_sth->{mysql_insertid} // $ser_insert_sth->last_insert_id() // die("Couldn't get the last_insert_id from a newly created serial ".np($s));
     };
