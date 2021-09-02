@@ -74,33 +74,37 @@ sub analyzePeriodical($o, $b) {
   }
 
   #Sanitate dates
-  $o->{PeriodDate} = MMT::Validator::parseDate($o->{PeriodDate}) if $o->{PeriodDate};
+  my $periodicalTmp = MMT::PrettyCirc2Koha::Periodical::setPlanneddate(bless({}, 'MMT::PrettyCirc2Koha::Periodical'), $o, $b);
+  $o->{planneddate} = $periodicalTmp->{planneddate};
 
   $subscriptions{$o->{Id_Item}} = bless({biblionumber => $biblionumber, itemnumber => $o->{Id_Item}, subscriptionid => $o->{Id_Item}}, 'MMT::PrettyCirc2Koha::Subscription') unless $subscriptions{$o->{Id_Item}};
   my $s = $subscriptions{$o->{Id_Item}};
 
   # look for the lowest start date
   $s->{startdate} = '2100-01-01' unless $s->{startdate}; #Seed this value high, so pretty much any real value will be less than this starting date
-  if ($o->{PeriodDate} && $o->{PeriodDate} lt $s->{startdate}) {
-    $s->{startdate} = $o->{PeriodDate};
-  }
-  elsif ($o->{PeriodYear} && $o->{PeriodYear} =~ /^\d\d\d\d/ && $o->{PeriodYear} lt $s->{startdate}) {
-    $s->{startdate} = $o->{PeriodYear}.'-01-01';
+  if ($o->{planneddate} lt $s->{startdate}) {
+    $s->{startdate} = $o->{planneddate};
   }
 
   # look for the biggest end date
   $s->{enddate} = '1000-01-01' unless $s->{enddate};
-  if ($o->{PeriodDate} && $o->{PeriodDate} gt $s->{enddate}) {
-    $s->{enddate} = $o->{PeriodDate};
-  }
-  elsif ($o->{PeriodYear} && $o->{PeriodYear} =~ /^\d\d\d\d/ && $o->{PeriodYear} gt $s->{enddate}) {
-    $s->{enddate} = $o->{PeriodYear}.'-12-31';
+  if ($o->{planneddate} gt $s->{enddate}) {
+    $s->{enddate} = $o->{planneddate};
   }
 
   # Build subscriptionhistory
   my $serialseq = MMT::PrettyCirc2Koha::Periodical::_calculateEnumerations($o);
   $s->{subscriptionhistory} = [] unless $s->{subscriptionhistory};
   push(@{$s->{subscriptionhistory}}, $serialseq);
+
+  # Gather location and branchcode statistics (how many serial numbers (Periodicals) are in which locations and branches)
+  my $loc = MMT::PrettyCirc2Koha::Periodical::calculateLocationsMFA($o, $b);
+  for my $location (@{$loc->{locations}}) {
+    $s->{locations}->{$location} = ($s->{locations}->{$location}) ? $s->{locations}->{$location} +1 : 1;
+  }
+  for my $branch (@{$loc->{branches}}) {
+    $s->{branches}->{$branch} = ($s->{branches}->{$branch}) ? $s->{branches}->{$branch} +1 : 1;
+  }
 }
 
 =head2 build
@@ -142,7 +146,7 @@ sub build($self, $o, $b) {
   #$self->setNumberpattern       ($o, $b); #| int(11)      | YES  | MUL | NULL    |                |
   #$self->setLocale              ($o, $b); #| varchar(80)  | YES  |     | NULL    |                |
   #$self->setDistributedto       ($o, $b); #| text         | YES  |     | NULL    |                |
-  $self->setInternalnotes       ($o, $b); #| longtext     | YES  |     | NULL    |                |
+  $self->setInternalnotes        ($o, $b); #| longtext     | YES  |     | NULL    |                |
   #$self->setCallnumber          ($o, $b); #| text         | YES  |     | NULL    |                |
   $self->setLocation             ($o, $b); #| varchar(80)  | YES  |     |         |                |
   $self->setBranchcode           ($o, $b); #| varchar(10)  | NO   |     |         |                |
@@ -201,13 +205,35 @@ sub setFirstacquidate($s, $o, $b) {
   $s->{firstacquidate} = $s->{startdate};
 }
 sub setLocation($s, $o, $b) {
-  my $item = $b->{Items}->get($s->{itemnumber})->[0];
-  my $branchcodeLocation = $b->{LocationId}->translate(@_, $item->{Id_Location});
-  $s->{location} = $branchcodeLocation->{location};
+  my $topLocation;
+  my $prevalenceHighest = -1;
+  while (my ($location, $prevalence) = each %{$s->{locations}}) {
+    $topLocation = $location if ($prevalence > $prevalenceHighest);
+  }
+
+  if ($topLocation eq 'DEFAULT') {
+    my $item = $b->{Items}->get($s->{itemnumber})->[0];
+    my $branchcodeLocation = $b->{LocationId}->translate(@_, $item->{Id_Location});
+    $s->{location} = $branchcodeLocation->{location};
+  }
+  else {
+    $s->{location} = $topLocation;
+  }
 }
 sub setBranchcode($s, $o, $b) {
-  my $item = $b->{Items}->get($s->{itemnumber})->[0];
-  $s->{branchcode} = $b->{Branchcodes}->translate(@_, $item->{Id_Library});
+  my $topBranch;
+  my $prevalenceHighest = -1;
+  while (my ($branch, $prevalence) = each %{$s->{branches}}) {
+    $topBranch = $branch if ($prevalence > $prevalenceHighest);
+  }
+
+  if ($topBranch eq 'DEFAULT') {
+    my $item = $b->{Items}->get($s->{itemnumber})->[0];
+    $s->{branchcode} = $b->{Branchcodes}->translate(@_, $item->{Id_Library});
+  }
+  else {
+    $s->{branchcode} = $topBranch;
+  }
 
   unless ($s->{branchcode}) {
     MMT::Exception::Delete->throw($s->logId()."' has no branchcode. Set a default in the TranslationTable rules!");

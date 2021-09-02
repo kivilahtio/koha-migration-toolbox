@@ -103,7 +103,11 @@ sub setPlanneddate($s, $o, $b) {
 
   for my $dateType (('WaitDate','PeriodDate')) {
     next unless $o->{$dateType};
-    my $date = MMT::Validator::parseDate($o->{$dateType});
+    my ($dateErr, $date) = MMT::Validator::parseDate($o->{$dateType});
+    if ($dateErr) {
+      $log->error("Periodical '".$s->id()."' unable to parse '$dateType'='$date'");
+      next;
+    }
 
     if ($o->{PeriodYear} && $o->{PeriodYear} =~ /^\s*(\d\d\d\d)/) {
       my $periodYear = $1;
@@ -112,21 +116,33 @@ sub setPlanneddate($s, $o, $b) {
       if ($datesApart == 0) {
         $s->{planneddate} = $date;
         $log->trace("Periodical '".$s->id()."' found exact planneddate match from field '$dateType'.");
-        return;
+        return $s;
       }
     }
   }
 
   my $date = $o->{WaitDate} || $o->{PeriodDate};
-  if ($date) {
-    $s->{planneddate} = MMT::Validator::parseDate($date);
+  if (not($date)) {
+    $s->{planneddate} = "1999-12-31";
+    return $s;
   }
-  elsif ($o->{PeriodYear} && $o->{PeriodYear} =~ /^\s*(\d\d\d\d)/) {
-    $s->{planneddate} = $1.'-01-01';
+
+  my $dateErr;
+  ($dateErr, $date) = MMT::Validator::parseDate($date);
+  if ($dateErr) {
+    $s->{planneddate} = "1999-12-31"; # Already warn about poor date in the year diff checker.
+    return $s;
+  }
+
+  if ($o->{PeriodYear} && $o->{PeriodYear} =~ /^\s*(\d\d\d\d)/) {
+    my $periodYear = $1;
+    $date =~ s/^\d\d\d\d/$periodYear/;
+    $s->{planneddate} = $date;
   }
   else {
-    $s->{planneddate} = '2001-01-01';
+    $s->{planneddate} = $date;
   }
+  return $s;
 }
 sub setNotes($s, $o, $b) {
   $s->{notes} = $o->{Notes};
@@ -160,6 +176,30 @@ sub setEnumerations($s, $o, $b) {
 }
 sub _calculateEnumerations($o) {
   return join(' : ', grep {$_} ($o->{PeriodYear}, $o->{PeriodVol}, $o->{PeriodNumber}));
+}
+
+# Gets the candidate branchcode and location for this Periodical.
+# Collects indicators of possible location and branch information from the serial number/issue.
+# Returns a HASH of LISTs of possible candidates.
+sub calculateLocationsMFA($o, $b) {
+  my $loc = {
+    locations => [],
+    branches => ['DEFAULT'],
+  };
+  for my $extra (($o->{Extra1}, $o->{Extra2})) {
+    $loc->{branches}->[0] = 'VAV' if ($extra =~ /Vantaa/i);
+    my @locations = $extra =~ /[AFK]/gsm;
+    $log->trace("Found \@locations='@locations', branch='".$loc->{branch}."'") if $log->is_trace();
+    push(@{$loc->{locations}}, @locations);
+  }
+  $loc->{locations}->[0] = 'DEFAULT' unless (scalar(@{$loc->{locations}}));
+  return $loc;
+}
+sub calculateLocationsDefault($o, $b) {
+  return {
+    locations => ['DEFAULT'],
+    branches => ['DEFAULT'],
+  };
 }
 
 return 1;
