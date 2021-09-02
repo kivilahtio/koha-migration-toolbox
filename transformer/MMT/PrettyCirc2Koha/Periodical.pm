@@ -145,7 +145,11 @@ sub setPlanneddate($s, $o, $b) {
   return $s;
 }
 sub setNotes($s, $o, $b) {
-  $s->{notes} = $o->{Notes};
+  my @notes;
+  push(@notes, $o->{Notes}) if $o->{Notes};
+  push(@notes, $o->{Extra1}) if $o->{Extra1};
+  push(@notes, $o->{Extra2}) if $o->{Extra2};
+  $s->{notes} = join(' | ', @notes);
 }
 #In Koha the publisheddate is the date the serial is actually printed. Voyager has no such distinction, so reuse expected_date.
 sub setPublisheddate($s, $o, $b) {
