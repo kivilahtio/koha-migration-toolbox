@@ -95,13 +95,34 @@ sub setItemnumber($s, $o, $b) { #This is used to populate the koha.serialitems -
   $s->{itemnumber} = undef;
 }
 
-#In Koha, the planneddate is the date the serial is expected to arrive to the library.
+# In Koha, the planneddate is the date the serial is expected to arrive to the library.
+# In PrettyCirc WaitDate and PeriodDate are used inconsistently and there seems to be no rule for what they signify.
+# Using a simple heuristic, pick the date which is closer to the PeriodYear.
 sub setPlanneddate($s, $o, $b) {
-  if ($o->{PeriodDate}) {
-    $s->{planneddate} = MMT::Validator::parseDate($o->{PeriodDate});
+  my $dateCandidates = {};
+
+  for my $dateType (('WaitDate','PeriodDate')) {
+    next unless $o->{$dateType};
+    my $date = MMT::Validator::parseDate($o->{$dateType});
+
+    if ($o->{PeriodYear} && $o->{PeriodYear} =~ /^\s*(\d\d\d\d)/) {
+      my $periodYear = $1;
+      $date =~ /^(\d\d\d\d)/;
+      my $datesApart = $periodYear - $1;
+      if ($datesApart == 0) {
+        $s->{planneddate} = $date;
+        $log->trace("Periodical '".$s->id()."' found exact planneddate match from field '$dateType'.");
+        return;
+      }
+    }
   }
-  elsif ($o->{PeriodYear} && $o->{PeriodYear} =~ /^\d\d\d\d/) {
-    $s->{planneddate} = $o->{PeriodYear}.'-01-01';
+
+  my $date = $o->{WaitDate} || $o->{PeriodDate};
+  if ($date) {
+    $s->{planneddate} = MMT::Validator::parseDate($date);
+  }
+  elsif ($o->{PeriodYear} && $o->{PeriodYear} =~ /^\s*(\d\d\d\d)/) {
+    $s->{planneddate} = $1.'-01-01';
   }
   else {
     $s->{planneddate} = '2001-01-01';
