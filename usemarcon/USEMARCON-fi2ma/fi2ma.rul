@@ -778,18 +778,7 @@ I40             | 830(newest)     | S;
                                     Replace ('$v' By ' ;$v');
                                     RegReplaceTable ('pieni-isoksi-pisteen-jalkeen.tbl', 'g')
 
-490I1           | 490(new)I2        | ' '
-490I2           | 490(newest)I1     | If (I2 = ' ' Or I2 = '0') Then '0' Else '1'
-490             | 490(newest)       | S;
-                                    RegReplace('$[xyz].*', '');
-                                    Replace ('$b' By ' : ', Strict);
-                                    Replace ('$d' By ' / ', Strict);
-                                    Replace ('$n' By ' / ', Strict);
-                                    Replace ('$g' By ' .', Strict);
-                                    Replace ('$h' By ', ', Strict);
-                                    Replace ('$r' By ' = ', Strict);
-                                    Replace ('$w' By ',$x');
-                                    Replace ('$v' By ' ;$v')
+490             | 490               | S;
 
 500$a           | <H00$a          | S; Replace('. - ' By '$a')
 H00$a           | <I00$a          | If ((RegFind('(\c3\a4|\c3\84)\c3\a4nitetty|[Kk]onsertti\c3\a4\c3\a4nitys|[Ll]ive\c3\a4\c3\a4nitys|[Rr]adiol\c3\a4hetys|[Tt]allennettu') < 0) And (RegFind('\\b[Tt]eksti: |\\b[Ss]anat: |\\b[Kk]ieli: |\\b[Ee]sityskieli: ') < 0 Or (RegFind('[Kk]alevala|[Kk]anteletar|[Rr]aamattu') >= 0))) Then S;
@@ -1539,26 +1528,11 @@ L73             | 773             | S;
 790I1           | 790I1           | ' '
 790I2           | 790I2           | ' '
 790             | 790             | S
-   
-810I1           | 810I1           | If (S = '1') Then '1' Else If (S = '2' And (RegFind(@810$a, ', ') > 0)) Then '0' Else '2'
-810I2           | 810I2           | ' '
-810$a           | <M10$a          | S
-810$c           | <M10$b          | S
-810$n           | <M10$t          | S
-810$b           | <M10$t          | + ' : ' + S
-810$g           | <M10$n          | S
-810$h           | <M10$p          | S
-810$r           | <M10$t          | + ' = ' + S
-810$w           | <M10$x          | S
-810$v           | <M10$v          | S
-M10             | 810             | If (RegFind('\\.\$') < 0) Then S + '.' Else S;
-                                    Replace ('$b' By '.$b');
-                                    Replace ('$t' By '.$t');
-                                    Replace ('$n' By '.$n');
-                                    Pvalimerkitys();
-                                    Replace ('$v' By ' ; $v', Strict);
-                                    RegReplaceTable('pieni-isoksi-osakentan-alussa.tbl');
-                                    If (RegFind('[\\)\\.]\$') < 0) S + '.'
+
+800             | 800             | S
+810             | 810             | S
+811             | 811             | S
+830             | 830             | S
 
 840I1           | 830I1           | ' '
 840I2           | 830I2           | S; Replace (' ' By '0')

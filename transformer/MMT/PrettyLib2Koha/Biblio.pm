@@ -458,28 +458,61 @@ PrettyLib.SeriesCross -> Series -> Field 490$ax
 =cut
 
 sub linkSeries($s, $o, $builder) {
-  my @subfields;
   if (my $seriesCrosses = $builder->{SeriesCross}->get($o->{Id})) {
     $log->trace($s->logId." - Found '".scalar(@$seriesCrosses)."' series.") if $log->is_trace();
     @$seriesCrosses = sort {$a->{Pos} <=> $b->{Pos}} @$seriesCrosses; # PrettyLib.SeriesCross.Pos seems to denote the ordering of these subject-words.
     for my $seriesCross (@$seriesCrosses) {
       if (my $seriess = $builder->{Series}->get($seriesCross->{Id_Series})) {
         for my $series (@$seriess) {
-          $series->{ISSN} = _ss($series->{ISSN});
-          $series->{Title} = _ss($series->{Title});
           unless ($series->{Title} || $series->{ISSN}) {
             $log->debug($s->logId." - Found an empty Series with Id '".$series->{Id}."'.") if $log->is_debug();
             next;
           }
-          push(@subfields, MMT::MARC::Subfield->new('a', $series->{Title})) if $series->{Title};
-          push(@subfields, MMT::MARC::Subfield->new('x', $series->{ISSN})) if $series->{ISSN};
+
+          $series->{bCompany} = _ss($series->{bCompany});
+          $series->{bTitle} = _ss($series->{bTitle});
+          $series->{ISSN} = _ss($series->{ISSN});
+          $series->{Name1} = _ss($series->{Name1});
+          $series->{SeriesInfo} = _ss($series->{SeriesInfo});
+          $series->{SubSeries} = _ss($series->{SubSeries});
+          $series->{SubTitle} = _ss($series->{SubTitle});
+          $series->{Title} = _ss($series->{Title});
+          $series->{URL} = _ss($series->{URL});
+
+          # Create the 8xx series added entry Field, since PrettyLib has the extra information for that.
+          my $marcField;
+          if ($series->{bCompany}) {
+            $marcField = 810;
+          }
+          elsif ($series->{bTitle}) {
+            $log->warn($s->logId." - Found a Series entry with both bTitle and bCompany? '".$series->{SeriesInfo}." : ".$series->{ISSN}."'") if $marcField;
+            $marcField = 830;
+          }
+          else {
+            $log->warn($s->logId." - Found a Series entry with no bTitle and bCompany? '".$series->{SeriesInfo}." : ".$series->{ISSN}."'");
+            $marcField = 830;
+          }
+
+          my $field8xx = MMT::MARC::Field->new($marcField, '#', '0');
+          if ($series->{Name1}) {
+            $field8xx->addSubfield('a', $series->{Name1});
+            $field8xx->addSubfield('t', $series->{Title}) if $series->{Title};
+          } else {
+            $field8xx->addSubfield('a', $series->{Title}) if $series->{Title};
+          }
+          $field8xx->addSubfield('b', $series->{SubTitle}) if $series->{SubTitle};
+          $field8xx->addSubfield('b', $series->{SubSeries}) if $series->{SubSeries};
+          $field8xx->addSubfield('x', $series->{ISSN}) if $series->{ISSN};
+          $s->{record}->addField($field8xx);
+
+          my $field490 = MMT::MARC::Field->new('490', '1', '#');
+          $field490->addSubfield('a', $series->{SeriesInfo}) if $series->{SeriesInfo};
+          $field490->addSubfield('x', $series->{ISSN}) if $series->{ISSN};
+          $s->{record}->addField($field490);
         }
       }
     }
   }
-  return unless @subfields;
-
-  $s->{record}->addField(MMT::MARC::Field->new('490', '0', '#', \@subfields)) if @subfields;
 }
 
 =head2 linkSubjects
