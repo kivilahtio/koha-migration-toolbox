@@ -86,10 +86,12 @@ if [[ "$SOURCE_SYSTEM" =~ "PrettyCirc" ]]; then
   MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --subscriptions   &> $LOG_DIR/08-subscriptions.log
   echo "--serials"
   MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --serials         &> $LOG_DIR/09-serials.log
+  echo "--routinglists"
+  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --routinglists    &> $LOG_DIR/10-routinglists.log
   echo "--reserves"
-  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --reserves        &> $LOG_DIR/10-reserves.log
+  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --reserves        &> $LOG_DIR/11-reserves.log
   echo "--load"
-  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --load            &> $LOG_DIR/11-load.log
+  MMT_HOME="$MMT_HOME" perl -Itransformer transformer/transform.pl --load            &> $LOG_DIR/12-load.log
 fi
 
 echo ""
