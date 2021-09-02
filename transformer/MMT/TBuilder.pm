@@ -396,7 +396,7 @@ sub getCsvIterator($s, $input_record_separator=undef) {
 sub openCsvFile($s) {
   $s->{csv} = Text::CSV->new(MMT::Config::csvInputNew());
   my $encoding = MMT::Config::csvInputEncoding();
-  open($s->{inFH}, "<:encoding($encoding)", $s->{inputFile}) or $log->logdie("Loading file '".$s->{inputFile}."' failed: $!");
+  open($s->{inFH}, "<:encoding($encoding)", $s->{inputFile}) or $log->logdie("Loading file '".$s->{inputFile}."' using encoding '$encoding' failed: $!");
   $s->{csv}->header($s->{inFH}, MMT::Config::csvInputHeader());
   $log->info("Loading file '".$s->{inputFile}."', identified columns '".join(',', $s->{csv}->column_names())."'");
   return $s->{csv}; #Have a meaningful truthy return value
@@ -415,8 +415,9 @@ Supercharge it.
 =cut
 
 sub getMarcFileIterator($s) {
+  my $encoding = MMT::Config::marcInputEncoding();
   local $INPUT_RECORD_SEPARATOR = '</record>'; #Let perl split MARCXML for us
-  open($s->{inFH}, '<:encoding(UTF-8)', $s->{inputFile}) or die("Opening the MARC file '$s->{inputFile}' for slurping failed: $!") # Make sure we have the proper encoding set before handing these to the MARC-modules
+  open($s->{inFH}, "<:encoding($encoding)", $s->{inputFile}) or $log->logdie("Opening the MARC file '$s->{inputFile}' using encoding '$encoding' for slurping failed: $!") # Make sure we have the proper encoding set before handing these to the MARC-modules
     unless $s->{inFH};
 
   my $_i;

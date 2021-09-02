@@ -71,6 +71,9 @@ sub logDir() {
 sub mainConfigFile() {
   return $ENV{MMT_HOME}.'/config/main.yaml';
 }
+sub marcInputEncoding() {
+  return $config->{marcInputEncoding} || 'utf-8';
+}
 sub organizationISILCode() {
   return $config->{organizationISILCode};
 }

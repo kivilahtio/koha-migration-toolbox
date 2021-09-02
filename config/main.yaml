@@ -85,6 +85,9 @@ csvInputParams:
     detect_bom: 1
     munge_column_names: none
 
+# How are the MARC-files encoded? To see the OS supported encodings, use command:
+#   $ perl -e 'use Encode; @a=Encode->encodings(); print "@a\n"'
+marcInputEncoding: utf-8
 
 ############ PRETTY* -specific configs ################
 
