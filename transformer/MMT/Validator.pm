@@ -147,7 +147,7 @@ sub filetype($file) {
 =head2 parseDate
 
  @param1 {String}, a Date in some format
- @returns {String}, the date as ISO8601
+ @returns ({Error String}, {String}), the date as ISO8601
 
 =cut
 
@@ -187,8 +187,9 @@ sub parseDate($dateStr) {
     @dc = ($1, '12', '31', undef, undef, undef)
   }
   else {
-    $log->error("Unknown date format '$dateStr'!");
-    return $dateStr;
+    my $dateErr = "Unknown date format '$dateStr'!";
+    $log->error($dateErr);
+    return ($dateErr, $dateStr);
   }
   # Make sure the Date which looks like a date is actually a valid calendar day. DateTime used by Koha crashes Koha if there are invalid calendar dates.
   my $dt;
@@ -212,10 +213,11 @@ sub parseDate($dateStr) {
     last if ($dt);
   }
   if (! $dt) {
-    $log->error("Parsed date string '$dateStr' as '@dc', but this is not a valid calendar date!\n$@");
-    return $dateStr;
+    my $dateErr = "Parsed date string '$dateStr' as '@dc', but this is not a valid calendar date!\n$@";
+    $log->error($dateErr);
+    return ($dateErr, $dateStr);
   }
-  return $dt->iso8601();
+  return (undef, $dt->iso8601());
 }
 
 sub _parameterValidationFailed($message, $variable, $opts) {
