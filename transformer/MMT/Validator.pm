@@ -147,11 +147,12 @@ sub filetype($file) {
 =head2 parseDate
 
  @param1 {String}, a Date in some format
+ @param2 {Bool}, prevent logging warnings, these should be handled in the calling code.
  @returns ({Error String}, {String}), the date as ISO8601
 
 =cut
 
-sub parseDate($dateStr) {
+sub parseDate($dateStr, $noWarn=undef) {
   my @dc;
   if ($dateStr =~ /^\s*
                       (\d{4})-(\d{2})-(\d{2}) #ISO-8601 Date
@@ -188,7 +189,7 @@ sub parseDate($dateStr) {
   }
   else {
     my $dateErr = "Unknown date format '$dateStr'!";
-    $log->error($dateErr);
+    $log->error($dateErr) unless $noWarn;
     return ($dateErr, $dateStr);
   }
   # Make sure the Date which looks like a date is actually a valid calendar day. DateTime used by Koha crashes Koha if there are invalid calendar dates.
@@ -214,7 +215,7 @@ sub parseDate($dateStr) {
   }
   if (! $dt) {
     my $dateErr = "Parsed date string '$dateStr' as '@dc', but this is not a valid calendar date!\n$@";
-    $log->error($dateErr);
+    $log->error($dateErr) unless $noWarn;
     return ($dateErr, $dateStr);
   }
   return (undef, $dt->iso8601());
