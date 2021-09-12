@@ -122,17 +122,11 @@ sub setPlanneddate($s, $o, $b) {
   }
 
   my $date = $o->{WaitDate} || $o->{PeriodDate};
-  if (not($date)) {
-    $s->{planneddate} = "1999-12-31";
-    return $s;
-  }
-
   my $dateErr;
-  ($dateErr, $date) = MMT::Validator::parseDate($date);
-  if ($dateErr) {
-    $s->{planneddate} = "1999-12-31"; # Already warn about poor date in the year diff checker.
-    return $s;
-  }
+  ($dateErr, $date) = MMT::Validator::parseDate($date, 'nowarn') if $date;
+  $log->error($s->logId().' : '.$dateErr) if $dateErr;
+
+  $date = '1999-12-31' if (not($date) || $dateErr);
 
   if ($o->{PeriodYear} && $o->{PeriodYear} =~ /^\s*(\d\d\d\d)/) {
     my $periodYear = $1;
