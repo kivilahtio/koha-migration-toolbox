@@ -663,7 +663,8 @@ F30             | 300             | If (RegFind('[\\)\\.]\$') < 0) Then S + '.' 
 
 410I1           | <G90I1          | S
 410I2           | <G90I2          | S
-410             | <G90            | S; RegReplace('$[xyz].*', '')
+410             | <G90            | S
+#410             | <G90            | S; RegReplace('$[xyz].*', '') # For some reason this also prevents 410$v from getting migrated.
 G90I1           | 490(new)I1      | '1'
 G90I2           | 490(newest)I2   | ' '
 G90             | 490(newest)     | S;
