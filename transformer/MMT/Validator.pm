@@ -134,7 +134,7 @@ sub dumpObject($o) {
  @die if filetype is unsupported.
 =cut
 sub filetype($file) {
-  $file =~ /(?<=\.)(.+?)$/;
+  $file =~ /(?<=\.)([^.]+?)$/;
   given ($1) {
     when ("csv") {} #ok
     default {
