@@ -101,6 +101,7 @@ sub bimp($s) {
     INFO "Queued $. Records" if ($. % 1000 == 0);
 
     while (my $bid = $bnConversionQueue->dequeue_nb()) {
+      #print("bid2:".$bid->{old}.$bid->{new}."\n");
       $s->{biblionumberConversionTable}->writeRow($bid->{old}, $bid->{new}, $bid->{op}, $bid->{status});
     }
   }
@@ -181,13 +182,18 @@ sub worker($s) {
     ($operation, $statusOfOperation)                   = $s->mergeRecords($record, $recordXmlPtr, $matchedBiblionumber) if     ($matchedBiblionumber);
     ($operation, $statusOfOperation, $newBiblionumber) = $s->addRecord   ($record, $recordXmlPtr, $legacyBiblionumber)  unless ($matchedBiblionumber);
 
-    my %bid :shared = (old => $legacyBiblionumber, new => $matchedBiblionumber // $newBiblionumber // 0, op => $operation, status => $statusOfOperation);
+    my %bid;
+    share(%bid);
+    $bid{old} = $legacyBiblionumber; $bid{new} = $matchedBiblionumber // $newBiblionumber // 0; $bid{op} = $operation; $bid{status} = $statusOfOperation;
+
     $bnConversionQueue->enqueue(\%bid);
 
     ($operation, $statusOfOperation, $newBiblionumber, $legacyBiblionumber) = Bulk::BibImporter::BoundRecord::migrate($s, $record, $recordXmlPtr);
     if ($operation) {
       if ($statusOfOperation eq 'OK') { #TODO: This ugly hack hides errors from the conversionTable, but is necessary to prevent from subsequent thread from attempting to create the same bound parent record many times, leading to errors, and overloading the initial correct insertion
-        my %bid2 :shared = (old => $legacyBiblionumber, new => $matchedBiblionumber // $newBiblionumber // 0, op => $operation, status => $statusOfOperation);
+        my %bid2;
+        share(%bid2);
+        $bid2{old} = $legacyBiblionumber; $bid2{new} = $matchedBiblionumber // $newBiblionumber // 0; $bid2{op} = $operation; $bid2{status} = $statusOfOperation;
         $bnConversionQueue->enqueue(\%bid2);
       }
     }
@@ -317,11 +323,13 @@ sub addRecordKoha($s, $record, $recordXmlPtr, $legacyBiblionumber) {
 sub addRecordFast($s, $record, $recordXmlPtr, $legacyBiblionumber) {
   my $dbh = C4::Context->dbh();
   $dbh->{AutoCommit} = 0;
+  my ($newBiblionumber, $newBiblioitemnumber, $error1, $error2);
 
+  eval {
   my $frameworkcode = '';
   my $olddata = C4::Biblio::TransformMarcToKoha($record, $frameworkcode);
   $olddata->{biblionumber} = $legacyBiblionumber if $s->p('preserveIds');
-  my ($newBiblionumber, $error1)     = _koha_add_biblio($dbh, $olddata, $frameworkcode);
+  ($newBiblionumber, $error1)     = _koha_add_biblio($dbh, $olddata, $frameworkcode);
   if ($error1) {
     ERROR "Error1=$error1";
     return ("insert", "ERROR1", $newBiblionumber);
@@ -331,26 +339,34 @@ sub addRecordFast($s, $record, $recordXmlPtr, $legacyBiblionumber) {
 
   $olddata->{'biblionumber'} = $newBiblionumber;
   $olddata->{'biblioitemnumber'} = $newBiblionumber;
-  my ($newBiblioitemnumber, $error2) = _koha_add_biblioitem($dbh, $olddata);
+  ($newBiblioitemnumber, $error2) = _koha_add_biblioitem($dbh, $olddata);
   if ($error2) {
     ERROR "Error2=$error2";
     return ("insert", "ERROR2", $newBiblionumber);
   }
 
-  $dbh->commit();
 
   die "Biblionumber '$newBiblionumber' and biblioitemnumber '$newBiblioitemnumber' do not match! This causes critical issues in Koha!\n" if $newBiblionumber != $newBiblioitemnumber;
 
   unless ($s->{sth_insertBiblioMetadata}) {
-    $s->{sth_insertBiblioMetadata} = $dbh->prepare("INSERT INTO biblio_metadata (biblionumber, format, marcflavour, metadata) VALUES (?, ?, ?, ?)");
+    $s->{sth_insertBiblioMetadata} = $dbh->prepare("INSERT INTO biblio_metadata (biblionumber, format, biblio_metadata.schema, metadata) VALUES (?, ?, ?, ?)");
   }
   $s->{sth_insertBiblioMetadata}->execute($newBiblionumber, 'marcxml', 'MARC21', $recordXmlPtr ? $$recordXmlPtr : $record->as_xml());
   if ($s->{sth_insertBiblioMetadata}->errstr()) {
     ERROR "Error3=".$s->{sth_insertBiblioMetadata}->errstr();
     return ("insert", "ERROR3", $newBiblionumber);
   }
+  };
+  if ($@) {
+    $dbh->rollback();
+    ERROR "Error4=$@";
+    return ("insert", "ERROR4", $newBiblionumber);
+  }
+  else {
+    $dbh->commit();
 
-  return ("insert", "OK", $newBiblionumber);
+    return ("insert", "OK", $newBiblionumber);
+  }
 }
 
 =head2 OVERLOADS C4::Biblio::_koha_add_biblio

@@ -18,7 +18,7 @@ use Bulk::ConversionTable::ItemnumberConversionTable;
 use Bulk::ConversionTable::BorrowernumberConversionTable;
 
 our $verbosity = 3;
-my %args = (subscriptionFile =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Subscription.migrateme',
+our %args = (subscriptionFile =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Subscription.migrateme',
             serialFile       =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Serial.migrateme',
             routinglistFile  =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Subscriptionroutinglist.migrateme',
             preserveIds      =>                   $ENV{MMT_PRESERVE_IDS} // 0,
@@ -90,6 +90,8 @@ HELP
 
 require Bulk::Util; #Init logging && verbosity
 
+Bulk::Util::logArgs(\%args);
+
 unless ($args{subscriptionFile}) {
     die "$help\n\n--subscriptionFile is mandatory";
 }
@@ -121,13 +123,14 @@ sub migrate_subscription($s) {
       or die "INSERT:ing Subscription failed: ".$sub_insert_sth->errstr();
 
     my $newSubscriptionid = $dbh->last_insert_id(undef, undef, 'subscription', 'subscriptionid') or die("Fetching last insert if failed: ".$dbh->errstr());
+    $s->{newSubscriptionid} = $newSubscriptionid;
     $args{subscriptionidConversionTable}->writeRow($s->{subscriptionid}, $newSubscriptionid);
 
     $sub_set_serial_sth->execute($s->{biblionumber}) or die("Setting the biblio serial-flag failed: ".$sub_set_serial_sth->errstr());
 }
 
 sub migrate_subscriptionhistory($s) {
-    $subhist_insert_sth->execute($s->{biblionumber}, $s->{subscriptionid}, $s->{startdate}, $s->{enddate}, '', $s->{subscriptionhistory})
+    $subhist_insert_sth->execute($s->{biblionumber}, $s->{newSubscriptionid}, $s->{startdate}, $s->{enddate}, '', $s->{subscriptionhistory})
       or die "INSERT:ing Subscriptionhistory failed: ".$subhist_insert_sth->errstr();
 }
 

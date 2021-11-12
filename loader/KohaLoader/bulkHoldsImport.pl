@@ -12,8 +12,8 @@ use Log::Log4perl qw(:easy);
 use Bulk::ConversionTable::ItemnumberConversionTable;
 use Bulk::ConversionTable::BorrowernumberConversionTable;
 use Bulk::ConversionTable::BiblionumberConversionTable;
+use Bulk::PatronImporter;
 
-use C4::Members;
 use C4::Letters;
 use C4::Context;
 
@@ -164,7 +164,7 @@ Queues a "hold ready for pickup"-notification for holds waiting for pickup.
 
 sub createNotification($hold) {
     INFO "Creating a notification for ".holdId($hold);
-    my $borrower = C4::Members::GetMember(borrowernumber => $hold->{borrowernumber});
+    my $borrower = Bulk::PatronImporter::GetBorrower($hold->{borrowernumber});
     my $branch_details = Koha::Libraries->find($borrower->{branchcode})->unblessed;
     my $letter = C4::Letters::GetPreparedLetter (
         module => 'reserves',

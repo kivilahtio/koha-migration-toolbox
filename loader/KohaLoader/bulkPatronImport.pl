@@ -11,10 +11,8 @@ use Log::Log4perl qw(:easy);
 use DateTime;
 
 use C4::Members;
-use C4::Members::Attributes;
-use Koha::Patron::Debarments qw/AddDebarment/;
 use Koha::Patron;
-use Koha::Patron::Message::Preferences;
+use C4::Members::Messaging;
 use Koha::Patron::Message;
 
 use Bulk::ConversionTable::BorrowernumberConversionTable;
@@ -22,7 +20,7 @@ use Bulk::PatronImporter;
 
 binmode( STDOUT, ":encoding(UTF-8)" );
 our $verbosity = 3;
-my %args = (importFile =>                         ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Borrower.migrateme',
+our %args = (importFile =>                         ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Borrower.migrateme',
             uploadSSNKeysFile =>                  ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Borrower.ssn.csv',
             uploadSSNKeysHetulaCredentialsFile => ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Hetula.credentials',
             preserveIds =>                        $ENV{MMT_PRESERVE_IDS} // 0,
@@ -119,6 +117,8 @@ GetOptions(
 
 require Bulk::Util; #Init logging && verbosity
 
+Bulk::Util::logArgs(\%args);
+
 my $patronImporter = Bulk::PatronImporter->new(\%args);
 if ($args{profile}) {
     $patronImporter->profileBcrypts();
@@ -135,6 +135,11 @@ if ($args{uploadSSNKeysOnly}) {
     }
     $patronImporter->uploadSSNKeys();
     exit 0;
+}
+if ($args{defaultAdmin}) {
+  ## Create the default admin after migrating Patrons, so we wont accidentally overwrite legacy borrowernumber==1 with the default admin
+  $patronImporter->addDefaultAdmin($args{defaultAdmin});
+  exit 0;
 }
 
 
@@ -182,10 +187,6 @@ foreach my $patron (@guarantees) {
     processNewFromRow( $patron );
 }
 $borrowernumberConversionTable->close();
-
-
-## Create the default admin after migrating Patrons, so we wont accidentally overwrite legacy borrowernumber==1 with the default admin
-$patronImporter->addDefaultAdmin($args{defaultAdmin}) if $args{defaultAdmin};
 
 
 sub processNewFromRow($patron) {
@@ -267,9 +268,6 @@ sub processNewFromRow($patron) {
         if ($ssn ne 'via Hetula') {
             $patronImporter->addBorrowerAttribute($patron, 'SSN', $ssn);
         }
-    }
-    else {
-        WARN "Patron '".$patron->{cardnumber}."' doesn't have a ssn?";
     }
 
     if ($extendedPatronAttributes) {

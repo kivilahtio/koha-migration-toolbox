@@ -17,6 +17,9 @@ sub borrower {
   if ($error =~ /Cannot add or update a child row: a foreign key constraint fails.+FOREIGN KEY \(`(categorycode)`\)/sm) {
     return addCategorycode($borrower->{$1});
   }
+  elsif ($error =~ /Cannot add or update a child row: a foreign key constraint fails.+FOREIGN KEY \(`(branchcode)`\)/sm) {
+    return addBranch($borrower->{$1}, $borrower->{$1})
+  }
   return 0;
 }
 

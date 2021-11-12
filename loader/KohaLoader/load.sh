@@ -12,18 +12,11 @@ WORKING_DIR="../KohaMigration/"
 CONFIRM=""
 PRESERVE_IDS=""
 DEFAULT_ADMIN=""
-
-test ! -e "$KOHA_CONF" && echo "\$KOHA_CONF=$KOHA_CONF doesn't exist. Aborting!" exit 2
-KOHA_DB=$(xmllint --xpath "yazgfs/config/database/text()" $KOHA_CONF)
-KOHA_DB_USER=$(xmllint --xpath "yazgfs/config/user/text()" $KOHA_CONF)
-KOHA_DB_PASS=$(xmllint --xpath "yazgfs/config/pass/text()" $KOHA_CONF)
-KOHA_USE_ELASTIC=$(xmllint --xpath "yazgfs/config/elasticsearch/server/text()" $KOHA_CONF)
-test -z "$KOHA_DB" && echo "\$KOHA_DB is unknown. Couldn't parse it from \$KOHA_CONF=$KOHA_CONF. Aborting!" exit 3
-test -z "$KOHA_DB_USER" && echo "\$KOHA_DB_USER is unknown. Couldn't parse it from \$KOHA_CONF=$KOHA_CONF. Aborting!" exit 3
-test -z "$KOHA_DB_PASS" && echo "\$KOHA_DB_PASS is unknown. Couldn't parse it from \$KOHA_CONF=$KOHA_CONF. Aborting!" exit 3
+KOHA_INSTANCE_NAME=$(koha-list | head -n 1)
+KOHA_USER="$KOHA_INSTANCE_NAME-koha"
 
 ## getopt --long
-OPTS=`getopt -o o::d::w::cpa:: --long operation::,data-source::,working-dir::,confirm,preserve-ids,default-admin:: --name "$(basename "$0")" -- "$@"`
+OPTS=`getopt -o o::k::d::w::cpa:: --long operation::,koha-instance::,data-source::,working-dir::,confirm,preserve-ids,default-admin:: --name "$(basename "$0")" -- "$@"`
 if [ $? != 0 ] ; then echo "Failed parsing options." >&2 ; exit 1 ; fi
 
 eval set --$OPTS
@@ -32,6 +25,7 @@ echo $OPTS
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -o|--operation)      OP=$2 ;              shift 2 ;;
+        -k|--koha-instance)  KOHA_INSTANCE_NAME=$2 ; shift 2 ;;
         -d|--data-source)    DATA_SOURCE_DIR=$2 ; shift 2 ;;
         -w|--working-dir)    WORKING_DIR=$2 ;     shift 2 ;;
         -a|--default-admin)  DEFAULT_ADMIN=$2 ;   shift 2 ;;
@@ -58,6 +52,12 @@ function help {
   echo "  --operation String"
   echo "    Which operation to conduct? One of backup, restore, migrate, merge"
   echo ""
+  echo "  --koha-instance String"
+  echo "    Which Koha-instance to migrate data for. Defaults to the first instance from koha-list"
+  echo ""
+  echo "  --koha-user String"
+  echo "    Username of the koha-user account on the server. Defaults to 'koha_' followed by the first instance name on the server."
+  echo ""
   echo "  --data-source Path to directory"
   echo "    Where to find the importable files"
   echo ""
@@ -74,6 +74,19 @@ function help {
   echo "    username:password of the default superlibrarian to add automatically, leave as 0|null to ingore adding the default admin"
   echo ""
 }
+
+
+export KOHA_CONF="/etc/koha/sites/$KOHA_INSTANCE_NAME/koha-conf.xml"
+test ! -e "$KOHA_CONF" && echo "\$KOHA_CONF=$KOHA_CONF doesn't exist. Aborting!" exit 2
+KOHA_DB=$(xmllint --xpath "yazgfs/config/database/text()" $KOHA_CONF)
+KOHA_DB_USER=$(xmllint --xpath "yazgfs/config/user/text()" $KOHA_CONF)
+KOHA_DB_PASS=$(xmllint --xpath "yazgfs/config/pass/text()" $KOHA_CONF)
+KOHA_USE_ELASTIC=$(xmllint --xpath "yazgfs/config/elasticsearch/server/text()" $KOHA_CONF)
+test -z "$KOHA_DB" && echo "\$KOHA_DB is unknown. Couldn't parse it from \$KOHA_CONF=$KOHA_CONF. Aborting!" exit 3
+test -z "$KOHA_DB_USER" && echo "\$KOHA_DB_USER is unknown. Couldn't parse it from \$KOHA_CONF=$KOHA_CONF. Aborting!" exit 3
+test -z "$KOHA_DB_PASS" && echo "\$KOHA_DB_PASS is unknown. Couldn't parse it from \$KOHA_CONF=$KOHA_CONF. Aborting!" exit 3
+
+
 
 
 test -z $OP &&                echo -e "\$OP is undefined\n" &&                         help && exit 5
@@ -95,9 +108,18 @@ test $KOHA_USE_ELASTIC &&     echo -e "\$KOHA_USE_ELASTIC = '$KOHA_USE_ELASTIC'.
 test -z $KOHA_USE_ELASTIC &&  echo -e "\$KOHA_USE_ELASTIC is unset. Indexing to Zebra."
 
 # Make environment known for bulk*.pl -scripts, so they can infer defaults automatically.
+echo "
 export MMT_DATA_SOURCE_DIR=$DATA_SOURCE_DIR
 export MMT_WORKING_DIR=$WORKING_DIR
 export MMT_PRESERVE_IDS=$PRESERVE_IDS
+export DEFAULT_ADMIN=$DEFAULT_ADMIN
+export PRESERVE_IDS=$PRESERVE_IDS
+export KOHA_USE_ELASTIC=$KOHA_USE_ELASTIC
+export KOHA_DB=$KOHA_DB
+export KOHA_DB_USER=$KOHA_DB_USER
+export KOHA_DB_PASS=$KOHA_DB_PASS
+" > $WORKING_DIR/mmt-env
+. $WORKING_DIR/mmt-env # This way the used environment can be reused without rerunning this script => better dev and debugging
 
 function checkUser {
     user=$1
@@ -122,21 +144,16 @@ function migrateBulkScripts {
 
     #./bulkItemImport.pl --file $DATA_SOURCE_DIR/Hankinta.migrateme --bnConversionTable $WORKING_DIR/biblionumberConversionTable &> $WORKING_DIR/bulkAcquisitionImport.log
 
-    ./bulkPatronImport.pl --defaultAdmin "$DEFAULT_ADMIN" &> $WORKING_DIR/bulkPatronImport.log
+    ./bulkPatronImport.pl &> $WORKING_DIR/bulkPatronImport.log
+    test -n $DEFAULT_ADMIN && ./bulkPatronImport.pl --defaultAdmin "$DEFAULT_ADMIN" &> $WORKING_DIR/bulkPatronImportDefaultAdmin.log
     ./bulkPatronImport.pl --messagingPreferencesOnly &> $WORKING_DIR/bulkPatronImportMessagingDefaults.log & #This is forked on the background
     ./bulkPatronImport.pl --uploadSSNKeysOnly &> $WORKING_DIR/bulkPatronImportSSNKeys.log & #This is forked on the background
 
     ./bulkHistoryImport.pl &> $WORKING_DIR/bulkHistoryImport.log # Histories' issue_id should be less then active checkouts.
 
-    ./bulkCheckoutImport.pl -file $DATA_SOURCE_DIR/Issue.migrateme \
-        --inConversionTable $WORKING_DIR/itemnumberConversionTable \
-        --bnConversionTable $WORKING_DIR/borrowernumberConversionTable \
-        &> $WORKING_DIR/bulkCheckoutImport.log
+    ./bulkCheckoutImport.pl &> $WORKING_DIR/bulkCheckoutImport.log
 
-    ./bulkFinesImport.pl --file $DATA_SOURCE_DIR/Fine.migrateme \
-        --inConversionTable $WORKING_DIR/itemnumberConversionTable \
-        --bnConversionTable $WORKING_DIR/borrowernumberConversionTable \
-        &> $WORKING_DIR/bulkFinesImport.log
+    ./bulkFinesImport.pl &> $WORKING_DIR/bulkFinesImport.log
 
     ./bulkHoldsImport.pl --file $DATA_SOURCE_DIR/Reserve.migrateme \
         --inConversionTable $WORKING_DIR/itemnumberConversionTable \
@@ -160,7 +177,6 @@ function migrateBulkScripts {
         --inConversionTable $WORKING_DIR/itemnumberConversionTable \
         &> $WORKING_DIR/bulkBranchtransfersImport.log
 
-    #./bulkRotatingCollectionsImport.pl --file $DATA_SOURCE_DIR/Siirtolaina.migrateme &> $WORKING_DIR/bulkRotatingCollectionsImport.log
 }
 
 function cleanPastMigrationWorkspace {
@@ -172,24 +188,24 @@ function cleanPastMigrationWorkspace {
 
 function flushDataFromDB {
     #Empty all previously migrated data, except configurations. You don't want this when merging records :)
-    mysql --user="$KOHA_DB_USER" --password="$KOHA_DB_PASS" "$KOHA_DB" < bulkEmptyMigratedTables.sql
+    ./bulkEmptyMigratedTables.sh
 }
 
 function fullReindex {
     FLUSH="$1"
 
-    checkUser "koha"
+    checkUser "$KOHA_USER"
 
     if [ -n "$KOHA_USE_ELASTIC" ]; then
         if [ -n "$FLUSH" ]; then
-            FLUSH="-d"
+            FLUSH="--delete"
         fi
-        $KOHA_PATH/misc/search_tools/rebuild_elastic_search.pl $FLUSH &> $WORKING_DIR/rebuild_elasticsearch.log
+        koha-elasticsearch $FLUSH --rebuild --verbose KOHA_INSTANCE_NAME &> $WORKING_DIR/rebuild_search_index.log
     else
         if [ -n "$FLUSH" ]; then
-            FLUSH="-r"
+            FLUSH="--full"
         fi
-        $KOHA_PATH/misc/migration_tools/rebuild_zebra.pl -b -a $FLUSH -x -v &> $WORKING_DIR/rebuild_zebra.log
+        koha-rebuild-zebra --verbose $FLUSH KOHA_INSTANCE_NAME &> $WORKING_DIR/rebuild_search_index.log
     fi
 }
 
@@ -229,7 +245,7 @@ then
 elif [ "$OP" == "migrate" ]
 then
     ##Run this as koha to not break permissions
-    checkUser "koha"
+    checkUser "$KOHA_USER"
 
     if [ -z $CONFIRM ]; then
         echo "Are you OK with having the Koha database and search index destroyed, and migrating a new batch? OK to accept, anything else to abort."
@@ -259,7 +275,7 @@ then
 elif [ "$OP" == "merge" ]
 then
     ##Run this as koha to not break permissions
-    checkUser "koha"
+    checkUser "$KOHA_USER"
 
     if [ -z $CONFIRM ]; then
         echo "Are you OK with having two databases merged? You should have a Zebra index to merge against. OK to accept, anything else to abort."

@@ -63,7 +63,6 @@ sub newFromUnblessedMigratemeRow($row) {
 sub invokeThreadCompatibilityMagic() {
     #Koha::Cache cannot be shared across threads due to Sereal. Hack around it.
     Koha::Caches::flush_L1_caches();
-    Koha::Caches::flush();
     $ENV{CACHING_SYSTEM} = 'disable';
     $Koha::Cache::L1_encoder = Sereal::Encoder->new;
     $Koha::Cache::L1_decoder = Sereal::Decoder->new;
@@ -121,6 +120,12 @@ sub getMaxIssueId {
   $old_issue_id = ($old_issue_id > $issue_id) ? $old_issue_id : $issue_id;
   $old_issue_id++;
   return $old_issue_id;
+}
+
+sub logArgs {
+  my ($args) = @_;
+  $Data::Dumper::Indent=1;
+  print("***ARGS:***\n".Data::Dumper::Dumper($args)."\n");
 }
 
 return 1;

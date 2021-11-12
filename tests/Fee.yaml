@@ -1,1 +1,17 @@
-Fine.yaml
+---
+
+##
+## IN THIS FILE
+##
+## Define the expected attributes of some of the expected koha.accountlines -objects the MMT builds.
+## These expectations are matched against the built objects runtime.
+##
+## The correct expectation is found using the Voyager database primary key
+##
+## Each expectation is a regular expression which is matched against the same attribute of the transformed object
+##
+
+#PK is fine_fee.patron_id-fine_fee.item_id
+"10-10":
+  homebranch: HAMK
+

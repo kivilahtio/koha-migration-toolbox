@@ -1,1 +1,35 @@
-Patron.yaml
+---
+
+##
+## IN THIS FILE
+##
+## Define the expected attributes of some of the expected koha.borrower -objects the MMT builds.
+## These expectations are matched against the built borrower-objects runtime.
+##
+## The correct expectation is found using the Voyager database primary key (eg. patron_id)
+##
+## Each expectation is a regular expression which is matched against the same attribute of the transformed object
+##
+
+127:
+  ExtendedPatronAttributes: #Nested regexps actually fail, but not so important atm.
+    STAT_CAT:
+      - "1:HAMK opiskelija"
+  borrowernotes: ^Pop-Up
+  borrowernumber: 127
+  branchcode: HAMK
+  cardnumber: 2586023945
+  categorycode: B
+  dateenrolled: 2002-01-01T08:32:29
+  dateexpiry: 2027-08-28T10:04:47
+  dateofbirth: 1911-11-11
+  firstname: Jane C.
+  lang: fi
+  password: ^\d+$
+  phone: ^\d+$
+  privacy: 1
+  sort1: 127
+  sort2: ''
+  ssn: 111111-111Y
+  surname: Doe
+  userid: 2586023945

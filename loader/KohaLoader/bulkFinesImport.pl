@@ -10,16 +10,15 @@ use Getopt::Long;
 use Log::Log4perl qw(:easy);
 
 use Getopt::Long;
-use C4::Items;
-use C4::Members;
 use C4::Accounts;
 use Bulk::ConversionTable::BorrowernumberConversionTable;
 use Bulk::ConversionTable::ItemnumberConversionTable;
+use Bulk::PatronImporter;
 
-my $importFile;
+my $importFile = $ENV{MMT_DATA_SOURCE_DIR}.'/Fine.migrateme';
 our $verbosity = 3;
-my $borrowernumberConversionTable = 'borrowernumberConversionTable';
-my $itemnumberConversionTable = 'itemnumberConversionTable';
+my $borrowernumberConversionTable =      ($ENV{MMT_WORKING_DIR}//'.').'/borrowernumberConversionTable';
+my $itemnumberConversionTable =          ($ENV{MMT_WORKING_DIR}//'.').'/itemnumberConversionTable';
 
 my $help = <<HELP;
 
@@ -85,33 +84,20 @@ my $issueStatement = $dbh->prepare(
 
 
 sub finesImport($fine) {
-    my $accountno  = C4::Accounts::getnextacctno( $fine->{borrowernumber} );
-    my $notifyid = 0;
-    my $manager_id = C4::Context->userenv ? C4::Context->userenv->{'number'} : 0;
-    my @issue_id = ();
-
-    if ($fine->{accounttype} eq "FU") {
-	$issueStatement->execute($fine->{itemnumber}, $fine->{borrowernumber});
-	my $row_count = 0;
-	while (my @row = $issueStatement->fetchrow_array()) {
-	    $issue_id[0] = @row[0];
-	    $row_count++;
-	}
-
-	if ($row_count > 1) {
-	    ERROR "Fine '".fineId($fine)."' is related to multiple checkouts!";
-	    $issue_id[0] = undef; # Fallback to not connecting it to anything
-	}
-    }
-
-    $fineStatement->execute(
-        $fine->{borrowernumber}, $fine->{itemnumber}, $accountno, $fine->{date}, $fine->{amount},
-        $fine->{description}, $fine->{accounttype}, $fine->{amountoutstanding}, $notifyid, $manager_id, $issue_id[0]
-    );
-
-    if ($fineStatement->errstr) {
-        ERROR "Error INSERT:ing Fine '".fineId($fine)."': ".$fineStatement->errstr;
-    }
+            my $account = Koha::Account->new({ patron_id => $fine->{borrowernumber} });
+            my $accountline = $account->add_debit(
+                {
+                    amount      => $fine->{amountoutstanding},
+                    description => $fine->{description},
+                    note        => $fine->{date},
+                    user_id     => $fine->{borrowernumber},
+                    interface   => 'MIGRATION',
+                    library_id  => undef,
+                    type        => 'MANUAL',
+                    item_id     => $fine->{itemnumber},
+                    issue_id    => undef,
+                }
+            );
 }
 
 sub validateAndConvertKeys($fine) {
@@ -122,7 +108,7 @@ sub validateAndConvertKeys($fine) {
         return undef;
     }
     #Make sure the borrower exists!
-    my $testingBorrower = C4::Members::GetMember(borrowernumber => $borrowernumber);
+    my $testingBorrower = Bulk::PatronImporter::GetBorrower($borrowernumber);
     unless (defined $testingBorrower) {
         WARN "Fine '".fineId($fine)."'. Patron ".$fine->{borrowernumber}."->$borrowernumber doesn't exist in Koha!";
         return undef;

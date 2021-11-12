@@ -18,7 +18,6 @@ use C4::Context;
 use Koha::AuthUtils;
 use Koha::Patron;
 use Koha::Patrons;
-use Koha::Auth::PermissionManager;
 
 #Local modules
 use Bulk::AutoConfigurer;
@@ -38,55 +37,18 @@ sub p($s, $param) {
   return $s->{_params}->{$param};
 }
 
-=head2 AddMember
-
-Trimmed down copy of C4::Members::AddMember
-
-=cut
-
-sub AddMember($s, $data, $useDBIx=0) {
-  # generate a proper login if none provided
-  $data->{'userid'} = C4::Members::Generate_Userid($data->{'borrowernumber'}, $data->{'firstname'}, $data->{'surname'}) unless $data->{'userid'};
-  delete $data->{'borrowernumber'} unless ($s->p('preserveIds'));
-
-  # add expiration date if it isn't already there
-  unless ( $data->{'dateexpiry'} ) {
-    $data->{'dateexpiry'} = $s->{now};
+my $getBorrowerSth;
+sub GetBorrower {
+  my ($borrowernumber) = @_;
+  my $dbh = C4::Context->dbh();
+  unless($getBorrowerSth) {
+    $getBorrowerSth = $dbh->prepare("SELECT * FROM borrowers WHERE borrowernumber = ?");
   }
-
-  # add enrollment date if it isn't already there
-  unless ( $data->{'dateenrolled'} ) {
-    $data->{'dateenrolled'} = $s->{now};
-  }
-
-  # create a disabled account if no password provided
-  $data->{'password'} = ($data->{'password'}) ?
-                          Koha::AuthUtils::hash_password($data->{'password'}, $s->bcryptSettings(2)) : #The bcrypt iterations has been dropped from 8 to 2 to significantly speed up the migration.
-                          '!';
-
-  # Default privacy if none provided
-  $data->{privacy} = 1 unless exists $data->{privacy};
-  $data->{'privacy_guarantor_checkouts'} = 0;
-
-  $data->{checkprevcheckout} = 0 unless $data->{checkprevcheckout};
-  $data->{lang} = 'fi' unless $data->{lang};
-
-  $data->{othernames} = $s->duplicateOthernamesHandler($data->{othernames});
-
-  if ($useDBIx) { #DBIx migrated 8800 Patrons in 8 minutes
-    my $patron=Koha::Patron->new($data);
-    $patron->store;
-    $s->checkPreserveId($data->{'borrowernumber'}, $patron->borrowernumber);
-    $data->{'borrowernumber'}=$patron->borrowernumber;
-  }
-  else {          #DBD::MySQL migrated 10500 Patrons in 11 minutes
-    $s->addBorrowerDBI($data);
-  }
-
-  return $data->{'borrowernumber'};
+  $getBorrowerSth->execute($borrowernumber) or die $getBorrowerSth->errstr();
+  return $getBorrowerSth->fetchrow_hashref();
 }
 
-=head2 addBorrowerDBI
+=head2 AddMember
 
 Hypothesis that DBIx::Class is sloooow. It doesn't seem that way now compared to this one.
 
@@ -96,31 +58,183 @@ Hypothesis that DBIx::Class is sloooow. It doesn't seem that way now compared to
 
 =cut
 
-sub addBorrowerDBI($s, $patron) {
-  unless ($s->{sth_addBorrower}) {
-    my $sth = $s->{dbh}->column_info( undef, undef, 'borrowers', '%' );
-    my $cols = $sth->fetchall_arrayref({}) or die("Fetching koha.borrowers column definitions failed: ".$s->{dbh}->errstr());
-    my @borrowerColumns = map {$_->{COLUMN_NAME}} @$cols;
-    my @placeholders = map {'?'} (1..@borrowerColumns);
+my $addBorrowerSth;
+sub AddMember($s, $b) {
+  unless ($addBorrowerSth) {
+    my $borrowerColumns = "
+borrowernumber,
+cardnumber,
+surname,
+firstname,
+title,
+othernames,
+initials,
+streetnumber,
+streettype,
+address,
+address2,
+city,
+state,
+zipcode,
+country,
+email,
+phone,
+mobile,
+fax,
+emailpro,
+phonepro,
+B_streetnumber,
+B_streettype,
+B_address,
+B_address2,
+B_city,
+B_state,
+B_zipcode,
+B_country,
+B_email,
+B_phone,
+dateofbirth,
+branchcode,
+categorycode,
+dateenrolled,
+dateexpiry,
+date_renewed,
+gonenoaddress,
+lost,
+debarred,
+debarredcomment,
+contactname,
+contactfirstname,
+contacttitle,
+borrowernotes,
+relationship,
+sex,
+password,
+flags,
+userid,
+opacnote,
+contactnote,
+sort1,
+sort2,
+altcontactfirstname,
+altcontactsurname,
+altcontactaddress1,
+altcontactaddress2,
+altcontactaddress3,
+altcontactstate,
+altcontactzipcode,
+altcontactcountry,
+altcontactphone,
+smsalertnumber,
+sms_provider_id,
+privacy,
+privacy_guarantor_fines,
+privacy_guarantor_checkouts,".
+#checkprevcheckout,
+#$b->{updated_on},
+"
+lastseen,
+lang,
+login_attempts,
+overdrive_auth_token,
+anonymized,
+autorenew_checkouts
+";
+    my $colCount = () = ($borrowerColumns =~ m/,/gsm);
+    my $placeholders = ('?,' x $colCount) . '?';
 
-    my $sth_addBorrower = $s->{dbh}->prepare( #Is DBIx just so freaking sloooooowwwww?
+    $addBorrowerSth = $s->{dbh}->prepare(
         "INSERT INTO borrowers\n".
-        "    (".join(',',@borrowerColumns).")\n".
+        "    ($borrowerColumns)\n".
         "VALUES\n".
-        "    (".join(',',@placeholders).")\n"
+        "    ($placeholders)\n"
     ) or die "Preparing the koha.borrowers insertion statement failed: ".$s->{dbh}->errstr();
-
-    $s->{sth_addBorrower} = $sth_addBorrower;
-    $s->{borrowerColumns} = \@borrowerColumns;
   }
 
-  my @params = map {$patron->{$_}} @{$s->{borrowerColumns}};
+my @params = (
+($main::args{preserveIds}) ? $b->{borrowernumber} : undef,
+$b->{cardnumber},
+$b->{surname},
+$b->{firstname},
+$b->{title},
+$b->{othernames},
+$b->{initials},
+$b->{streetnumber},
+$b->{streettype},
+$b->{address},
+$b->{address2},
+$b->{city},
+$b->{state},
+$b->{zipcode},
+$b->{country},
+$b->{email},
+$b->{phone},
+$b->{mobile},
+$b->{fax},
+$b->{emailpro},
+$b->{phonepro},
+$b->{B_streetnumber},
+$b->{B_streettype},
+$b->{B_address},
+$b->{B_address2},
+$b->{B_city},
+$b->{B_state},
+$b->{B_zipcode},
+$b->{B_country},
+$b->{B_email},
+$b->{B_phone},
+$b->{dateofbirth},
+$b->{branchcode} // '',
+$b->{categorycode} // '',
+$b->{dateenrolled},
+$b->{dateexpiry},
+$b->{date_renewed},
+$b->{gonenoaddress},
+$b->{lost},
+$b->{debarred},
+$b->{debarredcomment},
+$b->{contactname},
+$b->{contactfirstname},
+$b->{contacttitle},
+$b->{borrowernotes},
+$b->{relationship},
+$b->{sex},
+$b->{password},
+$b->{flags},
+$b->{userid},
+$b->{opacnote},
+$b->{contactnote},
+$b->{sort1},
+$b->{sort2},
+$b->{altcontactfirstname},
+$b->{altcontactsurname},
+$b->{altcontactaddress1},
+$b->{altcontactaddress2},
+$b->{altcontactaddress3},
+$b->{altcontactstate},
+$b->{altcontactzipcode},
+$b->{altcontactcountry},
+$b->{altcontactphone},
+$b->{smsalertnumber},
+$b->{sms_provider_id},
+$b->{privacy} // 1,
+$b->{privacy_guarantor_fines} // 0,
+$b->{privacy_guarantor_checkouts} // 0,
+#$b->{checkprevcheckout},
+#$b->{updated_on},
+$b->{lastseen},
+$b->{lang},
+$b->{login_attempts} // 0,
+$b->{overdrive_auth_token},
+$b->{anonymized} // 0,
+$b->{autorenew_checkouts} // 1,
+);
   eval {
-    $s->{sth_addBorrower}->execute(@params) or die("Adding borrower failed: ".$s->{sth_addBorrower}->errstr());
+    $addBorrowerSth->execute(@params) or die $addBorrowerSth->errstr();
   };
   if ($@) {
-    if (Bulk::AutoConfigurer::borrower($patron, $@)) {
-      $s->{sth_addBorrower}->execute(@params) or die("Adding borrower failed: ".$s->{sth_addBorrower}->errstr());
+    if (Bulk::AutoConfigurer::borrower($b, $@)) {
+      $addBorrowerSth->execute(@params) or die("Adding borrower failed: ".$addBorrowerSth->errstr());
     }
     else {
       die $@;
@@ -132,8 +246,8 @@ sub addBorrowerDBI($s, $patron) {
     die "last_insert_id() not available after adding a borrower?: ".$s->{dbh}->errstr();
   }
 
-  $s->checkPreserveId($patron->{borrowernumber}, $borrowernumber);
-  $patron->{borrowernumber} = $borrowernumber;
+  $s->checkPreserveId($b->{borrowernumber}, $borrowernumber);
+  $b->{borrowernumber} = $borrowernumber;
 }
 
 =head2 addBorrowerAttribute
@@ -164,43 +278,21 @@ sub addBorrowerAttribute($s, $patron, $attribute, $value, $isRepeatable) {
 
 sub addDefaultAdmin($s, $defaultAdmin) {
   my ($username, $password) = split(':', $defaultAdmin);
-  INFO "Adding default admin";
-  my $dbh = C4::Context->dbh;
-  my $categorycode = $dbh->selectrow_array("SELECT categorycode from categories LIMIT 1") or warn "Failed to get default admin categorycode ".$dbh->errstr(); #Pick any borrower.categorycode
-  unless ($categorycode) {
-    $dbh->do("INSERT IGNORE INTO categories (categorycode, description) ".
-                              "VALUE ('ADMIN','AUTO-ADMIN')");
-    $categorycode = 'ADMIN';
-  }
-  my $branchcode = $dbh->selectrow_array("SELECT branchcode from branches LIMIT 1") or warn "Failed to get default admin branchcode ".$dbh->errstr(); #Pick any borrower.branchcode
-  my $dt = DateTime->now();
-  my $expiration = $dt->clone()->add(days => 90);
-  my %defaultAdmin = (
-    cardnumber =>   "kalifi",
-    surname =>      "Kalifi",
-    firstname =>    "Kalifin",
-    othernames =>   "paikalla",
-    address =>      "Kalifinkuja 12 b 7",
-    city =>         "Kalifila",
-    zipcode =>      "12345",
-    dateofbirth =>  "1985-09-06",
-    branchcode =>   $branchcode,
+
+  my $branchcode = Koha::Libraries->search->next->branchcode;
+
+  my $categorycode = Koha::Patron::Categories->search->next->categorycode;
+
+  my $patron = Koha::Patron->new( {
+    surname => 'Kalifi',
+    userid => $username,
+    cardnumber => $username,
+    branchcode => $branchcode,
     categorycode => $categorycode,
-    dateenrolled => $dt->iso8601(),
-    dateexpiry =>   $expiration->iso8601(),
-    password =>     $password,
-    userid =>       $username,
-    privacy =>      1,
-  );
-  eval {
-    $defaultAdmin{borrowernumber} = C4::Members::AddMember(%defaultAdmin);
-    INFO "Granting default admin permissions";
-    my $permissionManager = Koha::Auth::PermissionManager->new();
-    $permissionManager->grantPermission($defaultAdmin{borrowernumber}, 'superlibrarian', 'superlibrarian');
-  };
-  if ($@) {
-    print "Error while adding the default admin: $@";
-  }
+    flags => 1,
+  })->store;
+
+  $patron->set_password( { password => $password } );
 }
 
 sub fineImport($s, $borrowernumber, $desc, $accounttype, $amount, $date) {
@@ -248,7 +340,7 @@ sub AddDebarment($s, $params) {
 
   $s->{sth_addDebarment}->execute($borrowernumber, $expiration, $type, $comment, $manager_id, $created);
 
-  Koha::Patron::Debarments::_UpdateBorrowerDebarmentFlags($borrowernumber);
+  Koha::Patron::Debarments::UpdateBorrowerDebarmentFlags($borrowernumber);
 }
 
 =head2 setDefaultMessagingPreferences
@@ -281,12 +373,12 @@ sub setDefaultMessagingPreferences($s) {
   my $i = 0;
   for my $bn (@bns) {
     INFO "Processed $i Items" if (++$i % 1000 == 0);
-    my $p = Koha::Patrons->find($bn);
-    unless ($p) {
+    my $b = GetBorrower($bn);
+    unless ($b) {
       WARN "No such Patron '$bn' in the DB";
       next;
     }
-    $p->set_default_messaging_preferences();
+    C4::Members::Messaging::SetMessagingPreferencesFromDefaults($b);
   }
 }
 

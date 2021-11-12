@@ -93,6 +93,7 @@ sub setPriority($s, $o, $b) {
   }
   elsif ($o->{Queue} < 0) {
     # hold has been expired, let it be automatically cancelled by Koha
+    MMT::Exception::Delete::Silently->throw($s->logId()."' expired already.");
   }
   else {
     MMT::Exception::Delete->throw($s->logId()."' no queue position.");

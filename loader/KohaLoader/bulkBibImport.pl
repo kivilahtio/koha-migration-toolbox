@@ -12,6 +12,7 @@ use Carp;
 # External modules
 use Getopt::Long;
 use Log::Log4perl qw(:easy);
+use Data::Dumper;
 
 #Local modules
 use Bulk::BibImporter;
@@ -139,12 +140,14 @@ HELP
 
 require Bulk::Util; #Init logging && verbosity
 
+Bulk::Util::logArgs(\%args);
+
 unless ($args{inputMarcFile}) {
     die "--file is mandatory";
 }
 
 my $bimporter = Bulk::BibImporter->new(\%args);
-TODO:: Make sure the biblio_metadata -row is created!
+#TODO:: Make sure the biblio_metadata -row is created!
 
 my $disablePrefs = {
   CataloguingLog => {

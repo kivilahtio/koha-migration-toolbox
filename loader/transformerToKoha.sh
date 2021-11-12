@@ -14,10 +14,13 @@ MMT_PROGRAM_DIR=`pwd` # koha-migration-tools executes this script from it's own 
 #SRC_ILS="Lib" # From credentials
 #KOHA_HOST="koha-host-server" # From credentials
 #KOHA_DEFAULT_ADMIN="" # From credentials
-KOHA_HOME="/home/koha"
+KOHA_INSTANCE_NAME=$(koha-list | head -n 1)
+KOHA_USER="$KOHA_INSTANCE_NAME-koha"
+KOHA_HOME="/var/lib/koha/$KOHA_INSTANCE_NAME/MMT"
 KOHA_LOAD_WORKING_DIR="$KOHA_HOME/KohaMigration$SRC_ILS"
+KOHA_DATA_SOURCE_DIR="$KOHA_HOME/KohaImports$SRC_ILS"
 KOHA_LOADER_DIR="$KOHA_HOME/KohaLoader"
-KOHA_LOADER_CMD="./load.sh --operation=migrate --data-source=$KOHA_HOME/KohaImports$SRC_ILS --working-dir=$KOHA_LOAD_WORKING_DIR --confirm --default-admin=$KOHA_DEFAULT_ADMIN"
+KOHA_LOADER_CMD="./load.sh --operation=migrate --data-source=$KOHA_DATA_SOURCE_DIR --working-dir=$KOHA_LOAD_WORKING_DIR --confirm --preserve-ids --default-admin=$KOHA_DEFAULT_ADMIN --koha-instance=$KOHA_INSTANCE_NAME"
 
 HETULA_CREDENTIALS_FILE="Hetula.credentials" #This must be manually created with login information. This filename is hardcoded, don't change it.
 HETULA_CREDS_FILE_IN_TRANSFORMER="$MMT_HOME/KohaImports$SRC_ILS/$HETULA_CREDENTIALS_FILE"
@@ -38,7 +41,7 @@ if [ -n "$KOHA_HOST" ]; then
   scp -r loader/KohaLoader $KOHA_HOST:$KOHA_HOME/
   test $? != 0 && echo "Uploading the Koha Loader failed!" && exit 8
 
-  ssh $KOHA_HOST "chown -R koha:koha $KOHA_HOME/KohaLoader"
+  ssh $KOHA_HOST "chown -R $KOHA_USER:$KOHA_USER $KOHA_HOME/KohaLoader"
   test $? != 0 && echo "Setting Koha Loader permissions failed!" && exit 9
 
 
@@ -52,21 +55,21 @@ if [ -n "$KOHA_HOST" ]; then
   ssh $KOHA_HOST "cd $KOHA_HOME && tar -xzf $KOHA_HOME/kohaData.tar.gz && rm $KOHA_HOME/kohaData.tar.gz && chown -R koha:koha $KOHA_HOME/KohaImports$SRC_ILS"
   test $? != 0 && echo "Unpacking Koha data remotely failed!" && exit 12
 
-  ssh $KOHA_HOST "mkdir -p $KOHA_LOAD_WORKING_DIR && chown koha:koha $KOHA_LOAD_WORKING_DIR"
+  ssh $KOHA_HOST "mkdir -p $KOHA_LOAD_WORKING_DIR && chown $KOHA_USER:$KOHA_USER $KOHA_LOAD_WORKING_DIR"
   test $? != 0 && echo "Creating load-phase working dir remotely failed!" && exit 13
 
   echo "Start loading"
-  ssh -t $KOHA_HOST "cd $KOHA_LOADER_DIR && su -c '$KOHA_LOADER_CMD' koha"
+  ssh -t $KOHA_HOST "cd $KOHA_LOADER_DIR && su -c '$KOHA_LOADER_CMD' $KOHA_USER"
   test $? != 0 && echo "Loading Koha data failed!" && exit 14
 elif [ -z "$KOHA_HOST" ]; then
-  echo "Link the loadable files for Loader default path"
-  test ! -e $KOHA_HOME/KohaImports$SRC_ILS && (ln -s $MMT_HOME/KohaImports $KOHA_HOME/KohaImports$SRC_ILS || (echo "Linking Koha data failed!" && exit 10))
+  mkdir -p $KOHA_LOAD_WORKING_DIR && chown $KOHA_USER:$KOHA_USER $KOHA_LOAD_WORKING_DIR
+  test $? != 0 && echo "Creating load-phase working dir failed!" && exit 13
 
-  mkdir -p $KOHA_LOAD_WORKING_DIR && chown koha:koha $KOHA_LOAD_WORKING_DIR
-  test $? != 0 && echo "Creating load-phase working dir remotely failed!" && exit 13
+  echo "Link the loadable files for Loader default path"
+  test ! -e $KOHA_DATA_SOURCE_DIR && (ln -s $MMT_HOME/KohaImports $KOHA_DATA_SOURCE_DIR || (echo "Linking Koha data failed!" && exit 10))
 
   echo "Start loading"
-  cd $MMT_PROGRAM_DIR/loader/KohaLoader && su -c "$KOHA_LOADER_CMD" koha
+  cd $MMT_PROGRAM_DIR/loader/KohaLoader && koha-shell -c "$KOHA_LOADER_CMD" $KOHA_INSTANCE_NAME
   test $? != 0 && echo "Loading Koha data failed!" && exit 14
 fi
 

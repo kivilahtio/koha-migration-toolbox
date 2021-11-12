@@ -26,13 +26,14 @@ EXTRACTOR_DIR="$MMT_CODE/extractor"
 EXTRACTOR_PIPELINE_SCRIPT="voyagerToTransformer.sh"
 LOADER_DIR="$MMT_CODE/loader"
 LOADER_PIPELINE_SCRIPT="transformerToKoha.sh"
-PIPELINE_SCRIPTS="$MMT_HOME/secret"
+PIPELINE_SCRIPTS="$MMT_HOME/"
 
 cd $MMT_CODE #Make sure we are in the source directory
 test $? != 0 && echo "Couldn't cd to app source code directory '$MMT_CODE', failed with error code '$?'" && exit 7
 
 
 echo "Installing Perl dependencies to the program dir '$MMT_CODE'"
+cd transformer
 cpanm -L extlib --installdeps .
 # Ubuntu 18 fails on one of the dependencies, unless --force is used...
 if [ $? != 0 ]
@@ -40,6 +41,7 @@ then
   echo "Perl dependencies install failed with error code '$?'. Using force." && cpanm -L extlib --force --installdeps .
   test $? != 0 && echo "Perl dependencies install failed with error code '$?'. Force did not help." && exit 9
 fi
+cd ..
 
 
 echo "Configuring application home to '$MMT_HOME'"

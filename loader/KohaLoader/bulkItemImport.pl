@@ -9,26 +9,25 @@ use Getopt::Long;
 use Log::Log4perl qw(:easy);
 use Time::HiRes qw(gettimeofday);
 
-use C4::Items;
-use C4::RotatingCollections;
 use Bulk::ConversionTable::ItemnumberConversionTable;
 use Bulk::ConversionTable::BiblionumberConversionTable;
 use Bulk::ConversionTable::SubscriptionidConversionTable;
 use Bulk::AutoConfigurer;
+use Bulk::Item;
 
 our $verbosity = 3;
-my %args = (itemsFile =>                          ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Item.migrateme',
+our %args = (itemsFile =>                          ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Item.migrateme',
             biblionumberConversionTable =>        ($ENV{MMT_WORKING_DIR}//'.').'/biblionumberConversionTable',
             itemnumberConversionTable =>          ($ENV{MMT_WORKING_DIR}//'.').'/itemnumberConversionTable',
-            holding_idConversionTable =>          ($ENV{MMT_WORKING_DIR}//'.').'/holding_idConversionTable',
+            preserveIds =>                        $ENV{MMT_PRESERVE_IDS} // 0,
             populateStatistics =>           0);
 
 GetOptions(
     'file:s'                   => \$args{itemsFile},
     's|statistics'             => \$args{populateStatistics},
     'b|bnConversionTable:s'    => \$args{biblionumberConversionTable},
-    'h|hiConversionTable:s'    => \$args{holding_idConversionTable},
     'i|inConversionTable:s'    => \$args{itemnumberConversionTable},
+    'preserveIds'              => \$args{preserveIds},
     'v|verbosity'              => \$verbosity,
     'h|help'              => sub {
     print <<HELP;
@@ -42,8 +41,6 @@ SYNOPSIS
 
 DESCRIPTION
   -Migrates the Perl-serialized MMT-processed Items to Koha.
-  -Creates the RotatingCollections when needed. Item needs to have an attribute
-   'rotatingcollection' which contains the branch details
   -Populates statistics-table entries for old issues and returns.
    Item needs to have an 'issues'-attribute.
   -Detects duplicate barcodes and rebrands duplicates with '_TUPLA'-prefix
@@ -74,9 +71,6 @@ DESCRIPTION
 
           Defaults to '$args{biblionumberConversionTable}'
 
-    --hiConversionTable filepath
-          Defaults to '$args{holding_idConversionTable}'
-
     --inConversionTable filepath
           To which file to write the itemnumber to barcode conversion. Items are best referenced
           by their barcodes, because the itemnumbers can overlap with existing Items.
@@ -93,6 +87,8 @@ HELP
 
 require Bulk::Util; #Init logging && verbosity
 
+Bulk::Util::logArgs(\%args);
+
 unless ($args{itemsFile}) {
     die "\n--file is mandatory";
 }
@@ -103,11 +99,8 @@ DEBUG "Today is $today";
 
 INFO "Opening BiblionumberConversionTable '$args{biblionumberConversionTable}' for reading";
 $args{biblionumberConversionTable} = Bulk::ConversionTable::BiblionumberConversionTable->new( $args{biblionumberConversionTable}, 'read' );
-INFO "Opening Holding_idConversionTable '$args{holding_idConversionTable}' for reading";
-$args{holding_idConversionTable} = Bulk::ConversionTable::SubscriptionidConversionTable->new( $args{holding_idConversionTable}, 'read' );
 INFO "Opening ItemnumberConversionTable '$args{itemnumberConversionTable}' for writing";
 $args{itemnumberConversionTable} = Bulk::ConversionTable::ItemnumberConversionTable->new( $args{itemnumberConversionTable}, 'write' );
-my $rotatingCollections = {}; #Collect the references to already created rotating collections here.
 
 sub processRow {
     my $item = Bulk::Util::newFromBlessedMigratemeRow($_);
@@ -120,7 +113,7 @@ sub processRow {
     #return if tryToCaptureMangledUtf8InDB($item);
 
 
-    my $existingBarcodeItem = C4::Items::GetItem(undef, $item->{barcode});
+    my $existingBarcodeItem = Bulk::Item::getItem($item->{barcode});
     if ($existingBarcodeItem) {
         $item->{barcode} .= '_TUPLA';
         INFO "\n".'DUPLICATE BARCODE "'.$item->{barcode}.'" FOUND'."\n";
@@ -130,15 +123,9 @@ sub processRow {
         ERROR "Failed to get biblionumber for Item ".$item->{barcode}."\n";
         return;
     }
-    my $newHolding_id = $args{holding_idConversionTable}->fetch($item->{holding_id} // 0);
-    if (not($newHolding_id) && $item->{holding_id}) {
-        ERROR "Failed to get a converted holding_id for Item ".$item->{barcode}."\n";
-        return;
-    }
 
     $item->{biblionumber} = $newBiblionumber;
     $item->{biblioitemnumber} = $newBiblionumber;
-    $item->{holding_id} = $newHolding_id;
 
 
     #Autoconfigure shelving locations
@@ -146,16 +133,16 @@ sub processRow {
     Bulk::AutoConfigurer::shelvingLocation($item->{permanent_location}, $item->{location});
     Bulk::AutoConfigurer::itemType($item->{itype});
 
-    C4::Items::_set_defaults_for_add($item);
-    C4::Items::_set_derived_columns_for_add($item);
+    Bulk::Item::set_cn_sort($item);
+
     my ($newItemnumber, $error);
     eval {
-        ($newItemnumber, $error) = C4::Items::_koha_new_item( $item, $item->{barcode} );
+        ($newItemnumber, $error) = Bulk::Item::_koha_new_item($item);
     };
     if ($@ || $error) {
         if (Bulk::AutoConfigurer::item($item, $@ || $error)) { #Try to recover if the error is something the autoconfigurer can deal with
             eval {
-                ($newItemnumber, $error) = C4::Items::_koha_new_item( $item, $item->{barcode} );
+                ($newItemnumber, $error) = Koha::Item::_koha_new_item($item);
             };
             if ($@ || $error) {
                 warn $@;
@@ -179,11 +166,6 @@ sub processRow {
 
     createCheckoutStatistics($item);
 
-    if (exists $item->{rotatingcollection}) {
-        my $rcItem = $item->{rotatingcollection};
-        my $rc = getRotatingCollectionFromHomebranch($rcItem->{homebranch});
-        C4::RotatingCollections::AddItemToCollection($rc, $newItemnumber);
-    }
 }
 
 my $starttime = gettimeofday;
@@ -260,29 +242,6 @@ sub createCheckoutStatistics {
         $dbh->disconnect();
         $dbh = C4::Context->dbh; #Refresh the DB handle, because it occasionally gets mangled and spits bad utf8.
     }
-}
-
-
-sub getRotatingCollectionFromHomebranch {
-    my $homebranch = shift;
-
-    if ($rotatingCollections->{ $homebranch }) {
-        return $rotatingCollections->{ $homebranch };
-    }
-
-    my ($colId, $colTitle, $colDesc, $colBranchcode) = C4::RotatingCollections::GetCollectionByTitle('KONVERSIO'.$homebranch);
-    if (not($colId)) {
-        my ( $success, $errorcode, $errormessage ) = CreateCollection( 'KONVERSIO'.$homebranch, "Konversiossa $homebranch:ssa olleet siirtolainat", $homebranch );
-        if ($errormessage) {
-            print $errormessage;
-            return undef;
-        }
-        ($colId, $colTitle, $colDesc, $colBranchcode) = C4::RotatingCollections::GetCollectionByTitle('KONVERSIO'.$homebranch);
-    }
-
-    $rotatingCollections->{ $homebranch } = $colId;
-
-    return $rotatingCollections->{ $homebranch };
 }
 
 sub tryToCaptureMangledUtf8InDB {

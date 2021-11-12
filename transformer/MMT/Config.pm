@@ -107,7 +107,9 @@ sub workers() {
 sub barcodeMinLength() {
   return $config->{barcodeMinLength} // 5;
 }
-
+sub defaultMissingDate() {
+  return '1999-12-31';
+}
 
 sub pl_barcodeFromAcqNumber() {
   return $config->{pl_barcodeFromAcqNumber};

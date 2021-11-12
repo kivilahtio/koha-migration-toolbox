@@ -65,8 +65,8 @@ sub build($self, $o, $b) {
   #$self->set(? => datereceived, $o, $b);
   $self->set(Id_Supplier          => 'booksellerid',       $o, $b);
   $self->set(Price                => 'replacementprice',   $o, $b);
-  #$self->set(? => replacementpricedate, $o, $b);
-  #$self->set(? => datelastseen, $o, $b);
+  $self->setReplacementpricedate($o, $b);
+  $self->setDatelastseen($o, $b);
   #$self->set(? => stack, $o, $b);
   #$self->set(? => coded_location_qualifier, $o, $b);
   #$self->set(? => renewals, $o, $b);
@@ -158,8 +158,12 @@ sub setDateaccessioned($s, $o, $b) {
   $s->{dateaccessioned} = MMT::Validator::parseDate($o->{SaveDate});
 
   unless ($s->{dateaccessioned}) {
+    $s->{dateaccessioned} = MMT::Config::defaultMissingDate();
     $log->warn($s->logId()."' has no dateaccessioned.");
   }
+}
+sub setReplacementpricedate($s, $o, $b) {
+  $s->{replacementpricedate} = $o->{dateaccessioned};
 }
 sub setPrice($s, $o, $b) {
   $s->{price} = ($o->{Price}) ? MMT::Validator::Money::replacementPrice(@_, $o->{Price}) : undef;
@@ -182,12 +186,14 @@ sub setDatelastborrowed($s, $o, $b) {
     $s->{datelastborrowed} = MMT::Validator::parseDate($loans->[-1]->{LoanDate});
   }
   #It is ok for the Item to not have datelastborrowed
+  $s->{datelastborrowed} = $s->{dateaccessioned} unless $s->{datelastborrowed};
 }
 sub setDatelastseen($s, $o, $b) {
   if ($s->{datelastborrowed}) {
     $s->{datelastseen} = $s->{datelastborrowed};
   }
   #It is ok for the Item to not have datelastborrowed
+  $s->{datelastseen} = $s->{dateaccessioned} unless $s->{datelastseen};
 }
 sub setItemcallnumber($s, $o, $b) {
   my $shelves = $b->{Shelf}->get($o->{Id_Shelf});

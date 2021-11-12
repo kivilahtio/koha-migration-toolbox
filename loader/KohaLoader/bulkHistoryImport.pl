@@ -15,13 +15,13 @@ binmode( STDOUT, ":encoding(UTF-8)" );
 
 use Getopt::Long;
 use C4::Items;
-use C4::Members;
-use C4::Biblio;
 
 use Bulk::ConversionTable::BorrowernumberConversionTable;
 use Bulk::ConversionTable::ItemnumberConversionTable;
 
 use Bulk::Util;
+use Bulk::PatronImporter;
+use Bulk::Item;
 
 my $input_file = ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Statistics.migrateme';
 my ($number, $offset, $help) = (0,0,undef);
@@ -141,18 +141,16 @@ my $statisticsStatement =
                 (
                     `datetime`,
                     `branch`,
-                    `proccode`,
                     `value`,
                     `type`,
                     `other`,
-                    `usercode`,
                     `itemnumber`,
                     `itemtype`,
+                    `location`,
                     `borrowernumber`,
-                    `associatedborrower`,
                     `ccode`
                 )
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
+            VALUES (?,?,?,?,?,?,?,?,?,?)"
       );
 
 
@@ -168,12 +166,12 @@ sub migrate_history {
 
     my $itemnumber = $itemnumberConversionTable->fetch(  $history->{itemnumber}  ) if $history->{itemnumber};
     if ($itemnumber) {
-        $item = C4::Items::GetItem($itemnumber);
+        $item = Bulk::Item::getItemIn($itemnumber);
     }
 
     my $borrowernumber = $borrowernumberConversionTable->fetch( $history->{borrowernumber} ) if $history->{borrowernumber};
     if ($borrowernumber) {
-        $borrower = C4::Members::GetMember(borrowernumber => $borrowernumber);
+        $borrower = Bulk::PatronImporter::GetBorrower($borrowernumber);
     }
 
 
@@ -193,14 +191,12 @@ sub migrate_history {
         $history->{datetime},
         $history->{branch},
         undef,
-        0.0000,
         $history->{type},
-        undef,
         ($borrower ? $borrower->{categorycode} : undef),
         $itemnumber,
         ($item ? $item->{itype} : undef),
-        $borrowernumber,
         undef,
+        $borrowernumber,
         undef,
     );
 }
