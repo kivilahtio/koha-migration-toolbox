@@ -16,6 +16,12 @@ test -z "$SOURCE_SYSTEM" && echo "'sourceSystemType' is unknown. Couldn't parse 
 
 
 LOG_DIR="$MMT_HOME/logs"
+DATA_SOURCE_DIR="$MMT_HOME/${SOURCE_SYSTEM}Exports/"
+
+function pii_finder {
+  grep --color="always" -Pnr "\d\d\d\d\d\d[-+A]\d\d\d\w" $DATA_SOURCE_DIR/*          &> $LOG_DIR/00-pii.log
+}
+
 
 if [[ "$SOURCE_SYSTEM" =~ "Voyager" ]]; then
   echo "--extract"
