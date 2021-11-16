@@ -210,6 +210,8 @@ sub setItemcallnumber($s, $o, $b) {
   unless ($s->{itemcallnumber}) {
     $log->warn($s->logId()." has no itemcallnumber! Id_Shelf=".$o->{Id_Shelf});
   }
+
+  $s->dispatchHook(MMT::Config::Item_setItemcallnumber_posthook(), $o, $b);
 }
 sub setIssues($s, $o, $b) {
   my $loans = $b->{LoanByItem}->get($o->{Id}); # The Loan-rows are ordered from oldest to newest
@@ -458,6 +460,21 @@ sub _circIsElectronic($o) {
     unless exists($o->{CircStatus2});
   return 1 if ($o->{CircStatus2} == 5);
   return undef;
+}
+
+#####################################
+#
+# Custom post-processor hooks
+#
+#####################################
+
+sub custom_itemcallnumber_PV_hopea($s, $o, $b) {
+  return unless $s->{itemcallnumber} && $o->{Note};
+
+  my $icn = $s->{itemcallnumber}; # itemcallnumber in Hopea are always ASCII character [a-zA-Z0-9]
+  if ($o->{Note} =~ m/$icn[^a-zA-Z0-9]([a-zA-Z0-9]+)/i) {
+    $s->{itemcallnumber} = uc($s->{itemcallnumber}.'-'.$1);
+  }
 }
 
 return 1;

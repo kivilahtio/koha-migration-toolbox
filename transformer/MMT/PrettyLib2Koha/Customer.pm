@@ -427,13 +427,16 @@ sub setPrivacy($s, $o, $b) {
   # 1 - Default
   # 0 - Gather and keep data about me! 
   if (not(defined($o->{LoanHistory}))) { # PrettyCirc Customers don't have a LoanHistory-column
-    $s->{privacy} = 1;
+    $s->{privacy} = undef;
   }
   elsif ($o->{LoanHistory} eq 'True') {
-    $s->{privacy} = 1;
+    $s->{privacy} = 0;
   }
-  else {
+  elsif ($o->{LoanHistory} eq 'False') {
     $s->{privacy} = 2;
+  }
+  if (not(defined($s->{privacy}))) {
+    $s->{privacy} = MMT::Config::patronDefaultPrivacy();
   }
 }
 sub setLang($s, $o, $b) {

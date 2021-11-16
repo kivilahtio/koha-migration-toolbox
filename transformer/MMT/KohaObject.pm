@@ -188,4 +188,17 @@ sub concatenate($s, $what, $where, $separator=' | ') {
   }
 }
 
+my %loggedHookUsages;
+
+sub dispatchHook($s, $hookSubroutineName, $o, $b) {
+  if ($hookSubroutineName) {
+    unless ($loggedHookUsages{$hookSubroutineName}) {
+      $loggedHookUsages{$hookSubroutineName} = 1;
+      $log->info(ref($s).": Using hook '$hookSubroutineName'");
+    }
+    no strict 'refs';
+    $s->$hookSubroutineName($o, $b);
+  }
+}
+
 return 1;

@@ -55,6 +55,12 @@ patronHomeLibrary:
 # How many expiry years to add for patron account if expiry date is not defined in Voyager
 patronAddExpiryYears: 0
 
+# Are patron data anonymized by default in Koha?
+# 2 - never save privacy information. Koha tries to save as little info as possible
+# 1 - Default
+# 0 - Gather and keep data about me!
+patronDefaultPrivacy: 1
+
 # Which strategy to use to validate phone numbers
 # See MMT::Validator::Phone for available strategies
 phoneNumberValidationStrategy: HAMK
@@ -115,3 +121,12 @@ pl_shelf_filter: "(?:nu|es|ki)"
 # Name of the script in directory $MMT_HOME/secret used to import the transformed data into Koha
 # See the importer-dir for example implementations.
 importPipelineScript: 'transformerToKoha.sh'
+
+##
+## Migration chain processing hooks
+##
+
+# After processing Koha.Item.itemcallnumber-field content, run this custom code subroutine within the MMT::$sourceSystemType::Item -package
+# eg. custom_itemcallnumber_PV_hopea
+# set to 0 to disable
+Item_setItemcallnumber_posthook: 0

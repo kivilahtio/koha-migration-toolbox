@@ -80,6 +80,9 @@ sub organizationISILCode() {
 sub patronAddExpiryYears() {
   return $config->{patronAddExpiryYears};
 }
+sub patronDefaultPrivacy() {
+  return $config->{patronDefaultPrivacy} // 1;
+}
 sub patronHomeLibrary() {
   return $config->{patronHomeLibrary};
 }
@@ -121,6 +124,9 @@ sub pl_shelf_filter() {
   return $config->{pl_shelf_filter};
 }
 
+sub Item_setItemcallnumber_posthook() {
+  return $config->{Item_setItemcallnumber_posthook};
+}
 
 #Check that the environment is properly configured
 my $errorDescr = "This must point to the home directory created during MMT-Voyager installation, where all the configurations reside.";
