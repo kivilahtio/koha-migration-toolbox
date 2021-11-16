@@ -277,6 +277,7 @@ sub addBorrowerAttribute($s, $patron, $attribute, $value, $isRepeatable) {
 }
 
 sub addDefaultAdmin($s, $defaultAdmin) {
+  print("Adding default admin");
   my ($username, $password) = split(':', $defaultAdmin);
 
   my $branchcode = Koha::Libraries->search->next->branchcode;
@@ -293,6 +294,30 @@ sub addDefaultAdmin($s, $defaultAdmin) {
   })->store;
 
   $patron->set_password( { password => $password } );
+
+  addAnonymizedPatron();
+}
+
+sub addAnonymizedPatron {
+  print("Adding anonymized Patron");
+
+  my $branchcode = Koha::Libraries->search->next->branchcode;
+
+  my $categorycode = Koha::Patron::Categories->search->next->categorycode;
+
+  my $patron = Koha::Patron->new( {
+    surname => 'Anonymized',
+    userid => 'anonymized',
+    cardnumber => 'anonymized',
+    branchcode => $branchcode,
+    categorycode => $categorycode,
+    flags => 0,
+    dateexpiry => '2032-12-31',
+  })->store;
+
+  $patron->set_password( { password => '!' } ); # disable login
+
+  C4::Context->set_preference('AnonymousPatron', $patron->borrowernumber);
 }
 
 sub fineImport($s, $borrowernumber, $desc, $accounttype, $amount, $date) {
