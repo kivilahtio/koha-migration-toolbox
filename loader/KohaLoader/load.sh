@@ -14,6 +14,7 @@ PRESERVE_IDS=""
 DEFAULT_ADMIN=""
 KOHA_INSTANCE_NAME=$(koha-list | head -n 1)
 KOHA_USER="$KOHA_INSTANCE_NAME-koha"
+LOADER_DIR=$(dirname $0)
 
 ## getopt --long
 OPTS=`getopt -o o::k::d::w::cpa:: --long operation::,koha-instance::,data-source::,working-dir::,confirm,preserve-ids,default-admin:: --name "$(basename "$0")" -- "$@"`
@@ -118,6 +119,7 @@ export KOHA_USE_ELASTIC=$KOHA_USE_ELASTIC
 export KOHA_DB=$KOHA_DB
 export KOHA_DB_USER=$KOHA_DB_USER
 export KOHA_DB_PASS=$KOHA_DB_PASS
+export KOHA_INSTANCE_NAME=$KOHA_INSTANCE_NAME
 " > $WORKING_DIR/mmt-env
 . $WORKING_DIR/mmt-env # This way the used environment can be reused without rerunning this script => better dev and debugging
 
@@ -131,52 +133,7 @@ function checkUser {
 }
 
 function migrateBulkScripts {
-    export PERL5LIB="$PERL5LIB:." #New Perl versions no longer implicitly include modules from .
-
-    #Migrate MARC and Items
-    ./bulkBibImport.pl --file $DATA_SOURCE_DIR/biblios.marcxml \
-        --bnConversionTable $WORKING_DIR/biblionumberConversionTable \
-        &> $WORKING_DIR/bulkBibImport.log
-
-    ./bulkMFHDImport.pl &> $WORKING_DIR/bulkMFHDImport.log
-
-    ./bulkItemImport.pl &> $WORKING_DIR/bulkItemImport.log
-
-    #./bulkItemImport.pl --file $DATA_SOURCE_DIR/Hankinta.migrateme --bnConversionTable $WORKING_DIR/biblionumberConversionTable &> $WORKING_DIR/bulkAcquisitionImport.log
-
-    ./bulkPatronImport.pl &> $WORKING_DIR/bulkPatronImport.log
-    test -n $DEFAULT_ADMIN && ./bulkPatronImport.pl --defaultAdmin "$DEFAULT_ADMIN" &> $WORKING_DIR/bulkPatronImportDefaultAdmin.log
-    ./bulkPatronImport.pl --messagingPreferencesOnly &> $WORKING_DIR/bulkPatronImportMessagingDefaults.log & #This is forked on the background
-    ./bulkPatronImport.pl --uploadSSNKeysOnly &> $WORKING_DIR/bulkPatronImportSSNKeys.log & #This is forked on the background
-
-    ./bulkHistoryImport.pl &> $WORKING_DIR/bulkHistoryImport.log # Histories' issue_id should be less then active checkouts.
-
-    ./bulkCheckoutImport.pl &> $WORKING_DIR/bulkCheckoutImport.log
-
-    ./bulkFinesImport.pl &> $WORKING_DIR/bulkFinesImport.log
-
-    ./bulkHoldsImport.pl --file $DATA_SOURCE_DIR/Reserve.migrateme \
-        --inConversionTable $WORKING_DIR/itemnumberConversionTable \
-        --bornumConversionTable $WORKING_DIR/borrowernumberConversionTable \
-        --bnConversionTable $WORKING_DIR/biblionumberConversionTable \
-        &> $WORKING_DIR/bulkHoldsImport.log
-
-    ./bulkBooksellerImport.pl --file $DATA_SOURCE_DIR/Bookseller.migrateme \
-        &> $WORKING_DIR/bulkBooksellerImport.log
-
-    ./bulkSubscriptionImport.pl \
-        --subscriptionFile $DATA_SOURCE_DIR/Subscription.migrateme \
-        --serialFile $DATA_SOURCE_DIR/Serial.migrateme \
-        --routinglistFile $DATA_SOURCE_DIR/Subscriptionroutinglist.migrateme \
-        --suConversionTable $WORKING_DIR/subscriptionidConversionTable \
-        --bnConversionTable $WORKING_DIR/biblionumberConversionTable \
-        --inConversionTable $WORKING_DIR/itemnumberConversionTable \
-        &> $WORKING_DIR/bulkSubscriptionImport.log
-
-    ./bulkBranchtransfersImport.pl -file $DATA_SOURCE_DIR/Branchtransfer.migrateme \
-        --inConversionTable $WORKING_DIR/itemnumberConversionTable \
-        &> $WORKING_DIR/bulkBranchtransfersImport.log
-
+  koha-shell $KOHA_INSTANCE_NAME -c "bash -x $LOADER_DIR/load_migrate.sh"
 }
 
 function cleanPastMigrationWorkspace {
@@ -194,18 +151,18 @@ function flushDataFromDB {
 function fullReindex {
     FLUSH="$1"
 
-    checkUser "$KOHA_USER"
+    checkUser "root"
 
     if [ -n "$KOHA_USE_ELASTIC" ]; then
         if [ -n "$FLUSH" ]; then
             FLUSH="--delete"
         fi
-        koha-elasticsearch $FLUSH --rebuild --verbose KOHA_INSTANCE_NAME &> $WORKING_DIR/rebuild_search_index.log
+        koha-elasticsearch $FLUSH --rebuild --verbose $KOHA_INSTANCE_NAME &> $WORKING_DIR/rebuild_search_index.log
     else
         if [ -n "$FLUSH" ]; then
             FLUSH="--full"
         fi
-        koha-rebuild-zebra --verbose $FLUSH KOHA_INSTANCE_NAME &> $WORKING_DIR/rebuild_search_index.log
+        koha-rebuild-zebra --verbose $FLUSH $KOHA_INSTANCE_NAME &> $WORKING_DIR/rebuild_search_index.log
     fi
 }
 
@@ -245,7 +202,7 @@ then
 elif [ "$OP" == "migrate" ]
 then
     ##Run this as koha to not break permissions
-    checkUser "$KOHA_USER"
+    checkUser "root"
 
     if [ -z $CONFIRM ]; then
         echo "Are you OK with having the Koha database and search index destroyed, and migrating a new batch? OK to accept, anything else to abort."
@@ -275,7 +232,7 @@ then
 elif [ "$OP" == "merge" ]
 then
     ##Run this as koha to not break permissions
-    checkUser "$KOHA_USER"
+    checkUser "root"
 
     if [ -z $CONFIRM ]; then
         echo "Are you OK with having two databases merged? You should have a Zebra index to merge against. OK to accept, anything else to abort."

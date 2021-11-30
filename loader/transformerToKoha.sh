@@ -59,7 +59,7 @@ if [ -n "$KOHA_HOST" ]; then
   test $? != 0 && echo "Creating load-phase working dir remotely failed!" && exit 13
 
   echo "Start loading"
-  ssh -t $KOHA_HOST "cd $KOHA_LOADER_DIR && su -c '$KOHA_LOADER_CMD' $KOHA_USER"
+  ssh -t $KOHA_HOST "cd $KOHA_LOADER_DIR && $KOHA_LOADER_CMD"
   test $? != 0 && echo "Loading Koha data failed!" && exit 14
 elif [ -z "$KOHA_HOST" ]; then
   mkdir -p $KOHA_LOAD_WORKING_DIR && chown $KOHA_USER:$KOHA_USER $KOHA_LOAD_WORKING_DIR
@@ -69,7 +69,7 @@ elif [ -z "$KOHA_HOST" ]; then
   test ! -e $KOHA_DATA_SOURCE_DIR && (ln -s $MMT_HOME/KohaImports $KOHA_DATA_SOURCE_DIR || (echo "Linking Koha data failed!" && exit 10))
 
   echo "Start loading"
-  cd $MMT_PROGRAM_DIR/loader/KohaLoader && koha-shell -c "$KOHA_LOADER_CMD" $KOHA_INSTANCE_NAME
+  cd $MMT_PROGRAM_DIR/loader/KohaLoader && $KOHA_LOADER_CMD
   test $? != 0 && echo "Loading Koha data failed!" && exit 14
 fi
 
