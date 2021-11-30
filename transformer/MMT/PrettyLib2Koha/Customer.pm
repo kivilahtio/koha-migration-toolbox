@@ -555,10 +555,10 @@ sub _extractZipcode($s, $o, $b, $codeField) {
 sub _extractCity($s, $o, $b, $cityField) {
   if ($o->{$cityField} =~ m/
       (?:\D|\b)  #City might have bad delimiters, so extract it only if it is not a part of a bigger word
-      (\w{3,})   #This is the city, I presume
+      (\p{L}{3,}) #This is the city, I presume
       (?:\D|\b)  #City might be typoed, so extract it only if it is not a part of a bigger word
       /x) {
-    return $2;
+    return $1;
   }
   else {
     $log->warn($s->logId()." - 'city' cannot be extracted from '$cityField'-field '".$o->{$cityField}."'");
