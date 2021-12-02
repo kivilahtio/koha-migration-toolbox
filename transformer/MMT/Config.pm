@@ -114,6 +114,9 @@ sub defaultMissingDate() {
   return '1999-12-31';
 }
 
+sub pl_biblio_seriesMARCCompatibility() {
+  return $config->{pl_biblio_seriesMARCCompatibility} // undef;
+}
 sub pl_barcodeFromAcqNumber() {
   return $config->{pl_barcodeFromAcqNumber};
 }

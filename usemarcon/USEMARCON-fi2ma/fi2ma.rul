@@ -663,8 +663,7 @@ F30             | 300             | If (RegFind('[\\)\\.]\$') < 0) Then S + '.' 
 
 410I1           | <G90I1          | S
 410I2           | <G90I2          | S
-410             | <G90            | S
-#410             | <G90            | S; RegReplace('$[xyz].*', '') # For some reason this also prevents 410$v from getting migrated.
+410             | <G90            | S; RegReplace('$[xyz].*', '')
 G90I1           | 490(new)I1      | '1'
 G90I2           | 490(newest)I2   | ' '
 G90             | 490(newest)     | S;
@@ -779,7 +778,7 @@ I40             | 830(newest)     | S;
                                     Replace ('$v' By ' ;$v');
                                     RegReplaceTable ('pieni-isoksi-pisteen-jalkeen.tbl', 'g')
 
-490             | 490               | S;
+490             | 490               | S; # 490 passthrough. PrettyLib doesnt really define 490, so we can safely use this as a Series-passthrough window, when we only want 490, and no 830 810 in Koha.
 
 500$a           | <H00$a          | S; Replace('. - ' By '$a')
 H00$a           | <I00$a          | If ((RegFind('(\c3\a4|\c3\84)\c3\a4nitetty|[Kk]onsertti\c3\a4\c3\a4nitys|[Ll]ive\c3\a4\c3\a4nitys|[Rr]adiol\c3\a4hetys|[Tt]allennettu') < 0) And (RegFind('\\b[Tt]eksti: |\\b[Ss]anat: |\\b[Kk]ieli: |\\b[Ee]sityskieli: ') < 0 Or (RegFind('[Kk]alevala|[Kk]anteletar|[Rr]aamattu') >= 0))) Then S;

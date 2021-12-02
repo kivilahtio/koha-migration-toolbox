@@ -453,7 +453,7 @@ sub linkPublishers($s, $o, $builder) {
 
 =head2 linkSeries
 
-PrettyLib.SeriesCross -> Series -> Field 490$ax
+PrettyLib.SeriesCross -> Series -> Field 410 && 440 && 490
 
 =cut
 
@@ -461,6 +461,16 @@ sub linkSeries($s, $o, $builder) {
   if (my $seriesCrosses = $builder->{SeriesCross}->get($o->{Id})) {
     $log->trace($s->logId." - Found '".scalar(@$seriesCrosses)."' series.") if $log->is_trace();
     @$seriesCrosses = sort {$a->{Pos} <=> $b->{Pos}} @$seriesCrosses; # PrettyLib.SeriesCross.Pos seems to denote the ordering of these subject-words.
+
+    # For some reason PrettyLib has 410 with only $xyv, and then in addition Series + SeriesCross. Clean up the initial 410$vxy and merge with proper Series.
+    my $v;
+    my $f410 = $s->{record}->getUnrepeatableField('410');
+    if ($f410) {
+      $v = $f410->getUnrepeatableSubfield('v');
+      $v = $v->content() if $v;
+      $s->{record}->deleteField($f410);
+    }
+
     for my $seriesCross (@$seriesCrosses) {
       if (my $seriess = $builder->{Series}->get($seriesCross->{Id_Series})) {
         for my $series (@$seriess) {
@@ -473,42 +483,70 @@ sub linkSeries($s, $o, $builder) {
           $series->{bTitle} = _ss($series->{bTitle});
           $series->{ISSN} = _ss($series->{ISSN});
           $series->{Name1} = _ss($series->{Name1});
+          $series->{Name2} = _ss($series->{Name2});
           $series->{SeriesInfo} = _ss($series->{SeriesInfo});
           $series->{SubSeries} = _ss($series->{SubSeries});
           $series->{SubTitle} = _ss($series->{SubTitle});
           $series->{Title} = _ss($series->{Title});
           $series->{URL} = _ss($series->{URL});
+          $series->{f440d} = _ss($series->{f440d});
+          $series->{f440n} = _ss($series->{f440n});
 
           # Create the 8xx series added entry Field, since PrettyLib has the extra information for that.
           my $marcField;
           if ($series->{bCompany}) {
-            $marcField = 810;
+            $marcField = 410;
           }
-          elsif ($series->{bTitle}) {
+          if ($series->{bTitle}) {
             $log->warn($s->logId." - Found a Series entry with both bTitle and bCompany? '".$series->{SeriesInfo}." : ".$series->{ISSN}."'") if $marcField;
-            $marcField = 830;
+            $marcField = 440;
           }
-          else {
+          unless ($marcField) {
             $log->warn($s->logId." - Found a Series entry with no bTitle and bCompany? '".$series->{SeriesInfo}." : ".$series->{ISSN}."'");
-            $marcField = 830;
+            $marcField = 440;
           }
 
-          my $field8xx = MMT::MARC::Field->new($marcField, '#', '0');
-          if ($series->{Name1}) {
-            $field8xx->addSubfield('a', $series->{Name1});
-            $field8xx->addSubfield('t', $series->{Title}) if $series->{Title};
-          } else {
-            $field8xx->addSubfield('a', $series->{Title}) if $series->{Title};
+          if (not(MMT::Config::pl_biblio_seriesMARCCompatibility()) || MMT::Config::pl_biblio_seriesMARCCompatibility() eq '4XX') {
+            my $field4xx = $s->{record}->getUnrepeatableField($marcField);
+            $field4xx = MMT::MARC::Field->new($marcField, '2', ' ') unless ($field4xx);
+            if ($field4xx eq '410') {
+              $field4xx->addSubfield('a', $series->{Name1} || $series->{Title}) if ($series->{Name1} || $series->{Title});
+              $field4xx->addSubfield('c', $series->{Name2}) if $series->{Name2};
+              $field4xx->addSubfield('g', $series->{SubSeries}) if $series->{SubSeries};
+              $field4xx->addSubfield('h', $series->{SubTitle}) if $series->{SubTitle};
+              $field4xx->addSubfield('w', $series->{ISSN}) if $series->{ISSN};
+            } else {
+              $field4xx->addSubfield('a', $series->{Title} || $series->{SeriesInfo}) if $series->{Title} || $series->{SeriesInfo};
+              $field4xx->addSubfield('b', $series->{Name1} || $series->{Name2}) if ($series->{Name1} || $series->{Name2});
+              $field4xx->addSubfield('d', $series->{f440d}) if $series->{f440d};
+              $field4xx->addSubfield('n', $series->{f440n}) if $series->{f440n};
+              $field4xx->addSubfield('g', $series->{SubSeries}) if $series->{SubSeries};
+              $field4xx->addSubfield('h', $series->{SubTitle}) if $series->{SubTitle};
+              $field4xx->addSubfield('w', $series->{ISSN}) if $series->{ISSN};
+            }
+            if ($v) {
+              $field4xx->addSubfield('v', $v);
+              $v = undef;
+            }
+            $s->{record}->addField($field4xx) unless ($s->{record}->getUnrepeatableField($marcField));
           }
-          $field8xx->addSubfield('b', $series->{SubTitle}) if $series->{SubTitle};
-          $field8xx->addSubfield('b', $series->{SubSeries}) if $series->{SubSeries};
-          $field8xx->addSubfield('x', $series->{ISSN}) if $series->{ISSN};
-          $s->{record}->addField($field8xx);
 
-          my $field490 = MMT::MARC::Field->new('490', '1', '#');
-          $field490->addSubfield('a', $series->{SeriesInfo}) if $series->{SeriesInfo};
-          $field490->addSubfield('x', $series->{ISSN}) if $series->{ISSN};
-          $s->{record}->addField($field490);
+          if (not(MMT::Config::pl_biblio_seriesMARCCompatibility()) || MMT::Config::pl_biblio_seriesMARCCompatibility() eq '490') {
+            my $field490 = $s->{record}->getUnrepeatableField('490');
+            $field490 = MMT::MARC::Field->new('490', ' ', ' ') unless ($field490);
+            $field490->addSubfield('a', $series->{Title} || $series->{SeriesInfo}) if $series->{Title} || $series->{SeriesInfo};
+            $field490->addSubfield('b', $series->{Name1} || $series->{Name2}) if ($series->{Name1} || $series->{Name2});
+            $field490->addSubfield('d', $series->{f440d}) if $series->{f440d};
+            $field490->addSubfield('n', $series->{f440n}) if $series->{f440n};
+            $field490->addSubfield('g', $series->{SubSeries}) if $series->{SubSeries};
+            $field490->addSubfield('h', $series->{SubTitle}) if $series->{SubTitle};
+            $field490->addSubfield('w', $series->{ISSN}) if $series->{ISSN};
+            if ($v) {
+              $field490->addSubfield('v', $v);
+              $v = undef;
+            }
+            $s->{record}->addField($field490) unless ($s->{record}->getUnrepeatableField('490'));
+          }
         }
       }
     }
@@ -869,7 +907,7 @@ sub _build008($s, $flags) {
   $flags->{SaveDate} =~ /\d\d(\d\d)-(\d\d)-(\d\d)/;
   $flags->{dateEnteredOnFile} = ($1 ? $1 : 00).($2 ? $2 : 00).($3 ? $3 : 00);
   return
-#Character Positions 	
+#Character Positions 
 #00-05 - Date entered on file
     $flags->{dateEnteredOnFile}.
 #06 - Type of date/Publication status
