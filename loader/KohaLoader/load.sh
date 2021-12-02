@@ -133,7 +133,7 @@ function checkUser {
 }
 
 function migrateBulkScripts {
-  koha-shell $KOHA_INSTANCE_NAME -c "bash -x $LOADER_DIR/load_migrate.sh"
+  koha-shell $KOHA_INSTANCE_NAME -c "bash -x $LOADER_DIR/load_migrate.sh '$WORKING_DIR'"
 }
 
 function cleanPastMigrationWorkspace {
