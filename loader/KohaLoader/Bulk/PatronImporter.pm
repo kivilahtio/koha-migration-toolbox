@@ -316,6 +316,7 @@ sub addAnonymizedPatron {
   })->store;
 
   $patron->set_password( { password => '!' } ); # disable login
+  $patron = Koha::Patrons->find({cardnumber => 'anonymized'}); # get new borrowernumber
 
   C4::Context->set_preference('AnonymousPatron', $patron->borrowernumber);
 }
