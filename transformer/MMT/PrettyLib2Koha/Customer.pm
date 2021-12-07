@@ -440,7 +440,7 @@ sub setPrivacy($s, $o, $b) {
   }
 }
 sub setLang($s, $o, $b) {
-  $s->{lang} = 'fi';
+  $s->{lang} = 'fi-FI';
 }
 sub setStatuses($s, $o, $b) {
   if ($o->{BlockDate}) {
