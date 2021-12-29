@@ -265,6 +265,21 @@ sub linkAuthors($s, $o, $builder) {
             next;
           }
 
+          my @subfields;
+          my $af = MMT::Config::Biblio_authorFilter();
+          if ($af) {
+            my %evalRv;
+            my $evalOk;
+            eval "if (\$author->{Author} =~ $af) { \%evalRv = \%+; \$evalOk = 1 } else { \$evalOk = 0 }"; # $rr is for ex. s/(?<e>\(suom\.\))//
+            if ($@) { $log->error($s->logId." - AuthorFilter '$af' error: '$@'"); }
+            elsif ($evalOk) {
+              my @subfieldCaptureGroups = keys(%evalRv);
+              for my $sfCode (@subfieldCaptureGroups) {
+                push(@subfields, MMT::MARC::Subfield->new($sfCode, $evalRv{$sfCode}));
+              }
+            }
+          }
+
           my ($fieldCode, $i1, $i2);
           if    ($authorCross->{Id_Field} == 23) {
             $fieldCode = 100;

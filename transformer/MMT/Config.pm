@@ -131,6 +131,10 @@ sub Item_setItemcallnumber_posthook() {
   return $config->{Item_setItemcallnumber_posthook};
 }
 
+sub Biblio_authorFilter() {
+  return $config->{Biblio_authorFilter};
+}
+
 #Check that the environment is properly configured
 my $errorDescr = "This must point to the home directory created during MMT-Voyager installation, where all the configurations reside.";
 die "\$ENV{MMT_HOME} '$ENV{MMT_HOME}' is undefined! $errorDescr"

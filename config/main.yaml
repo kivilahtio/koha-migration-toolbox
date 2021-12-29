@@ -141,3 +141,7 @@ importPipelineScript: 'transformerToKoha.sh'
 # eg. custom_itemcallnumber_PV_hopea
 # set to 0 to disable
 Item_setItemcallnumber_posthook: 0
+
+# Author-table entries are filtered with this Perl regexp. MARC subfields are extracted from the text. All named capture groups must map to MARC subfields.
+# eg.    s/(?<e>\(toim\.\))//    - All Author-fields that contain (toim.), have the matched text removed and put into subfield $e
+Biblio_authorFilter: 0
