@@ -86,7 +86,8 @@ Used when the Koha object doesn't have a barcode/cardnumber
 =cut
 
 our $pattern;
-sub createBarcode($s) {
+sub createBarcode($s, $seed) {
+  $seed //= $s->_id();
   unless ($pattern) {
     my $pat = MMT::Config::emptyBarcodePattern();
     unless ($pat =~ /^([^0]*)(0+)([^0]*)/) {
@@ -99,10 +100,10 @@ sub createBarcode($s) {
     };
   }
 
-  my $zeroesNeeded = $pattern->{numberLength} - length($s->_id());
+  my $zeroesNeeded = $pattern->{numberLength} - length($seed);
   return $pattern->{prefix}.
          substr('00000000000000000000', 0, $zeroesNeeded).
-         $s->_id().
+         $seed.
          $pattern->{suffix};
 }
 

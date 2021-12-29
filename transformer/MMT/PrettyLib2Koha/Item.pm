@@ -132,7 +132,12 @@ sub setBarcode($s, $o, $b) {
                                            'Unspecified error';
   }
   elsif (length($s->{barcode}) < MMT::Config::barcodeMinLength()) {
-    $error = 'Barcode too short';
+    if (MMT::Config::emptyBarcodePolicy() eq 'CREATE') {
+        $s->{barcode} = $s->createBarcode($s->{barcode});
+        $log->warn($s->logId()." has too short barcode='$bc'. Overlayed with '".$s->{barcode}."'");
+    } else {
+        $error = 'Barcode too short';
+    }
   }
   elsif (length($s->{barcode}) > 20) { #koha.items.barcode max length is 20 characters
     $error = 'Barcode too long. Max length 20 characters';
@@ -148,7 +153,7 @@ sub setBarcode($s, $o, $b) {
       #Ignore
     }
     elsif (MMT::Config::emptyBarcodePolicy() eq 'CREATE') {
-      my $newBc = $s->createBarcode();
+      my $newBc = $s->createBarcode(undef);
       $log->info("$msg Created barcode '$newBc'.");
       $s->{barcode} = $newBc;
     }
@@ -469,12 +474,15 @@ sub _circIsElectronic($o) {
 #####################################
 
 sub custom_itemcallnumber_PV_hopea($s, $o, $b) {
-  return unless $s->{itemcallnumber} && $o->{Note};
+  return unless $s->{itemcallnumber} && $o->{f950d_Item};
+  $s->{itemcallnumber} = uc($s->{itemcallnumber}.'-'.$o->{f950d_Item});
 
-  my $icn = $s->{itemcallnumber}; # itemcallnumber in Hopea are always ASCII character [a-zA-Z0-9]
-  if ($o->{Note} =~ m/$icn[^a-zA-Z0-9]([a-zA-Z0-9]+)/i) {
-    $s->{itemcallnumber} = uc($s->{itemcallnumber}.'-'.$1);
-  }
+#  return unless $s->{itemcallnumber} && $o->{Note};
+
+#  my $icn = $s->{itemcallnumber}; # itemcallnumber in Hopea are always ASCII character [a-zA-Z0-9]
+#  if ($o->{Note} =~ m/$icn[^a-zA-Z0-9]([a-zA-Z0-9]+)/i) {
+#    $s->{itemcallnumber} = uc($s->{itemcallnumber}.'-'.$1);
+#  }
 }
 
 return 1;
