@@ -177,7 +177,7 @@ sub forceControlFields {
 
     # Set the publication date to 008
     my $pd = $r->publicationDate();
-    $f008 = substr($f008,7,4,substr($pd,0,4)) if ($pd);
+    substr($f008,7,4) = substr($pd,0,4) if ($pd);
 
     if ($leader) {
         $leader = characterReplace($leader, 7, $componentPart) if ($r->isComponentPart());

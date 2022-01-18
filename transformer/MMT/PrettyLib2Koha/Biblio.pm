@@ -74,6 +74,7 @@ sub build($s, $o, $b) {
   $s->{record}->leader( $s->_buildLeader(\%leader) );
 
   $s->{record}->addUnrepeatableSubfield('008', '0', $s->_build008($o));
+  $s->{record}->publicationDate(getPublicationYear($o));
 
   $s->mergeLinks($o, $b);
 
@@ -720,6 +721,28 @@ sub getItemType($s, $o, $b) {
     return 'EJ' if (ref($s) eq 'MMT::PrettyCirc2Koha::Item' && MMT::PrettyLib2Koha::Item::_circIsElectronic($item));
   }
   return $b->{ItemTypes}->translate($s, $item, $b, $titleType); # Try to get the itemtype from the biblio or the item
+}
+
+=head2 getPublicationYear
+
+@STATIC
+
+  Attempts to parse Year1 or 260$c
+
+=cut
+
+sub getPublicationYear($o) {
+    if ($o->{Year1} =~ /^\d\d\d\d$/) {
+      return $o->{Year1};
+    }
+    my $f260c = $o->{F260c};
+       $f260c =~ s/[^0-9]{4}//;
+
+    if ($f260c =~ /^\d\d\d\d$/) {
+      return $f260c;
+    }
+
+    return;
 }
 
 =head2 dropPassiveCirc
