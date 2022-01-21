@@ -345,13 +345,21 @@ sub addRecordFast($s, $record, $recordXmlPtr, $legacyBiblionumber) {
     return ("insert", "ERROR2", $newBiblionumber);
   }
 
-
   die "Biblionumber '$newBiblionumber' and biblioitemnumber '$newBiblioitemnumber' do not match! This causes critical issues in Koha!\n" if $newBiblionumber != $newBiblioitemnumber;
+
+  C4::Biblio::_koha_marc_update_bib_ids( $record, $frameworkcode, $newBiblionumber, $newBiblioitemnumber );
+
+  # update MARC subfield that stores biblioitems.cn_sort
+  C4::Biblio::_koha_marc_update_biblioitem_cn_sort( $record, $olddata, $frameworkcode );
+
+  if (C4::Context->preference('BiblioAddsAuthorities')) {
+    C4::Biblio::BiblioAutoLink( $record, $frameworkcode );
+  }
 
   unless ($s->{sth_insertBiblioMetadata}) {
     $s->{sth_insertBiblioMetadata} = $dbh->prepare("INSERT INTO biblio_metadata (biblionumber, format, biblio_metadata.schema, metadata) VALUES (?, ?, ?, ?)");
   }
-  $s->{sth_insertBiblioMetadata}->execute($newBiblionumber, 'marcxml', 'MARC21', $recordXmlPtr ? $$recordXmlPtr : $record->as_xml());
+  $s->{sth_insertBiblioMetadata}->execute($newBiblionumber, 'marcxml', 'MARC21', $record->as_xml());
   if ($s->{sth_insertBiblioMetadata}->errstr()) {
     ERROR "Error3=".$s->{sth_insertBiblioMetadata}->errstr();
     return ("insert", "ERROR3", $newBiblionumber);
