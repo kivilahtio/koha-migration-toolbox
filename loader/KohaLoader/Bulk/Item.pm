@@ -34,7 +34,7 @@ sub getItemIn {
 sub set_cn_sort {
   my ($item) = @_;
   if ($item->{itemcallnumber} or $item->{cn_source}) {
-    my $cn_sort = GetClassSort($item->{cn_source}, $item->{itemcallnumber}, "");
+    my $cn_sort = C4::ClassSource::GetClassSort($item->{cn_source}, $item->{itemcallnumber}, "");
     $item->{cn_sort} = $cn_sort;
   }
 }
