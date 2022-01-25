@@ -135,6 +135,33 @@ sub Biblio_authorFilter() {
   return $config->{Biblio_authorFilter};
 }
 
+sub Biblio_ISNFilter {
+  my $isn = shift;
+
+  return unless $isn;
+  return Biblio_ISBNFilter() if $isn eq uc('ISBN');
+  return Biblio_ISSNFilter() if $isn eq uc('ISSN');
+  return Biblio_ISRCFilter() if $isn eq uc('ISRC');
+  return Biblio_ISMNFilter() if $isn eq uc('ISMN');
+  return Biblio_ISRNFilter() if $isn eq uc('ISRN');
+}
+sub Biblio_ISBNFilter() {
+  return $config->{Biblio_ISBNFilter};
+}
+sub Biblio_ISSNFilter() {
+  return $config->{Biblio_ISSNFilter};
+}
+sub Biblio_ISRCFilter() {
+  return $config->{Biblio_ISRCFilter};
+}
+sub Biblio_ISMNFilter() {
+  return $config->{Biblio_ISMNFilter};
+}
+sub Biblio_ISRNFilter() {
+  return $config->{Biblio_ISRNFilter};
+}
+
+
 #Check that the environment is properly configured
 my $errorDescr = "This must point to the home directory created during MMT-Voyager installation, where all the configurations reside.";
 die "\$ENV{MMT_HOME} '$ENV{MMT_HOME}' is undefined! $errorDescr"

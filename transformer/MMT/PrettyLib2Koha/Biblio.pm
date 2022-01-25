@@ -187,6 +187,7 @@ sub _parseDatafield($s, $o, $b, $code, $data) {
                                           \@subfields);
     $s->{record}->addField($field);
     normalizeLanguageCodes($field) if $code eq '041';
+    normalizeInternationalStandardNumbers($s, $field, $code) if $code eq '020' or $code eq '021' or $code eq '022' or $code eq '024' or $code eq '025' or $code eq '027';
     return $field;
   }
   else {
@@ -198,6 +199,47 @@ sub _parseDatafield($s, $o, $b, $code, $data) {
 sub normalizeLanguageCodes($field) {
   my $sfs = $field->getAllSubfields();
   $_->content( lc($_->content()) ) for @$sfs;
+}
+
+sub normalizeInternationalStandardNumbers($s, $field, $code) {
+  my $isn;
+  $isn = 'ISBN' if $code eq '021';
+  $isn = 'ISSN' if $code eq '022';
+  $isn = 'ISRC' if $code eq '024';
+  $isn = 'ISMN' if $code eq '025';
+  $isn = 'ISRN' if $code eq '027';
+
+  my $isn_re = MMT::Config::Biblio_ISNFilter($isn);
+
+  return unless $isn_re;
+
+  my $isnsubfields = $field->getAllSubfields();
+  for my $isnSubfield (@$isnsubfields) {
+    if ($isnSubfield->content() =~ m/($isn_re)/) {
+      my $normalized_isn = $1;
+      if ($isnSubfield->code() eq 'a') {
+        $isnSubfield->content($normalized_isn);
+      }
+      elsif ($isnSubfield->code() eq 'c') {
+        if ($field->getUnrepeatableSubfield('a')) {
+          # if subfield a exists, create new field
+          my $new_field = MMT::MARC::Field->new(_ss($code));
+          $new_field->addSubfield('a', $isnSubfield->content($normalized_isn));
+          $s->{record}->addField($new_field);
+          $field->deleteSubfield($isnSubfield);
+          $log->debug($s->logId()." - Created new field $code and removed subfield c from old field");
+        } else {
+          # otherwise move subfield c contents to subfield a
+          $isnSubfield->code('a');
+          $isnSubfield->content($normalized_isn);
+          $log->debug($s->logId()." - Relocated $isn field '$code' from subfield c to subfield a");
+        }
+      }
+    }
+    else {
+      $log->warn($s->logId()." - Unable to normalize $isn field '$code' value '" . $isnSubfield->content() . "'");
+    }
+  }
 }
 
 =head2 linkToMother

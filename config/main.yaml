@@ -146,3 +146,10 @@ Item_setItemcallnumber_posthook: 0
 # eg.    s/(?<e>\(toim\.\))//    - All Author-fields that contain (toim.), have the matched text removed and put into subfield $e
 # eg.    s/(?<relatorterm)\(toim.\)//   - Trigger special relator-term handling to populate 700$x and 100$e from regex matches.
 Biblio_authorFilter: 0
+
+# International Standard Numbers (ISBN, ISSN, ISRC, ISMN, ISRN) are filtered with this Perl regexp.
+Biblio_ISBNFilter: (?=[0-9X]{10}|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13}|97[89][0-9]{10}|(?=(?:[0-9]+[- ]){4})[- 0-9]{17})(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]
+Biblio_ISSNFilter: [0-9]{4}-[0-9]{3}[0-9xX]
+Biblio_ISRCFilter: [A-Z]{2}[- ]?\w{3}[- ]?\d{2}[- ]?\d{5}
+Biblio_ISMNFilter: (?:979-?0-?|M-?)(?:\d{9}|(?=[\d-]{11}$)\d+-\d+-\d)
+Biblio_ISRNFilter: ^.{1,36}
