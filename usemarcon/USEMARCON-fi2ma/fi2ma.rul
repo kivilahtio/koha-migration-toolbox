@@ -41,7 +41,7 @@ versio 8.11.2012 - Kansalliskirjasto
 021I1             | <P20I1          | ' '
 021I2             | <P20I2          | ' '
 021$a             | <P20$a          | S
-021$c             | <P20$a          | +' (' +S +')'
+021$c             | <P20$q          | S
 021$d             | <P20$c          | S
 021$e             | <P20$c          | If Exists ($d) Then ($d+', ' + S) Else S
 021$z             | <P20$z          | S
@@ -59,7 +59,7 @@ P20               | 020(new)        | S;
 025I1           | 024(no)I1       | '2'
 025I2           | 024(no)I2       | ' '
 025$a           | 024(no)$a       | S
-025$c           | 024(no)$a       | +' (' +S +')'
+025$c           | 024(no)$q       | S
 025$d           | 024$c           | S
 025$e           | 024$c           | If Exists ($d) Then ', '+S Else S
 025$z           | 024$z           | S
@@ -96,7 +96,7 @@ P20               | 020(new)        | S;
 029$a(2)        | 024(nto)$a      | S
 029I1           | 024(nto)I1      | '3'
 029I2           | 024(nto)I2      | ' '
-029$c           | 024(newest)$a   | +' (' +S +')'
+029$c           | 024(newest)$q   | S
 
 //Oletuksena Allfons-numero konvertoidaan kenttään 972.  Vaihtoehtona on kenttä 024 8_.
 031             | 972             | S
