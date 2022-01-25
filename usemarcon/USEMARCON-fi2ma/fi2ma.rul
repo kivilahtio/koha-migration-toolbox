@@ -1605,10 +1605,10 @@ M30             | 830             | If (RegFind('\\.\$') < 0) Then S + '.' Else 
 
 942        | 942           | S
 
-945I1      | 940I1         | If (I1=0 Or I1=' ') Then ' ' Else S 
-945I2      | 940I2         | If (I2=0 Or I1=' ') Then '0' Else S 
-945$a      | 940$a         | S
-945$y      | 940$y         | S
+945I1      | 786I1         | '0' 
+945I2      | 786I2         | '#'
+945$a      | 786$t         | S
+945$y      | 786$a         | S
 
 
 // *** SIJOITUSPAIKKATIEDOT 950-969, 971, 991-992 ***
