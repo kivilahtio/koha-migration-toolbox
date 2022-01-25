@@ -336,20 +336,22 @@ sub linkAuthors($s, $o, $builder) {
             my $evalOk;
             eval "if (\$author->{Author} =~ $af) { \%evalRv = \%+; \$evalOk = 1 } else { \$evalOk = 0 }"; # $rr is for ex. s/(?<e>\(suom\.\))//
             if ($@) { $log->error($s->logId." - AuthorFilter '$af' error: '$@'"); }
-            elsif ($evalOk) {
-              my @subfieldCaptureGroups = keys(%evalRv);
-              for my $sfCodeOrType (@subfieldCaptureGroups) {
+            elsif ($evalOk or exists $author->{FilteredSubfields}) {
+              my @capturedSubfields = $evalOk ? keys(%evalRv) : keys(%{$author->{FilteredSubfields}});
+              for my $sfCodeOrType (@capturedSubfields) {
+                my $sfContent = $evalOk ? $evalRv{$sfCodeOrType} : $author->{FilteredSubfields}->{$sfCodeOrType};
                 if ($sfCodeOrType eq 'relatorterm') {
                   if ($fieldCode eq '700') {
-                    push(@subfields, MMT::MARC::Subfield->new('x', $evalRv{$sfCodeOrType}));
+                    push(@subfields, MMT::MARC::Subfield->new('x', $sfContent));
                   }
                   else {
-                    push(@subfields, MMT::MARC::Subfield->new('e', $evalRv{$sfCodeOrType}));
+                    push(@subfields, MMT::MARC::Subfield->new('e', $sfContent));
                   }
                 }
                 else {
-                  push(@subfields, MMT::MARC::Subfield->new($sfCodeOrType, $evalRv{$sfCodeOrType}));
+                  push(@subfields, MMT::MARC::Subfield->new($sfCodeOrType, $sfContent));
                 }
+                $author->{FilteredSubfields}->{$sfCodeOrType} = $sfContent unless exists $author->{FilteredSubfields}->{$sfCodeOrType};
               }
             }
           }
