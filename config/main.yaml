@@ -144,4 +144,5 @@ Item_setItemcallnumber_posthook: 0
 
 # Author-table entries are filtered with this Perl regexp. MARC subfields are extracted from the text. All named capture groups must map to MARC subfields.
 # eg.    s/(?<e>\(toim\.\))//    - All Author-fields that contain (toim.), have the matched text removed and put into subfield $e
+# eg.    s/(?<relatorterm)\(toim.\)//   - Trigger special relator-term handling to populate 700$x and 100$e from regex matches.
 Biblio_authorFilter: 0

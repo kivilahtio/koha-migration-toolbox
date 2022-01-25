@@ -267,6 +267,27 @@ sub linkAuthors($s, $o, $builder) {
           }
 
           my @subfields;
+
+          my ($fieldCode, $i1, $i2) = ('100', 0, '#');
+          if    ($authorCross->{Id_Field} == 23) {
+            $fieldCode = '100';
+            $i1 = 0;
+            $i2 = '#';
+          }
+          elsif ($authorCross->{Id_Field} == 24) {
+            $fieldCode = '700';
+            $i1 = 0;
+            $i2 = '#';
+          }
+          elsif ($authorCross->{Id_Field} == 25) {
+            $fieldCode = '110';
+            $i1 = 2;
+            $i2 = '#';
+          }
+          else {
+            $log->fatal($s->logId()." - Unknown AuthorCross.Id_Field '".$authorCross->{Id_Field}."'!");
+          }
+
           my $af = MMT::Config::Biblio_authorFilter();
           if ($af) {
             my %evalRv;
@@ -275,40 +296,31 @@ sub linkAuthors($s, $o, $builder) {
             if ($@) { $log->error($s->logId." - AuthorFilter '$af' error: '$@'"); }
             elsif ($evalOk) {
               my @subfieldCaptureGroups = keys(%evalRv);
-              for my $sfCode (@subfieldCaptureGroups) {
-                push(@subfields, MMT::MARC::Subfield->new($sfCode, $evalRv{$sfCode}));
+              for my $sfCodeOrType (@subfieldCaptureGroups) {
+                if ($sfCodeOrType eq 'relatorterm') {
+                  if ($fieldCode eq '700') {
+                    push(@subfields, MMT::MARC::Subfield->new('x', $evalRv{$sfCodeOrType}));
+                  }
+                  else {
+                    push(@subfields, MMT::MARC::Subfield->new('e', $evalRv{$sfCodeOrType}));
+                  }
+                }
+                else {
+                  push(@subfields, MMT::MARC::Subfield->new($sfCodeOrType, $evalRv{$sfCodeOrType}));
+                }
               }
             }
           }
 
-          my ($fieldCode, $i1, $i2);
-          if    ($authorCross->{Id_Field} == 23) {
-            $fieldCode = 100;
-            $i1 = 0;
-            $i2 = '#';
-          }
-          elsif ($authorCross->{Id_Field} == 24) {
-            $fieldCode = 700;
-            $i1 = 0;
-            $i2 = '#';
-          }
-          elsif ($authorCross->{Id_Field} == 25) {
-            $fieldCode = 110;
-            $i1 = 2;
-            $i2 = '#';
-          }
-          else {
-            $log->fatal($s->logId()." - Unknown AuthorCross.Id_Field '".$authorCross->{Id_Field}."'!");
-          }
+          push(@subfields, MMT::MARC::Subfield->new('a', $author->{Author}));
+
           if ($fieldCode eq '700') {
-            $s->{record}->addField(MMT::MARC::Field->new($fieldCode, $i1, $i2, [
-              MMT::MARC::Subfield->new('a', $author->{Author}),
-            ]));
+            $s->{record}->addField(MMT::MARC::Field->new($fieldCode, $i1, $i2, \@subfields));
           }
           else {
             my $field = $s->{record}->getUnrepeatableField($fieldCode);
             $field = $s->{record}->addField(MMT::MARC::Field->new($fieldCode, $i1, $i2, [])) unless $field;
-            $field->addSubfield(MMT::MARC::Subfield->new('a', $author->{Author}));
+            $field->addSubfield($_) for @subfields;
             if (my $sfs = $field->subfields('a')) {
               $log->error($s->logId()." - Has '".scalar(@$sfs)."' Author field '$fieldCode'. Only one allowed!")
                   if @$sfs > 1;
