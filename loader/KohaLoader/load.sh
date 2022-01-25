@@ -222,6 +222,8 @@ then
     #Empty all previously migrated data, except configurations. You don't want this when merging records :)
     flushDataFromDB
 
+    fullReindex flush
+
     migrateBulkScripts
 
     #Kill the search indexes when doing bare migrations. Remember to not kill indexes when merging migrations :)

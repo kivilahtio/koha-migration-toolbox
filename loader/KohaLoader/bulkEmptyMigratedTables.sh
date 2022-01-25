@@ -41,7 +41,7 @@ TRUNCATE aqbooksellers;
 --TRUNCATE aqorders_transfers;
 TRUNCATE article_requests;
 --TRUNCATE audio_alerts;
---TRUNCATE auth_header;
+TRUNCATE auth_header;
 --TRUNCATE auth_subfield_structure;
 --TRUNCATE auth_tag_structure;
 --TRUNCATE auth_types;
