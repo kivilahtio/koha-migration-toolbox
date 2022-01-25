@@ -136,6 +136,10 @@ function migrateBulkScripts {
   koha-shell $KOHA_INSTANCE_NAME -c "bash -x $LOADER_DIR/load_migrate.sh '$WORKING_DIR'"
 }
 
+function dedupAuthorities {
+  koha-shell $KOHA_INSTANCE_NAME -c "perl dedup_authorities.pl -c --verbose --verbose" &> $MMT_WORKING_DIR/bulkDedupAuthorities.log
+}
+
 function cleanPastMigrationWorkspace {
     #Remove traces of existing migrations
     rm $WORKING_DIR/biblionumberConversionTable $WORKING_DIR/itemnumberConversionTable $WORKING_DIR/borrowernumberConversionTable \
@@ -228,6 +232,8 @@ then
 
     #Kill the search indexes when doing bare migrations. Remember to not kill indexes when merging migrations :)
     fullReindex flush
+
+    dedupAuthorities
 
     exit
 
