@@ -606,7 +606,7 @@ sub linkSeries($s, $o, $builder) {
             $s->{record}->addField($field4xx) unless ($s->{record}->getUnrepeatableField($marcField));
           }
 
-          if (not(MMT::Config::pl_biblio_seriesMARCCompatibility()) || MMT::Config::pl_biblio_seriesMARCCompatibility() eq '490') {
+          if (MMT::Config::pl_biblio_seriesMARCCompatibility() && MMT::Config::pl_biblio_seriesMARCCompatibility() eq '490') {
             my $field490 = $s->{record}->getUnrepeatableField('490');
             $field490 = MMT::MARC::Field->new('490', ' ', ' ') unless ($field490);
             $field490->addSubfield('a', $series->{Title} || $series->{SeriesInfo}) if $series->{Title} || $series->{SeriesInfo};
