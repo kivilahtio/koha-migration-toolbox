@@ -340,6 +340,9 @@ sub linkAuthors($s, $o, $builder) {
               my @capturedSubfields = $evalOk ? keys(%evalRv) : keys(%{$author->{FilteredSubfields}});
               for my $sfCodeOrType (@capturedSubfields) {
                 my $sfContent = $evalOk ? $evalRv{$sfCodeOrType} : $author->{FilteredSubfields}->{$sfCodeOrType};
+                # translate $sfContent
+                my $sfContentTranslateMap = MMT::Config::Biblio_authorFilterMatchTranslationMap();
+                $sfContent = $sfContentTranslateMap->{$sfContent} if exists $sfContentTranslateMap->{$sfContent};
                 if ($sfCodeOrType eq 'relatorterm') {
                   if ($fieldCode eq '700') {
                     push(@subfields, MMT::MARC::Subfield->new('x', $sfContent));

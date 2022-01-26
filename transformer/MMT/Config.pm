@@ -134,6 +134,9 @@ sub Item_setItemcallnumber_posthook() {
 sub Biblio_authorFilter() {
   return $config->{Biblio_authorFilter};
 }
+sub Biblio_authorFilterMatchTranslationMap() {
+  return $config->{Biblio_authorFilterMatchTranslationMap};
+}
 
 sub Biblio_ISNFilter {
   my $isn = shift;
