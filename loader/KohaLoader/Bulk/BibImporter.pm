@@ -29,6 +29,7 @@ my $jobBufferMaxSize = 500;
 use Time::HiRes qw(gettimeofday);
 use Log::Log4perl qw(:easy);
 use Thread::Queue;
+use Module::Load::Conditional qw( can_load );
 
 # Koha modules used
 use MARC::File::XML;
@@ -53,6 +54,8 @@ package C4::Biblio {
   }
   use warnings 'redefine';
 }
+
+my $linker = _get_linker();
 
 sub new($class, $params) {
   my %params = %$params; #Shallow copy to prevent unintended side-effects
@@ -353,7 +356,7 @@ sub addRecordFast($s, $record, $recordXmlPtr, $legacyBiblionumber) {
   C4::Biblio::_koha_marc_update_biblioitem_cn_sort( $record, $olddata, $frameworkcode );
 
   if (C4::Context->preference('BiblioAddsAuthorities')) {
-    C4::Biblio::BiblioAutoLink( $record, $frameworkcode );
+    C4::Biblio::LinkBibHeadingsToAuthorities( $linker, $record, $frameworkcode, C4::Context->preference("CatalogModuleRelink") || '', undef, undef );
   }
 
   unless ($s->{sth_insertBiblioMetadata}) {
@@ -491,6 +494,22 @@ sub _koha_add_biblioitem {
     }
     $sth->finish();
     return ( $bibitemnum, $error );
+}
+
+sub _get_linker() {
+  my $linker_module =
+    "C4::Linker::" . ( C4::Context->preference("LinkerModule") || 'Default' );
+  unless ( can_load( modules => { $linker_module => undef } ) ) {
+      $linker_module = 'C4::Linker::Default';
+      unless ( can_load( modules => { $linker_module => undef } ) ) {
+          return 0;
+      }
+  }
+
+  $linker_module = $linker_module->new(
+      { 'options' => C4::Context->preference("LinkerOptions") } );
+
+  return $linker_module;
 }
 
 sub checkPreserveId($s, $legId, $newId) {
