@@ -276,9 +276,10 @@ sub addBorrowerAttribute($s, $patron, $attribute, $value, $isRepeatable) {
   $s->{sth_addBorrowerAttribute}->execute($patron->{borrowernumber}, $attribute, $value) or die("Adding borrower_attribute 'SSN' failed for borrowernumber='".$patron->{borrowernumber}."': ".$s->{sth_addBorrowerAttribute}->errstr());
 }
 
-sub addDefaultAdmin($s, $defaultAdmin) {
+sub addDefaultAdmin($s, $defaultAdmin, $defaultAdminApiKey) {
   print("Adding default admin");
   my ($username, $password) = split(':', $defaultAdmin);
+  my ($api_key, $secret) = split(':', $defaultAdminApiKey);
 
   my $branchcode = Koha::Libraries->search->next->branchcode;
 
@@ -294,6 +295,13 @@ sub addDefaultAdmin($s, $defaultAdmin) {
   })->store;
 
   $patron->set_password( { password => $password } );
+
+  if (defined $api_key && defined $secret) {
+    my $hashed_secret = Koha::AuthUtils::hash_password($secret);      
+    $s->{sth_addDefaultAdmin} =
+      $s->{dbh}->prepare("INSERT INTO api_keys (client_id, secret, patron_id) VALUES (?,?,?)") or die("Preparing the addDefaultAdmin() api key query failed)".$s->{dbh}->errstr());
+    $s->{sth_addDefaultAdmin}->execute($api_key, $hashed_secret, $patron->borrowernumber);
+  }
 
   addAnonymizedPatron();
 }

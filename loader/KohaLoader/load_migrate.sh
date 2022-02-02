@@ -20,7 +20,7 @@ export PERL5LIB="$PERL5LIB:." #New Perl versions no longer implicitly include mo
 #./bulkItemImport.pl --file $MMT_DATA_SOURCE_DIR/Hankinta.migrateme --bnConversionTable $MMT_WORKING_DIR/biblionumberConversionTable &> $WORKING_DIR/bulkAcquisitionImport.log
 
 ./bulkPatronImport.pl &> $MMT_WORKING_DIR/bulkPatronImport.log
-test -n $DEFAULT_ADMIN && ./bulkPatronImport.pl --defaultAdmin "$DEFAULT_ADMIN" &> $MMT_WORKING_DIR/bulkPatronImportDefaultAdmin.log
+test -n $DEFAULT_ADMIN && test -n $DEFAULT_ADMIN_APIKEY && ./bulkPatronImport.pl --defaultAdmin "$DEFAULT_ADMIN" --defaultAdminApiKey "$DEFAULT_ADMIN_APIKEY" &> $MMT_WORKING_DIR/bulkPatronImportDefaultAdmin.log
 ./bulkPatronImport.pl --messagingPreferencesOnly &> $MMT_WORKING_DIR/bulkPatronImportMessagingDefaults.log & #This is forked on the background
 ./bulkPatronImport.pl --uploadSSNKeysOnly &> $MMT_WORKING_DIR/bulkPatronImportSSNKeys.log & #This is forked on the background
 

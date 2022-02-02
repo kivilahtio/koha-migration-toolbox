@@ -14,13 +14,14 @@ MMT_PROGRAM_DIR=`pwd` # koha-migration-tools executes this script from it's own 
 #SRC_ILS="Lib" # From credentials
 #KOHA_HOST="koha-host-server" # From credentials
 #KOHA_DEFAULT_ADMIN="" # From credentials
+#KOHA_DEFAULT_ADMIN_APIKEY="" # From credentials
 KOHA_INSTANCE_NAME=$(koha-list | head -n 1)
 KOHA_USER="$KOHA_INSTANCE_NAME-koha"
 KOHA_HOME="/var/lib/koha/$KOHA_INSTANCE_NAME/MMT"
 KOHA_LOAD_WORKING_DIR="$KOHA_HOME/KohaMigration$SRC_ILS"
 KOHA_DATA_SOURCE_DIR="$KOHA_HOME/KohaImports$SRC_ILS"
 KOHA_LOADER_DIR="$KOHA_HOME/KohaLoader"
-KOHA_LOADER_CMD="./load.sh --operation=migrate --data-source=$KOHA_DATA_SOURCE_DIR --working-dir=$KOHA_LOAD_WORKING_DIR --confirm --preserve-ids --default-admin=$KOHA_DEFAULT_ADMIN --koha-instance=$KOHA_INSTANCE_NAME"
+KOHA_LOADER_CMD="./load.sh --operation=migrate --data-source=$KOHA_DATA_SOURCE_DIR --working-dir=$KOHA_LOAD_WORKING_DIR --confirm --preserve-ids --default-admin=$KOHA_DEFAULT_ADMIN --default-admin-apikey=$KOHA_DEFAULT_ADMIN_APIKEY --koha-instance=$KOHA_INSTANCE_NAME"
 
 HETULA_CREDENTIALS_FILE="Hetula.credentials" #This must be manually created with login information. This filename is hardcoded, don't change it.
 HETULA_CREDS_FILE_IN_TRANSFORMER="$MMT_HOME/KohaImports$SRC_ILS/$HETULA_CREDENTIALS_FILE"

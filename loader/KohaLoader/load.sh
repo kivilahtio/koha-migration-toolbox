@@ -12,12 +12,13 @@ WORKING_DIR="../KohaMigration/"
 CONFIRM=""
 PRESERVE_IDS=""
 DEFAULT_ADMIN=""
+DEFAULT_ADMIN_APIKEY=""
 KOHA_INSTANCE_NAME=$(koha-list | head -n 1)
 KOHA_USER="$KOHA_INSTANCE_NAME-koha"
 LOADER_DIR=$(dirname $0)
 
 ## getopt --long
-OPTS=`getopt -o o::k::d::w::cpa:: --long operation::,koha-instance::,data-source::,working-dir::,confirm,preserve-ids,default-admin:: --name "$(basename "$0")" -- "$@"`
+OPTS=`getopt -o o::k::d::w::cpa:: --long operation::,koha-instance::,data-source::,working-dir::,confirm,preserve-ids,default-admin::,default-admin-apikey:: --name "$(basename "$0")" -- "$@"`
 if [ $? != 0 ] ; then echo "Failed parsing options." >&2 ; exit 1 ; fi
 
 eval set --$OPTS
@@ -30,6 +31,7 @@ while [[ $# -gt 0 ]]; do
         -d|--data-source)    DATA_SOURCE_DIR=$2 ; shift 2 ;;
         -w|--working-dir)    WORKING_DIR=$2 ;     shift 2 ;;
         -a|--default-admin)  DEFAULT_ADMIN=$2 ;   shift 2 ;;
+        --default-admin-apikey) DEFAULT_ADMIN_APIKEY=$2 ; shift 2 ;;
         -c|--confirm)        CONFIRM=1 ;          shift ;;
         -p|--preserve-ids)   PRESERVE_IDS=1 ;     shift ;;
         --) shift ; break ;;
@@ -46,7 +48,7 @@ function help {
   echo "using this tooling."
   echo ""
   echo "SYNOPSIS"
-  echo "  " $(basename $0) "--operation=migrate --data-source=$DATA_SOURCE_DIR --working-dir=$WORKING_DIR --confirm --preserve-ids --default-admin=admin:1234"
+  echo "  " $(basename $0) "--operation=migrate --data-source=$DATA_SOURCE_DIR --working-dir=$WORKING_DIR --confirm --preserve-ids --default-admin=admin:1234 --default-admin-apikey=123-456-789:abc-def-ghj"
   echo ""
   echo "OPTIONS"
   echo ""
@@ -73,6 +75,9 @@ function help {
   echo ""
   echo "  --default-admin username:password"
   echo "    username:password of the default superlibrarian to add automatically, leave as 0|null to ingore adding the default admin"
+  echo ""
+  echo "  --default-admin-apikey apikey:apisecret"
+  echo "    apikey:apisecret of the default superlibrarian API key to add automatically, leave as 0|null to ingore adding the default admin api key"
   echo ""
 }
 
@@ -105,6 +110,9 @@ test $PRESERVE_IDS &&         echo -e "\$PRESERVE_IDS set. Preserving legacy dat
 test $DEFAULT_ADMIN &&        echo -e "\$DEFAULT_ADMIN scheduled for creation."
 test -z $DEFAULT_ADMIN &&     echo -e "\$DEFAULT_ADMIN not being created."
 
+test $DEFAULT_ADMIN_APIKEY    && echo -e "\$DEFAULT_ADMIN_APIKEY scheduled for creation."
+test -z $DEFAULT_ADMIN_APIKEY && echo -e "\$DEFAULT_ADMIN_APIKEY not being created."
+
 test $KOHA_USE_ELASTIC &&     echo -e "\$KOHA_USE_ELASTIC = '$KOHA_USE_ELASTIC'. Indexing to Elasticsearch."
 test -z $KOHA_USE_ELASTIC &&  echo -e "\$KOHA_USE_ELASTIC is unset. Indexing to Zebra."
 
@@ -114,6 +122,7 @@ export MMT_DATA_SOURCE_DIR=$DATA_SOURCE_DIR
 export MMT_WORKING_DIR=$WORKING_DIR
 export MMT_PRESERVE_IDS=$PRESERVE_IDS
 export DEFAULT_ADMIN=$DEFAULT_ADMIN
+export DEFAULT_ADMIN_APIKEY=$DEFAULT_ADMIN_APIKEY
 export PRESERVE_IDS=$PRESERVE_IDS
 export KOHA_USE_ELASTIC=$KOHA_USE_ELASTIC
 export KOHA_DB=$KOHA_DB

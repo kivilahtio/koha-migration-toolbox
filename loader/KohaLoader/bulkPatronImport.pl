@@ -25,6 +25,7 @@ our %args = (importFile =>                         ($ENV{MMT_DATA_SOURCE_DIR}//'
             uploadSSNKeysHetulaCredentialsFile => ($ENV{MMT_DATA_SOURCE_DIR}//'.').'/Hetula.credentials',
             preserveIds =>                        $ENV{MMT_PRESERVE_IDS} // 0,
             defaultAdmin =>                       0,
+            defaultAdminApiKey =>                 0,
             borrowernumberConversionTableFile =>  ($ENV{MMT_WORKING_DIR}//'.').'/borrowernumberConversionTable');
 
 my $help = <<HELP;
@@ -34,7 +35,7 @@ NAME
 
 SYNOPSIS
   perl bulkPatronImport.pl --file $args{importFile} --deduplicate --defaultAdmin kalifi:Baba-Gnome \
-      --bnConversionTable $args{borrowernumberConversionTableFile}
+      --defaultAdminApiKey ab-cd-ef-gh:12-34-56-78 --bnConversionTable $args{borrowernumberConversionTableFile}
 
   then
 
@@ -67,6 +68,10 @@ DESCRIPTION
     --defaultAdmin username:password
           Should we populate the default test superlibrarian?
           Defaults to '$args{defaultAdmin}'
+
+    --defaultAdminApiKey client_id:secret
+          Should we populate the default test superlibrarian with api_keys entry?
+          Defaults to '$args{defaultAdminApiKey}'
 
     --preserveIds
           Should the source system database IDs be preserved or should they be overridden by defaults from Koha?
@@ -103,6 +108,7 @@ GetOptions(
     'file:s'                   => \$args{importFile},
     'deduplicate'              => \$args{deduplicate},
     'defaultAdmin:s'           => \$args{defaultAdmin},
+    'defaultAdminApiKey:s'     => \$args{defaultAdminApiKey},
     'b|bnConversionTable:s'    => \$args{borrowernumberConversionTableFile},
     'v|verbosity:i'            => \$verbosity,
     'preserveIds'              => \$args{preserveIds},
@@ -138,7 +144,7 @@ if ($args{uploadSSNKeysOnly}) {
 }
 if ($args{defaultAdmin}) {
   ## Create the default admin after migrating Patrons, so we wont accidentally overwrite legacy borrowernumber==1 with the default admin
-  $patronImporter->addDefaultAdmin($args{defaultAdmin});
+  $patronImporter->addDefaultAdmin($args{defaultAdmin},$args{defaultAdminApiKey});
   exit 0;
 }
 
