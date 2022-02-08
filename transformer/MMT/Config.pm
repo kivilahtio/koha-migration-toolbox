@@ -92,6 +92,9 @@ sub patronInitials() {
 sub phoneNumberValidationStrategy() {
   return $config->{phoneNumberValidationStrategy};
 }
+sub reserveAddExpiryDays() {
+  return $config->{reserveAddExpiryDays};
+}
 sub sourceSystemType() {
   return $config->{sourceSystemType};
 }

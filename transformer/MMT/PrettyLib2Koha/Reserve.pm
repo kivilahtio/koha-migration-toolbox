@@ -3,6 +3,7 @@ package MMT::PrettyLib2Koha::Reserve;
 use MMT::Pragmas;
 
 #External modules
+use DateTime;
 
 #Local modules
 use MMT::Validator;
@@ -75,7 +76,11 @@ sub setExpirationDate($s, $o, $b) {
   $s->{expirationdate} = $o->{DueDate};
 
   unless ($s->{expirationdate}) {
-    MMT::Exception::Delete->throw($s->logId()."' has no DueDate/expirationdate.");
+    my $add_reserve_days = MMT::Config::reserveAddExpiryDays();
+    my $dt = DateTime->now;
+    $s->{expirationdate} = $dt->add(days => $add_reserve_days)->iso8601;
+    $log->info($s->logId()."' no expiration date, it is now '$add_reserve_days' days from today (".$s->{expirationdate}.")");
+    return;
   }
 
   $s->{expirationdate} = MMT::Validator::parseDate($s->{expirationdate});

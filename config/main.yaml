@@ -65,6 +65,10 @@ patronDefaultPrivacy: 1
 # See MMT::Validator::Phone for available strategies
 phoneNumberValidationStrategy: HAMK
 
+# How many expiry days to add for reserves if expiry date is not defined in PrettyLib
+# TODO: Voyager support
+reserveAddExpiryDays: 365
+
 # How to deal with missing barcodes?
 # ERROR: Barcodes must exist, mocks a barcode based on the Id
 # IGNORE: Barcodes might be missing
