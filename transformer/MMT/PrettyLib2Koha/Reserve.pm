@@ -14,6 +14,7 @@ use base qw(MMT::KohaObject);
 
 #Exceptions
 use MMT::Exception::Delete;
+use MMT::Exception::Delete::Silently;
 
 =head1 NAME
 
