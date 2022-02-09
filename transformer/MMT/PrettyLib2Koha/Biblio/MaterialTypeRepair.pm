@@ -83,6 +83,9 @@ sub KI { # Kirja
     $leader = '     nam a22     zu 4500';
     $f008   = '||||||n||||    fi |||||||||| ||||||   ||';
 }
+sub KM { # Konemanuaali
+    KI()
+}
 sub KO { # Kokousjulkaisu
     KI()
 }
@@ -90,6 +93,9 @@ sub KR { # Kartta
     $leader = '     nem a22     zu 4500';
     $f007   = 'a| ca|||';
     $f008   = '      n           ||||| |||| 00|       |';
+}
+sub KV { # Kalvot
+    KI()
 }
 sub LA { # Lautapeli
     $leader = '     nrm a22     zu 4500';
@@ -130,6 +136,9 @@ sub PP { # Pienpainate
 sub SA { # Sarjajulkaisu
     KA()
 }
+sub SO { # Sopimus
+    KI()
+}
 sub SR { # Äänite
     $leader = '     njm a22     zu 4500';
     $f007   = 'sd f||g|||m|||';
@@ -164,9 +173,24 @@ sub forceControlFields {
     else {
         eval {
             no strict 'refs';
-            &{__PACKAGE__."::$itemType"}();
+            my $sub = __PACKAGE__->can($itemType);
+            if ($sub) {
+                $sub->();
+            }
+            else {
+                # probably translation tables change the default itype mappings to something completely new. So reconcile here.
+                my $standardItemtype = $MMT::TranslationTable::ItemTypes::PL_defaultTitleTypes{$o->{TitleType}};
+                $sub = __PACKAGE__->can($standardItemtype);
+                if ($sub) {
+                    $sub->();
+                } else {
+                    $log->warn($s->logId()." Unknown itemtype '$standardItemtype' to force control fields and leader. Defaulting to KI");
+                    KI();
+                }
+            }
+
         };
-        if ($@ && $@ =~ /Undefined subroutine/) {
+        if ($@ && ($@ =~ /Undefined subroutine/)) {
             $log->warn($s->logId()." Unknown itemtype '$itemType' to force control fields and leader. Defaulting to KI");
             KI();
         }
