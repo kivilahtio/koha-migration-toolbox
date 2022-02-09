@@ -71,6 +71,9 @@ sub logDir() {
 sub mainConfigFile() {
   return $ENV{MMT_HOME}.'/config/main.yaml';
 }
+sub marcAddCustomRepeatableField() {
+  return $config->{marcAddCustomRepeatableField};
+}
 sub marcInputEncoding() {
   return $config->{marcInputEncoding} || 'utf-8';
 }

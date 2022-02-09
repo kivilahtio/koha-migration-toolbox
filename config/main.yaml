@@ -100,6 +100,18 @@ csvInputParams:
 #   $ perl -e 'use Encode; @a=Encode->encodings(); print "@a\n"'
 marcInputEncoding: utf-8
 
+# Adds new repeatable field(s) to MARC record containing statically defined data below:
+# e.g. 
+#marcAddCustomRepeatableField:
+#  - tag: 540
+#    indicator1: '#'
+#    indicator2: '#'
+#    subfields:
+#      - 3: Metadata
+#        a: Ei poimintaa. No copying;
+#        b: Org
+marcAddCustomRepeatableField:
+
 ############ PRETTY* -specific configs ################
 
 # Instead of the Item.BarCode use Item.AcqNumIdx to populate koha.items.barcode

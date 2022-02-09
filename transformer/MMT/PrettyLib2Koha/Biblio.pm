@@ -80,6 +80,8 @@ sub build($s, $o, $b) {
 
   $s->{record}->addUnrepeatableSubfield('942', 'c', getItemType(@_));
 
+  addCustomRepeatableFields($s);
+
   MMT::PrettyLib2Koha::Biblio::MaterialTypeRepair::forceControlFields(@_);
 }
 
@@ -194,6 +196,16 @@ sub _parseDatafield($s, $o, $b, $code, $data) {
     $log->debug($s->logId()." - Skipping field '$code' is missing subfields?");
   }
   return undef;
+}
+
+sub addCustomRepeatableFields($s) {
+  for my $field (@{MMT::Config::marcAddCustomRepeatableField()}) {
+    my $marc_field = MMT::MARC::Field->new($field->{tag}, $field->{indicator1}, $field->{indicator2}, []);
+    $s->{record}->addField($marc_field);
+    for my $subfield (@{$field->{subfields}}) {
+      $marc_field->addSubfield($_, $subfield->{$_}) for keys %$subfield;
+    }
+  }
 }
 
 sub normalizeLanguageCodes($field) {
