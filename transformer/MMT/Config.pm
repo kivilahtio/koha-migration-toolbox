@@ -116,6 +116,9 @@ sub workers() {
 sub barcodeMinLength() {
   return $config->{barcodeMinLength} // 5;
 }
+sub barcodeRegexReplace() {
+  return $config->{barcodeRegexReplace} // {};
+}
 sub defaultMissingDate() {
   return '1999-12-31';
 }

@@ -83,6 +83,16 @@ emptyBarcodePattern: HAMK00000000
 # TODO: Voyager support
 barcodeMinLength: 5
 
+# Apply a set of regular expression replaces into barcode
+# TODO: Voyager support
+# e.g.
+#barcodeRegexReplace:
+#  - regex: '[ÄÅ]'
+#    replace: A
+#  - regex: 'Ö'
+#    replace: O
+barcodeRegexReplace:
+
 # How Perl's Text::CSV should handle .csv-files input?
 # Output is hard-coded and should not be changed to maintain zero-configuration compatibility with the Loader-modules
 csvInputParams:

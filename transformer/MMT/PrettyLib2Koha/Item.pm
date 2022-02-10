@@ -122,6 +122,17 @@ sub setBarcode($s, $o, $b) {
     $bc = $o->{BarCode} if $o->{BarCode};
   }
 
+  for my $bc_regex (@{MMT::Config::barcodeRegexReplace()}) {
+    my $regex_str = $bc_regex->{regex};
+    my $regex = qr/$regex_str/;
+    my $replace = $bc_regex->{replace};
+    my $old_bc = $bc;
+    $bc =~ s/$regex/$replace/;
+    if ($old_bc ne $bc) {
+      $log->info($s->logId()." matched regex replace regex='$regex_str' replace='$replace'. Converted old barcode='$old_bc' into new barcode='$bc'");
+    }
+  }
+
   ($bc, $ok) = MMT::Validator::Barcode::validate(@_, $bc) if defined $bc && length($bc)>0;
   $s->{barcode} = $bc;
 
