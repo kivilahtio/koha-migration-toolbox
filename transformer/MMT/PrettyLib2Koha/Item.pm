@@ -485,9 +485,8 @@ sub _circIsElectronic($o) {
 #####################################
 
 sub custom_itemcallnumber_PV_hopea($s, $o, $b) {
-  return unless $s->{itemcallnumber} && $o->{f950d_Item};
-  $s->{itemcallnumber} = uc($s->{itemcallnumber}.'-'.$o->{f950d_Item});
-
+  return unless $s->{itemcallnumber} && $o->{F950d_Item};
+  $s->{itemcallnumber} = uc($s->{itemcallnumber}.' '.$o->{F950d_Item});
 #  return unless $s->{itemcallnumber} && $o->{Note};
 
 #  my $icn = $s->{itemcallnumber}; # itemcallnumber in Hopea are always ASCII character [a-zA-Z0-9]
