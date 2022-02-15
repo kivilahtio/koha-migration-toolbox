@@ -151,6 +151,12 @@ autorenew_checkouts
     ) or die "Preparing the koha.borrowers insertion statement failed: ".$s->{dbh}->errstr();
   }
 
+  $b->{'password'} = ($b->{'password'}) 
+                       ? (substr($b->{'password'}, 0, 3) eq '$2a')
+                         ? $b->{'password'} # password is already hashed with bcrypt
+                         : Koha::AuthUtils::hash_password($b->{'password'}, $s->bcryptSettings(2)) #The bcrypt iterations has been dropped from 8 to 2 to significantly speed up the migration.
+                       : '!';
+
 my @params = (
 ($main::args{preserveIds}) ? $b->{borrowernumber} : undef,
 $b->{cardnumber},
