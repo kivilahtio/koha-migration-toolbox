@@ -100,6 +100,8 @@ sub setType($s, $o, $b) {
   elsif ($tt == 4) { $s->{type} = 'return' }
   elsif ($tt == 5) { $s->{type} = 'Pretty varaus pois' }
   elsif ($tt == 7) { $s->{type} = 'Pretty kaukolaina' }
+  elsif ($tt == 8) { $s->{type} = 'renew' } # opac renew
+  elsif ($tt == 9) { $s->{type} = 'Pretty OPAC varaus' }
   else {
     $log->warn($s->logId()." - Unknown 'TransType' '$tt'.");
     MMT::Exception::Delete::Silently->throw(error => "Unknown 'TransType' '$tt'");
