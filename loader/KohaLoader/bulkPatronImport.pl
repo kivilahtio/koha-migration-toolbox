@@ -40,6 +40,7 @@ SYNOPSIS
   then
 
   perl bulkPatronImport.pl --messagingPreferencesOnly --bnConversionTable $args{borrowernumberConversionTableFile}
+  perl bulkPatronImport.pl --sort1ToAuthorizedValueOnly --bnConversionTable $args{borrowernumberConversionTableFile}
   perl bulkPatronImport.pl --uploadSSNKeysOnly --uploadSSNKeysFile $args{uploadSSNKeysFile} \
                            --uploadSSNKeysHetulaCredentialsFile $args{uploadSSNKeysHetulaCredentialsFile} \
                            --bnConversionTable $args{borrowernumberConversionTableFile}
@@ -86,6 +87,9 @@ DESCRIPTION
           Reads the borrowernumber conversion table for the added Patrons that need
           to have their messaging preferences set.
 
+    --sort1ToAuthorizedValueOnly
+          Only convert SELECT DISTINCT sort2 FROM borrowers to authorised_values Bsort1
+
     --uploadSSNKeysOnly
           Upload SSN keys to Hetula using Hetula::Client and then to Koha.borrower_attributes.
           --uploadSSNKeysFile can be set if this is selected.
@@ -113,6 +117,7 @@ GetOptions(
     'v|verbosity:i'            => \$verbosity,
     'preserveIds'              => \$args{preserveIds},
     'messagingPreferencesOnly' => \$args{messagingPreferencesOnly},
+    'sort1ToAuthorizedValueOnly' => \$args{sort1ToAuthorizedValueOnly},
     'uploadSSNKeysOnly'        => \$args{uploadSSNKeysOnly},
     'uploadSSNKeysFile:s'      => \$args{uploadSSNKeysFile},
     'uploadSSNKeysHetulaCredentialsFile:s' => \$args{uploadSSNKeysHetulaCredentialsFile},
@@ -145,6 +150,11 @@ if ($args{uploadSSNKeysOnly}) {
 if ($args{defaultAdmin}) {
   ## Create the default admin after migrating Patrons, so we wont accidentally overwrite legacy borrowernumber==1 with the default admin
   $patronImporter->addDefaultAdmin($args{defaultAdmin},$args{defaultAdminApiKey});
+  exit 0;
+}
+if ($args{sort1ToAuthorizedValueOnly}) {
+  # Convert SELECT DISTINCT sort2 FROM borrowers to authorised_values Bsort1
+  $patronImporter->sort1ToAuthorizedValue();
   exit 0;
 }
 

@@ -422,6 +422,18 @@ sub setDefaultMessagingPreferences($s) {
   }
 }
 
+=head2 sort1ToAuthorizedValue
+
+Convert borrowers.sort1 to a list of Bsort1 authorised_values
+
+=cut
+
+sub sort1ToAuthorizedValue($s) {
+  $s->{dbh} = C4::Context->dbh();
+  $s->{sth_sort1} = $s->{dbh}->prepare("insert ignore into authorised_values (category, authorised_value, lib, lib_opac) select distinct 'Bsort1', sort1, sort1, sort1 from borrowers where sort1!='';");
+  $s->{sth_sort1}->execute();
+}
+
 =head2 uploadSSNKeys
 
 Upload ssn keys to koha.borrower_attributes

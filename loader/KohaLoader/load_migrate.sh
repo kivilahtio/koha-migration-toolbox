@@ -22,6 +22,7 @@ export PERL5LIB="$PERL5LIB:." #New Perl versions no longer implicitly include mo
 ./bulkPatronImport.pl &> $MMT_WORKING_DIR/bulkPatronImport.log
 test -n $DEFAULT_ADMIN && test -n $DEFAULT_ADMIN_APIKEY && ./bulkPatronImport.pl --defaultAdmin "$DEFAULT_ADMIN" --defaultAdminApiKey "$DEFAULT_ADMIN_APIKEY" &> $MMT_WORKING_DIR/bulkPatronImportDefaultAdmin.log
 ./bulkPatronImport.pl --messagingPreferencesOnly &> $MMT_WORKING_DIR/bulkPatronImportMessagingDefaults.log & #This is forked on the background
+./bulkPatronImport.pl --sort1ToAuthorizedValueOnly &> $MMT_WORKING_DIR/bulkPatronImportSort1ToAuthorisedValue.log & #This is forked on the background
 ./bulkPatronImport.pl --uploadSSNKeysOnly &> $MMT_WORKING_DIR/bulkPatronImportSSNKeys.log & #This is forked on the background
 
 ./bulkHistoryImport.pl &> $MMT_WORKING_DIR/bulkHistoryImport.log # Histories' issue_id should be less then active checkouts.
