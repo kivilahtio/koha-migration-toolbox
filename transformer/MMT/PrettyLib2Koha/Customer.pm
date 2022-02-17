@@ -268,8 +268,8 @@ sub setContactInfo($s, $o, $b) {
     $addresses{HomeAddress}{city}    = _extractCity(@_,    'HomeCode') if $o->{HomeCode};
   }
 
-  $s->{address}   = $addresses{$priority[0]}{address} // '';
-  $s->{address2}  = join(', ', grep {$_} ($o->{Organization}, $o->{Department})) // '';
+  $s->{address}   = join(', ', grep {$_} ($o->{Organization}, $o->{Department})) // '';
+  $s->{address2}  = $addresses{$priority[0]}{address} // '';
   $s->{zipcode}   = $addresses{$priority[0]}{zipcode} // '';
   $s->{city}      = $addresses{$priority[0]}{city} // '';
   ($s->{phone}, $ok)   = MMT::Validator::Phone::validate($s, $o, $b, $addresses{$priority[0]}{phone}) if $addresses{$priority[0]}{phone} && MMT::Validator::Phone::validate($s, $o, $b, $addresses{$priority[0]}{phone});
