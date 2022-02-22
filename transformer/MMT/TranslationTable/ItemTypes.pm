@@ -77,9 +77,11 @@ sub PV_hopea_itypes($s, $kohaObject, $prettyObject, $builder, $itype, $tablePara
   $period = 0 unless $period;
 
   if   ($period == 28) { $kohaItype = 'PV28'; } # 28 vrk vain PV – period 28 
+  elsif($period == 30) { $kohaItype = 'PVKK'; } # URHO849
   elsif($period == 360) { $kohaItype = 'PV360'; } # 1 vuoden vain PV – period 360 
   elsif($period == 0) { $kohaItype = 'PV0'; } # Käsikirja (ei lainata) – period 0  
   elsif($period == 999) { $kohaItype = 'PV999'; } # Virkakäyttö ikuinen – period 999 
+  elsif($period == 9999) { $kohaItype = 'PV999'; } # URHO849
 
   else{ $log->warn($kohaObject->logId()." - Unknown PV_hopea_itypes() with \$period='$period'"); $kohaItype = 'KONVERSIO'; }
 
