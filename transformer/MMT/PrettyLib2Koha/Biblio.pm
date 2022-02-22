@@ -637,6 +637,23 @@ sub linkSeries($s, $o, $builder) {
         }
       }
     }
+  } else {
+    my $f410 = $s->{record}->getUnrepeatableField('410');
+    if ($f410) {
+      $log->warn($s->logId." - Found field 410 with no Series entry?");    
+      if (not(MMT::Config::pl_biblio_seriesMARCCompatibility()) || MMT::Config::pl_biblio_seriesMARCCompatibility() eq '4XX') {
+        my $f4xx = MMT::MARC::Field->new('440', ' ', ' ') unless ($s->{record}->getUnrepeatableField('440'));
+        $f4xx->mergeField($f410);
+        $s->{record}->deleteField($f410);
+        $s->{record}->addField($f4xx) unless ($s->{record}->getUnrepeatableField('440'));
+      }
+      elsif (MMT::Config::pl_biblio_seriesMARCCompatibility() && MMT::Config::pl_biblio_seriesMARCCompatibility() eq '490') {
+        my $f490 = MMT::MARC::Field->new('490', ' ', ' ') unless ($s->{record}->getUnrepeatableField('490'));
+        $f490->mergeField($f410);
+        $s->{record}->deleteField($f410);
+        $s->{record}->addField($f490) unless ($s->{record}->getUnrepeatableField('490'));
+      }
+    }
   }
 }
 
