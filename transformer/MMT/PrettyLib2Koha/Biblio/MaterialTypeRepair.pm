@@ -54,7 +54,9 @@ sub DV { # DVD, videotallenne
     $f008   = '      n        fi |||       |    v|   ||';
 }
 sub EA { # Elektroninen aineisto
-    EK()
+    $leader = '     nmm a22     zu 4500';
+    $f007   = 'cr |||||||||||';
+    $f008   = '      n           ||||      |||| ||   ||';
 }
 sub EJ { # Elektroninen kausijulkaisu
     $leader = '     nas a22     zu 4500';
