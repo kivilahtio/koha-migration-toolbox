@@ -433,39 +433,61 @@ sub linkClasses($s, $o, $builder) {
             next;
           }
 
+          # Classify based on Class.List
+          my ($classifiedOk, $field);
+          if ($class->{List} ne '53') {
+            my $fieldCode = '084';
+            my $sf2;
+            if ($class->{List} eq '80') { # UDK, field 080
+              $fieldCode = '080';
+            }
+            elsif ($class->{List} eq '98') { # YKL, field 084
+              $fieldCode = '084';
+              $sf2 = 'ykl';
+            }
+
+            $field = MMT::MARC::Field->new($fieldCode, ' ', ' ');
+            $field->addSubfield('a', $class->{Class}, {after => 'a'});
+            $field->addSubfield('2', $sf2, {after => 'a'}) if $sf2;
+            $s->{record}->addField($field);
+
+            $classifiedOk = 1;
+          }
 
           #Classify based on the class classifier rules
-          my ($classifiedOk, $field);
-          for my $classifier (@{MMT::Config::pl_class_classifiers()}) {
-            last if $classifiedOk;
-            if ($class->{Class} =~ /$classifier->{regexp}/) {
-              $classifiedOk = 1;
-              $log->trace($s->logId()." - Classifier '".$classifier->{regexp}."' matches '".$class->{Class}."'.") if $log->is_trace();
+          unless ($classifiedOk) {
+            for my $classifier (@{MMT::Config::pl_class_classifiers()}) {
+              last if $classifiedOk;
+              if ($class->{Class} =~ /$classifier->{regexp}/) {
+                $classifiedOk = 1;
+                $log->trace($s->logId()." - Classifier '".$classifier->{regexp}."' matches '".$class->{Class}."'.") if $log->is_trace();
 
-              $field = $s->{record}->getUnrepeatableField($classifier->{field});
-              unless ($field) {
-                $field = MMT::MARC::Field->new($classifier->{field}, $classifier->{indicator1}, $classifier->{indicator2});
-                $s->{record}->addField($field);
-              }
+                $field = $s->{record}->getUnrepeatableField($classifier->{field});
+                unless ($field) {
+                  $field = MMT::MARC::Field->new($classifier->{field}, $classifier->{indicator1}, $classifier->{indicator2});
+                  $s->{record}->addField($field);
+                }
 
-              $field->addSubfield('a', $class->{Class}, {after => 'a'});
+                $field->addSubfield('a', $class->{Class}, {after => 'a'});
 
-              if ($classifier->{subfields}) {
-                for my $sfRule (@{$classifier->{subfields}}) {
-                  my ($code, $value) = ((keys(%$sfRule))[0], (values(%$sfRule))[0]);
+                if ($classifier->{subfields}) {
+                  for my $sfRule (@{$classifier->{subfields}}) {
+                    my ($code, $value) = ((keys(%$sfRule))[0], (values(%$sfRule))[0]);
 
-                  my $sf = $field->getUnrepeatableSubfield($code);
-                  unless ($sf) {
-                    $field->addSubfield(MMT::MARC::Subfield->new($code, $value));
-                  }
-                  else {
-                    $sf->content($value);
+                    my $sf = $field->getUnrepeatableSubfield($code);
+                    unless ($sf) {
+                      $field->addSubfield(MMT::MARC::Subfield->new($code, $value));
+                    }
+                    else {
+                      $sf->content($value);
+                    }
                   }
                 }
-              }
 
+              }
             }
           }
+
           $log->error($s->logId()." - Classifying Class '".$class->{Class}."' failed. No matching classifier found. Update the configuration parameter 'pl_class_classifiers'") unless ($classifiedOk);
         }
       }
