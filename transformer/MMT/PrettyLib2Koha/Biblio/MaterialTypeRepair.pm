@@ -167,6 +167,13 @@ sub forceControlFields {
 
     ($leader, $f007, $f008, $componentPart) = (undef, undef, undef, 'a');
 
+    if (my $mother_id = $r->isComponentPart()) {
+        my $mother = $b->{Titles}->get($mother_id);
+        if ($mother) {
+          $itemType = $MMT::TranslationTable::ItemTypes::PL_defaultTitleTypes{$mother->[0]->{TitleType}};
+        }
+    }
+
     if    ($itemType eq 'KI') { KI() } # PrettyLib 0 => KI
     elsif ($itemType eq 'NU') { NU() } # PrettyLib 2 => NU
     elsif ($itemType eq 'KA') { KA() } # PrettyLib 3 => KA
