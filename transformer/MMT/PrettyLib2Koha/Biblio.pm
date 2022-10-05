@@ -80,6 +80,9 @@ sub build($s, $o, $b) {
 
   $s->{record}->addUnrepeatableSubfield('942', 'c', getItemType(@_));
 
+  $s->{record}->addUnrepeatableSubfield('999', 'c', $s->id()); # 999$c = biblionumber
+  $s->{record}->addUnrepeatableSubfield('999', 'd', $s->id()); # 999$d = biblioitemnumber
+
   addCustomRepeatableFields($s);
 
   MMT::PrettyLib2Koha::Biblio::MaterialTypeRepair::forceControlFields(@_);
