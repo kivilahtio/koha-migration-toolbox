@@ -382,7 +382,7 @@ sub _bcryptCustomerPasswords {
 sub ship {
   my ($config) = @_;
 
-  my $cmd = $config->{pscp_filepath}.' -batch -unsafe -pw "'.$config->{ssh_pass}.'" -r '.$config->{export_path}.'/* '.$config->{ssh_user}.'@'.$config->{ssh_host}.':'.$config->{ssh_shipping_dir}.'/';
+  my $cmd = $config->{pscp_filepath}.' -batch -unsafe -pw "'.$config->{ssh_pass}.'" -P '.$config->{ssh_port}.' -r '.$config->{export_path}.'/* '.$config->{ssh_user}.'@'.$config->{ssh_host}.':'.$config->{ssh_shipping_dir}.'/';
   print "Executing shipping command:$nl  $cmd$nl" if $v;
   qx($cmd);
 }

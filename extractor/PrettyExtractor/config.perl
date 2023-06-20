@@ -61,6 +61,9 @@ return {
   # IP/hostname of the remote fileserver
   ssh_host => '127.0.0.1',
 
+  # TCPIP Port number to connect to.
+  ssh_port => '22',
+
   # In which directory the DB dump should be put into?
   ssh_shipping_dir => 'private/PKKS',
 
