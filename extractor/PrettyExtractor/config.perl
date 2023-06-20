@@ -54,6 +54,8 @@ return {
   ssh_user => 'beastttk',
 
   # Password of the remote server user
+  # User only numbers and words, no special characters.
+  # Don't know how to pass those via the cmd.exe shell invocations.
   ssh_pass => '1234',
 
   # IP/hostname of the remote fileserver

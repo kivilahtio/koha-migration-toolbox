@@ -144,7 +144,7 @@ if ($dbh->{odbc_has_unicode}) {
 }
 #$dbh->{odbc_utf8_on} = 0;
 $dbh->{odbc_default_bind_type} = SQL_VARCHAR;
-$dbh->{LongReadLen} = 80000;
+$dbh->{LongReadLen} = 1048576*1024;
 
 my $encoding = $config->{export_encoding};
 if ($encoding eq 'encoding(UTF-8)') {
