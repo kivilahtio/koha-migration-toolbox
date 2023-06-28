@@ -43,6 +43,7 @@ sub build($self, $o, $b) {
   $self->set(Id_Library           => 'homebranch',         $o, $b);
   $self->set(Price                => 'price',              $o, $b);
   $self->set(Id                   => 'datelastborrowed',   $o, $b);
+  $self->setItype(                                         $o, $b);
   $self->setDatelastseen                                  ($o, $b);
   $self->setStatuses                                      ($o, $b);
   #  \$self->setNotforloan
@@ -55,7 +56,6 @@ sub build($self, $o, $b) {
   $self->set(Id                   => 'issues',             $o, $b);
   $self->set(Note                 => 'itemnotes',          $o, $b);
   #  \$self->setItemnotes_nonpublic
-  $self->setItype(                                         $o, $b);
   $self->set(Id_Library           => 'holdingbranch',      $o, $b);
   $self->set(Id_Location          => 'permanent_location', $o, $b);
   #  \$self->setCcode                                         ($o, $b);
@@ -223,11 +223,11 @@ sub setItemcallnumber($s, $o, $b) {
     }
   }
 
+  $s->dispatchHook(MMT::Config::Item_setItemcallnumber_posthook(), $o, $b);
+
   unless ($s->{itemcallnumber}) {
     $log->warn($s->logId()." has no itemcallnumber! Id_Shelf=".$o->{Id_Shelf});
   }
-
-  $s->dispatchHook(MMT::Config::Item_setItemcallnumber_posthook(), $o, $b);
 }
 sub setIssues($s, $o, $b) {
   my $loans = $b->{LoanByItem}->get($o->{Id}); # The Loan-rows are ordered from oldest to newest
