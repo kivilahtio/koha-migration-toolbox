@@ -91,7 +91,7 @@ barcodeMinLength: 5
 #    replace: A
 #  - regex: 'Ö'
 #    replace: O
-barcodeRegexReplace:
+barcodeRegexReplace: []
 
 # How Perl's Text::CSV should handle .csv-files input?
 # Output is hard-coded and should not be changed to maintain zero-configuration compatibility with the Loader-modules
@@ -120,7 +120,7 @@ marcInputEncoding: utf-8
 #      - 3: Metadata
 #        a: Ei poimintaa. No copying;
 #        b: Org
-marcAddCustomRepeatableField:
+marcAddCustomRepeatableField: []
 
 ############ PRETTY* -specific configs ################
 
