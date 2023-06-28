@@ -160,6 +160,11 @@ sub VI { # Video (VHS)
     $f007   = 'vf |ba|||';
     $f008   = '||||||n||||    xxd|||||||||| ||||v|   ||';
 }
+sub VA { # Valokuva
+    $leader = '     nkm#a22     zu#4500';
+    $f007   = 'k|#||#';
+    $f008   = '      n        fi ||| |     ||   |||||||';
+}
 
 sub forceControlFields {
     my ($s, $o, $b) = @_;
