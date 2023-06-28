@@ -708,30 +708,36 @@ sub linkSubjects($s, $o, $builder) {
 
           my ($fieldCode, $subfieldA, $subfield2, $indicator1, $indicator2) = ('653', $subject->{Subject}, undef, '#', '#'); #Defaults for unknown and uncontrolled index term
           if    ($subject->{List} == 152) { # YSA
-            $fieldCode = '650';
+            $fieldCode = '652';
             $subfield2 = 'YSA';
             $indicator1 = '#';
             $indicator2 = '7';
           }
+          elsif ($subject->{List} == 153) { # Concis - kirjastokohtainen
+            $fieldCode = '694';
+            $subfield2 = MMT::Config::organizationISILCode();
+            $indicator1 = '#';
+            $indicator2 = '7';
+          }
           elsif ($subject->{List} == 192) { # Kirjastokohtaiset (Organization specific)
-            $fieldCode = '650';
+            $fieldCode = '692';
             $subfield2 = MMT::Config::organizationISILCode();
             $indicator1 = '#';
             $indicator2 = '7';
           }
           elsif ($subject->{List} == 199) { # Avainsanat (Topical keywords) ??? TODO::
-            $fieldCode = '650';
+            $fieldCode = '693';
             $subfield2 = MMT::Config::organizationISILCode();
             $indicator1 = '#';
             $indicator2 = '7';
           }
           elsif ($subject->{List} == 0) { # MeSH (Medical Subject Headings)
-            $fieldCode = '650';
+            $fieldCode = '690';
             $indicator1 = '#';
             $indicator2 = '2';
           }
           elsif ($subject->{List} == 50) { # MUSA (Musiikki asiasanasto)
-            $fieldCode = '650';
+            $fieldCode = '653';
             $subfield2 = 'MUSA';
             $indicator1 = '#';
             $indicator2 = '7';
