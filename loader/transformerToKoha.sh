@@ -68,6 +68,7 @@ elif [ -z "$KOHA_HOST" ]; then
 
   echo "Link the loadable files for Loader default path"
   test ! -e $KOHA_DATA_SOURCE_DIR && (ln -s $MMT_HOME/KohaImports $KOHA_DATA_SOURCE_DIR || (echo "Linking Koha data failed!" && exit 10))
+  chmod -R +r $MMT_HOME/KohaImports
 
   echo "Start loading"
   cd $MMT_PROGRAM_DIR/loader/KohaLoader && $KOHA_LOADER_CMD
