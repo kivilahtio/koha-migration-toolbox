@@ -329,7 +329,7 @@ sub addAnonymizedPatron {
     dateexpiry => '2032-12-31',
   })->store;
 
-  $patron->set_password( { password => '!' } ); # disable login
+  #$patron->set_password( { password => '!' } ); # disable login # This doesn't work anymore, as password length check is not passed.
   $patron = Koha::Patrons->find({cardnumber => 'anonymized'}); # get new borrowernumber
 
   C4::Context->set_preference('AnonymousPatron', $patron->borrowernumber);
