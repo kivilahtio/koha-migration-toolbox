@@ -100,7 +100,7 @@ $itemnumberConversionTable =     Bulk::ConversionTable::ItemnumberConversionTabl
 
 my $checkoutStatement = $dbh->prepare(
     "INSERT INTO issues
-        (issue_id, borrowernumber, itemnumber, issuedate, date_due, branchcode, renewals)
+        (issue_id, borrowernumber, itemnumber, issuedate, date_due, branchcode, renewals_count)
     VALUES (?,?,?,?,?,?,?)"
 );
 my $updateItemSth = $dbh->prepare("
