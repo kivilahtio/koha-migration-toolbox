@@ -71,7 +71,7 @@ sub EK { # E-Kirja
 sub ES { # Esine
     $leader = '     nrm a22     zu 4500';
     $f007   = 'z|';
-    $f008   = '      n        xxd||||| |||| 00| 0    ||';
+    $f008   = '      n||||||||xx |||||     ||   rn|||||';
 }
 sub KA { # Kausijulkaisu/Sarjajulkaisu
     $leader = '     nas a22     zu 4500';
