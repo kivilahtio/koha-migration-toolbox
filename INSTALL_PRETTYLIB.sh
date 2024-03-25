@@ -7,16 +7,19 @@
 IS_CPANM_INSTALLED=`which cpanm`
 test $IS_CPANM_INSTALLED || ( echo "cpanm is not installed, install it with 'apt install cpanminus'" && exit 1)
 
+MMT_CODE=`dirname $0` #Where this installer resides, resides the code to execute
+test $MMT_CODE == "." && MMT_CODE=`pwd`
+MMT_USERGRP=$(stat -c "%U:%G" "$MMT_CODE")
+MMT_USER=$(stat -c "%U" "$MMT_CODE")
+HOME2="/home/$MMT_USER"
 if [ -z "$MMT_HOME" ]; then
-  MMT_HOME="$HOME/MMT-PrettyLib" #Put configuration files here and preconfigure paths
+  MMT_HOME="$HOME2/MMT-PrettyLib" #Put configuration files here and preconfigure paths
   echo "MMT_HOME not defined, installing to default directory '$MMT_HOME'"
   echo "Is this acceptable? <Ctrl+C to abort, ENTER to accept>"
   read -t 10 -p "Your answer: "
 else
   echo "Installing to MMT_HOME='$MMT_HOME'"
 fi
-MMT_CODE=`dirname $0` #Where this installer resides, resides the code to execute
-test $MMT_CODE == "." && MMT_CODE=`pwd`
 CONFIG_MAIN="$MMT_HOME/config/main.yaml"
 PRETTYLIB_EXPORT_DIR="PrettyLibExports"
 KOHA_IMPORT_DIR="KohaImports"
@@ -31,16 +34,25 @@ PIPELINE_SCRIPTS="$MMT_HOME/secret"
 cd $MMT_CODE #Make sure we are in the source directory
 test $? != 0 && echo "Couldn't cd to app source code directory '$MMT_CODE', failed with error code '$?'" && exit 7
 
+function debian_packages {
+  echo "Installing Transformer debian packages"
+  cat "$MMT_CODE/transformer/debian-packages" | sudo apt install -y
+  cpanm -f Carp::Always::Color
+}
+debian_packages
 
-echo "Installing Perl dependencies to the program dir '$MMT_CODE'"
-echo "$MMT_CODE/transformer"
-cpanm -L $MMT_CODE/transformer/extlib --installdeps $MMT_CODE/transformer
-# Ubuntu 18 fails on one of the dependencies, unless --force is used...
-if [ $? != 0 ]
-then
-  echo "Perl dependencies install failed with error code '$?'. Using force." && cpanm -L $MMT_CODE/transformer/extlib --force --installdeps $MMT_CODE/transformer
-  test $? != 0 && echo "Perl dependencies install failed with error code '$?'. Force did not help." && exit 9
-fi
+function localized_perl_deps {
+  echo "Installing Perl dependencies to the program dir '$MMT_CODE'"
+  echo "$MMT_CODE/transformer"
+  cpanm -L $MMT_CODE/transformer/extlib --installdeps $MMT_CODE/transformer
+  # Ubuntu 18 fails on one of the dependencies, unless --force is used...
+  if [ $? != 0 ]
+  then
+    echo "Perl dependencies install failed with error code '$?'. Using force." && cpanm -L $MMT_CODE/transformer/extlib --force --installdeps $MMT_CODE/transformer
+    test $? != 0 && echo "Perl dependencies install failed with error code '$?'. Force did not help." && exit 9
+  fi
+}
+#localized_perl_deps #Debian packages should cover these
 
 echo "Installing debian packages"
 sudo apt install -y sshpass # Typically used with extractor from legacy systems
@@ -59,22 +71,23 @@ cp config/seed.gitignore $MMT_HOME/.gitignore || exit 11
 cp $EXTRACTOR_DIR/PrettyExtractor/preprocess.sh $MMT_HOME/preprocess.sh || exit 11
 cp $EXTRACTOR_DIR/$EXTRACTOR_PIPELINE_SCRIPT $PIPELINE_SCRIPTS/ || exit 12
 cp $LOADER_DIR/$LOADER_PIPELINE_SCRIPT $PIPELINE_SCRIPTS/ || exit 12
+chown -R $MMT_USERGRP "$MMT_HOME"
 
 
 echo "Persisting environment variables"
 export MMT_HOME=$MMT_HOME
 export MMT_CODE=$MMT_CODE
-if [[ `grep -P 'MMT_HOME' $HOME/.bashrc` ]]
+if [[ `grep -P 'MMT_HOME' $HOME2/.bashrc` ]]
 then
-  perl -pi.bak -e "s|^.+MMT_HOME.+$|export MMT_HOME=$MMT_HOME|" $HOME/.bashrc
+  perl -pi.bak -e "s|^.+MMT_HOME.+$|export MMT_HOME=$MMT_HOME|" $HOME2/.bashrc
 else
-  echo "export MMT_HOME=$MMT_HOME" >> $HOME/.bashrc
+  echo "export MMT_HOME=$MMT_HOME" >> $HOME2/.bashrc
 fi
-if [[ `grep -P 'MMT_CODE' $HOME/.bashrc` ]]
+if [[ `grep -P 'MMT_CODE' $HOME2/.bashrc` ]]
 then
-  perl -pi.bak -e "s|^.+MMT_CODE.+$|export MMT_CODE=$MMT_CODE|" $HOME/.bashrc
+  perl -pi.bak -e "s|^.+MMT_CODE.+$|export MMT_CODE=$MMT_CODE|" $HOME2/.bashrc
 else
-  echo "export MMT_CODE=$MMT_CODE" >> $HOME/.bashrc
+  echo "export MMT_CODE=$MMT_CODE" >> $HOME2/.bashrc
 fi
 
 
