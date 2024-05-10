@@ -30,7 +30,7 @@ sub configure($rules) {
                                            $sourceSystem . '/' . $rule->{destinationFile};
 
 
-    open(my $FHin,  '<:encoding(UTF-8)', $sourceFile)      or $log->logdie("Unable to open file '$sourceFile' for reading: $!");
+    open(my $FHin,  '<:encoding('.MMT::Config::csvInputEncoding().')', $sourceFile)      or $log->logdie("Unable to open file '$sourceFile' for reading: $!");
     open(my $FHout, '>:encoding(UTF-8)', $destinationFile) or $log->logdie("Unable to open file '$destinationFile' for writing: $!");
 
     my $csv = Text::CSV->new(MMT::Config::csvInputNew());
