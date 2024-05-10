@@ -55,6 +55,12 @@ patronHomeLibrary:
 # How many expiry years to add for patron account if expiry date is not defined in Voyager
 patronAddExpiryYears: 0
 
+# How to fix missing patron record entry dates?
+# NOW - Generate the current time
+# EMPTY - Leave empty
+# YYYY-MM-DD - Set some static date, such as 2024-05-10
+patronDateEnrolledDefault: NOW
+
 # Are patron data anonymized by default in Koha?
 # 2 - never save privacy information. Koha tries to save as little info as possible
 # 1 - Default

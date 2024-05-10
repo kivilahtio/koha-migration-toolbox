@@ -92,6 +92,23 @@ sub patronHomeLibrary() {
 sub patronInitials() {
   return $config->{patronInitials};
 }
+my $patronDateEnrolledDefaultYMD;
+sub patronDateEnrolledDefault() {
+  return $patronDateEnrolledDefaultYMD if defined($patronDateEnrolledDefaultYMD);
+  if ($config->{patronDateEnrolledDefault} eq 'NOW') {
+    $patronDateEnrolledDefaultYMD = DateTime->now()->ymd('-');
+  }
+  elsif ($config->{patronDateEnrolledDefault} eq 'EMPTY') {
+    $patronDateEnrolledDefaultYMD = "";
+  }
+  elsif ($config->{patronDateEnrolledDefault} =~ /^\d\d\d\d-\d\d-\d\d$/) {
+    $patronDateEnrolledDefaultYMD = $config->{patronDateEnrolledDefault};
+  }
+  else {
+    die "Config patronDateEnrolledDefault value '".$config->{patronDateEnrolledDefault}."' is misconfigured!";
+  }
+  return $patronDateEnrolledDefaultYMD;
+}
 sub phoneNumberValidationStrategy() {
   return $config->{phoneNumberValidationStrategy};
 }

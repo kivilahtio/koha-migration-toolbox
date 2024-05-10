@@ -221,12 +221,12 @@ sub setInitials($s, $o, $b) {
   }
 }
 
-my $dateenrolledDefault = DateTime->new(year => 1985, month => 1, day => 1)->ymd('-');
+my $dateenrolledDefaultYMD = MMT::Config::patronDateEnrolledDefault();
 sub setDateenrolled($s, $o, $b) {
   $s->{dateenrolled} = $o->{SaveDate};
   unless ($s->{dateenrolled}) {
-    $log->warn($s->logId()." - Is missing dateenrolled. Defaulting to '$dateenrolledDefault'");
-    $s->{dateenrolled} = $dateenrolledDefault;
+    $log->warn($s->logId()." - Is missing dateenrolled. Defaulting to '$dateenrolledDefaultYMD'");
+    $s->{dateenrolled} = $dateenrolledDefaultYMD;
   }
   else {
     $s->{dateenrolled} = MMT::Validator::parseDate($s->{dateenrolled});
