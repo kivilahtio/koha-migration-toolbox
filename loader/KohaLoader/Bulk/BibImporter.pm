@@ -149,12 +149,14 @@ sub worker($s) {
     #$oplibMatcher = Bulk::OplibMatcher->new($s->p('matchLog'));
   }
 
+  my $legacyBiblionumber;
   while (not($SIG_TERMINATE_RECEIVED) && defined(my $recordXmlPtr = $recordQueue->dequeue())) {
+   eval {
     DEBUG "Thread $tid - New job";
     TRACE "$$recordXmlPtr\n";
 
     my $record = MARC::Record->new_from_xml($$recordXmlPtr, 'UTF-8', 'MARC21');
-    my $legacyBiblionumber = $s->getLegacyBiblionumber($record);
+    $legacyBiblionumber = $s->getLegacyBiblionumber($record);
     next unless $legacyBiblionumber;
 
     my $matchedBiblionumber;
@@ -200,6 +202,10 @@ sub worker($s) {
         $bnConversionQueue->enqueue(\%bid2);
       }
     }
+   };
+   if ($@) {
+     warn "ERROR: Bib='$legacyBiblionumber' $@"
+   }
   }
   };
   if ($@) {
@@ -330,7 +336,7 @@ sub addRecordFast($s, $record, $recordXmlPtr, $legacyBiblionumber) {
 
   eval {
   my $frameworkcode = '';
-  my $olddata = C4::Biblio::TransformMarcToKoha($record, $frameworkcode);
+  my $olddata = C4::Biblio::TransformMarcToKoha({record => $record});
   $olddata->{biblionumber} = $legacyBiblionumber if $s->p('preserveIds');
   ($newBiblionumber, $error1)     = _koha_add_biblio($dbh, $olddata, $frameworkcode);
   if ($error1) {
