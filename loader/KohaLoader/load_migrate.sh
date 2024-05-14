@@ -8,6 +8,9 @@ test -z "$MMT_WORKING_DIR" && echo "This cannot be ran standalone, but must be c
 
 export PERL5LIB="$PERL5LIB:." #New Perl versions no longer implicitly include modules from .
 
+#Migrate frameworks
+./bulkMARCFrameworkImport.pl &> $MMT_WORKING_DIR/bulkMARCFrameworkImport.log
+
 #Migrate MARC and Items
 ./bulkBibImport.pl --file $MMT_DATA_SOURCE_DIR/biblios.marcxml \
     --bnConversionTable $MMT_WORKING_DIR/biblionumberConversionTable \
