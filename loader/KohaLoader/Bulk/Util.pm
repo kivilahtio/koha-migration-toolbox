@@ -82,9 +82,9 @@ Trying different strategies to speed it up while maintaining optimal memory foot
 
 =cut
 
-sub getMarcFileIterator($s) {
+sub getMarcFileIterator($inputMarcFile) {
   local $INPUT_RECORD_SEPARATOR = '</record>'; #Let perl split MARCXML for us
-  open(my $FH, '<:encoding(UTF-8)', $s->p('inputMarcFile')) or die("Opening the MARC file '".$s->p('inputMarcFile')."' for slurping failed: $!"); # Make sure we have the proper encoding set before handing these to the MARC-modules
+  open(my $FH, '<:encoding(UTF-8)', $inputMarcFile) or die("Opening the MARC file '".$inputMarcFile."' for slurping failed: $!"); # Make sure we have the proper encoding set before handing these to the MARC-modules
 
   sub _i {
     my ($recursionDepth) = @_;

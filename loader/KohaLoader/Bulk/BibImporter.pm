@@ -88,7 +88,7 @@ sub bimp($s) {
   push @threads, threads->create(\&worker, $s)
     for 1..$s->p('workers');
 
-  my $next = Bulk::Util::getMarcFileIterator($s);
+  my $next = Bulk::Util::getMarcFileIterator($s->p('inputMarcFile'));
   #Enqueue MFHDs to the job queue. This way we avoid strange race conditions in the file handle
   while (not($SIG_TERMINATE_RECEIVED) && defined(my $record = $next->())) {
     if ($recordQueue->pending() > $jobBufferMaxSize) { # This is a type of buffering to avoid loading too much into memory. Wait for a while, if the job queue is getting large.
