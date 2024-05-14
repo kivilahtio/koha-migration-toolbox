@@ -245,7 +245,7 @@ sub setDateexpiry($s, $o, $b) {
 							 days => int(rand(350)) # Don't expire all the same day
 							)->ymd();
       $s->{dateexpiry} = $expiry_date_if_not_none;
-      $log->info($s->logId()." - setting expiration to '$expiry_date_if_not_none'");
+      $log->debug($s->logId()." - setting expiration to '$expiry_date_if_not_none'");
     } else {
       my $notification = "Missing expiration date, expiring now";
       $log->warn($s->logId()." - $notification");
