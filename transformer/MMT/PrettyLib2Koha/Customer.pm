@@ -42,6 +42,10 @@ sub new {
   return $self;
 }
 
+# borrower note fields available [borrowernotes,contactnote,opacnote]
+my $defaultPrivateNoteField = 'borrowernotes';
+my $defaultPublicNoteField = 'opacnote';
+
 =head2 build
 
 Flesh out the Koha-borrower -object out of the given
@@ -194,7 +198,7 @@ sub setBorrowernotes($s, $o, $b) {
   if ($o->{Note}) {
     my ($Note, $ssns) = MMT::Validator::filterSSNs($s, $o->{Note});
     $s->_exportSsn($_) for @$ssns;
-    $s->concatenate($Note => 'borrowernotes');
+    $s->concatenate($Note => $defaultPrivateNoteField);
   }
 }
 sub setFirstname($s, $o, $b) {
@@ -245,7 +249,7 @@ sub setDateexpiry($s, $o, $b) {
     } else {
       my $notification = "Missing expiration date, expiring now";
       $log->warn($s->logId()." - $notification");
-      $s->concatenate($notification => 'borrowernotes');
+      $s->concatenate($notification => $defaultPrivateNoteField);
     }
   }
 }
@@ -318,7 +322,7 @@ sub setEmail($s, $o, $b) {
     }
     else {
       my $msg = "Kirjastojärjestelmävaihdon yhteydessä havaittu epäselvä sähköpostiosoite '".$o->{Email}."' poistettu asiakastiedoistanne. Olkaa yhteydessä kirjastoonne.";
-      $s->concatenate($msg => 'opacnote');
+      $s->concatenate($msg => $defaultPublicNoteField);
       $log->warn($s->logId()." - Has a bad email address '".$o->{Email}."'.");
     }
   }
@@ -408,7 +412,7 @@ sub setSsn($s, $o, $b) {
       my $notification = "SSN is not a valid Finnish SSN";
       $log->warn($s->logId()." - $notification - $@");
 
-      $s->concatenate($notification => 'borrowernotes');
+      $s->concatenate($notification => $defaultPrivateNoteField);
     }
   }
   else {
