@@ -1,6 +1,7 @@
 #!/bin/bash
 
 MMT_WORKING_DIR="$1"
+SQL_POSTPROCESS_CMD_FILE="$MMT_WORKING_DIR/postprocessing.sql"
 
 test -z "$MMT_WORKING_DIR" && echo "This cannot be ran standalone, but must be called from load.sh" && exit 1
 
@@ -23,7 +24,6 @@ export PERL5LIB="$PERL5LIB:." #New Perl versions no longer implicitly include mo
 #./bulkItemImport.pl --file $MMT_DATA_SOURCE_DIR/Hankinta.migrateme --bnConversionTable $MMT_WORKING_DIR/biblionumberConversionTable &> $WORKING_DIR/bulkAcquisitionImport.log
 
 ./bulkPatronImport.pl &> $MMT_WORKING_DIR/bulkPatronImport.log
-test -n $DEFAULT_ADMIN && test -n $DEFAULT_ADMIN_APIKEY && ./bulkPatronImport.pl --defaultAdmin "$DEFAULT_ADMIN" --defaultAdminApiKey "$DEFAULT_ADMIN_APIKEY" &> $MMT_WORKING_DIR/bulkPatronImportDefaultAdmin.log
 ./bulkPatronImport.pl --messagingPreferencesOnly &> $MMT_WORKING_DIR/bulkPatronImportMessagingDefaults.log & #This is forked on the background
 ./bulkPatronImport.pl --sort1ToAuthorizedValueOnly &> $MMT_WORKING_DIR/bulkPatronImportSort1ToAuthorisedValue.log & #This is forked on the background
 ./bulkPatronImport.pl --uploadSSNKeysOnly &> $MMT_WORKING_DIR/bulkPatronImportSSNKeys.log & #This is forked on the background
@@ -55,3 +55,8 @@ test -n $DEFAULT_ADMIN && test -n $DEFAULT_ADMIN_APIKEY && ./bulkPatronImport.pl
 ./bulkBranchtransfersImport.pl -file $MMT_DATA_SOURCE_DIR/Branchtransfer.migrateme \
     --inConversionTable $MMT_WORKING_DIR/itemnumberConversionTable \
     &> $MMT_WORKING_DIR/bulkBranchtransfersImport.log
+
+echo "Postprocessing SQL, logging to '$MMT_WORKING_DIR/postprocessing.sql.log'"
+cat $SQL_POSTPROCESS_CMD_FILE | koha-mysql $KOHA_INSTANCE_NAME -vvvv &> $MMT_WORKING_DIR/postprocessing.sql.log
+
+test -n $DEFAULT_ADMIN && test -n $DEFAULT_ADMIN_APIKEY && ./bulkPatronImport.pl --defaultAdmin "$DEFAULT_ADMIN" --defaultAdminApiKey "$DEFAULT_ADMIN_APIKEY" &> $MMT_WORKING_DIR/bulkPatronImportDefaultAdmin.log

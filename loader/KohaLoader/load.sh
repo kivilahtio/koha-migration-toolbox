@@ -132,8 +132,6 @@ export KOHA_INSTANCE_NAME=$KOHA_INSTANCE_NAME
 " > $WORKING_DIR/mmt-env
 . $WORKING_DIR/mmt-env # This way the used environment can be reused without rerunning this script => better dev and debugging
 
-SQL_POSTPROCESS_CMD_FILE="$MMT_WORKING_DIR/postprocessing.sql"
-
 function checkUser {
     user=$1
     if [ $(whoami) != "$user" ]
@@ -145,9 +143,6 @@ function checkUser {
 
 function migrateBulkScripts {
   koha-shell $KOHA_INSTANCE_NAME -c "bash -x $LOADER_DIR/load_migrate.sh '$WORKING_DIR'"
-
-  echo "Postprocessing SQL, logging to '$MMT_WORKING_DIR/postprocessing.sql.log'"
-  cat $SQL_POSTPROCESS_CMD_FILE | koha-mysql $KOHA_INSTANCE_NAME -vvvv &> $MMT_WORKING_DIR/postprocessing.sql.log
 }
 
 function dedupAuthorities {
