@@ -19,158 +19,180 @@ Enforce MARC21 Record's leader and control field contents to match a itemtype.
 
 my $statistics;
 
-#EGDATA-116
-## Initializing anonymous sanitation functions
-my ($leader, $f007, $f008, $componentPart) = (undef, undef, undef, 'a');
+#DUPLICATION WARNING!
+#KohaLoader/bulkMARCFrameworkImport.pl needs updated changes from here!
+my %frameworks = (
+  AA => {
+    code => 'AA',
+    description => 'Äänikirja',
+    leader => '     nim a22     zu 4500',
+    f007   => 'sd f||g|||m|||',
+    f008   => '||||||n||||    fi ||||| ||||||f  |    ||',
+  },
+  AR => {
+    code => 'AR',
+    description => 'Artikkeli',
+    leader => '     naa a22     zu 4500',
+    f007   => 'ta',
+    f008   => '||||||n||||    xxd|||||||||| ||||||   ||',
+  },
+  AT => {
+    code => 'AT',
+    description => 'ATK-tallenne',
+    leader => '     nmm a22     zu 4500',
+    f007   => 'cd ||||||||',
+    f008   => '||||||n||||    fi |||||||||| ||||f|   ||',
+  },
+  CD => {
+    code => 'CD',
+    description => 'CD-äänilevy',
+    leader => '     njm a22     zu 4500',
+    f007   => 'sd f||g|||m|||',
+    f008   => '      n||||    xxu||nn  ||||||   |     |',
+  },
+  DI => {
+    code => 'DI',
+    description => 'Dia',
+    leader => '     ngm a22     zu 4500',
+    f007   => 'g| ||||||',
+    f008   => '      n        fi |||       |    d|   ||',
+  },
+  DV => {
+    code => 'DV',
+    description => 'DVD, videotallenne',
+    leader => '     ngm a22     zu 4500',
+    f007   => 'vd cvaiz|',
+    f008   => '      n        fi |||       |    v|   ||',
+  },
+  EA => {
+    code => 'EA',
+    description => 'Elektroninen aineisto',
+    leader => '     nmm a22     zu 4500',
+    f007   => 'cr |||||||||||',
+    f008   => '      n           ||||      |||| ||   ||',
+  },
+  EJ => {
+    code => 'EJ',
+    description => 'Elektroninen kausijulkaisu',
+    leader => '     nas a22     zu 4500',
+    f007   => 'cr#|||||||||||',
+    f008   => '      n        xxu|||||o|||| |###|     |',
+  },
+  EK => {
+    code => 'EK',
+    description => 'E-Kirja',
+    leader => '     nam a22     zu 4500',
+    f007   => 'cr |||||||||||',
+    f008   => '      n           |||| o    |||| ||   ||',
+  },
+  ES => {
+    code => 'ES',
+    description => 'Esine',
+    leader => '     nrm a22     zu 4500',
+    f007   => 'z|',
+    f008   => '      n||||||||xx |||||     ||   rn|||||',
+  },
+  KA => {
+    code => 'KA',
+    description => 'Kausijulkaisu/Sarjajulkaisu',
+    leader => '     nas a22     zu 4500',
+    f008   => '      n        xxu||||| |||| 00| 0     |',
+    componentPart => 's',
+  },
+  KN => 'KI', # Kansio
+  KI => {
+    code => 'KI',
+    description => 'Kirja',
+    leader => '     nam a22     zu 4500',
+    f008   => '||||||n||||    fi |||||||||| ||||||   ||',
+  },
+  KM => 'KI', # Konemanuaali
+  KO => 'KI', # Kokousjulkaisu
+  KR => {
+    code => 'KR',
+    description => 'Kartta',
+    leader => '     nem a22     zu 4500',
+    f007   => 'a| ca|||',
+    f008   => '      n           ||||| |||| 00|       |',
+  },
+  KV => 'KI', # Kalvot
+  LA => {
+    code => 'LA',
+    description => 'Lautapeli',
+    leader => '     nrm a22     zu 4500',
+    f007   => 'zu',
+    f008   => '      n        fi ||| |      |   g|   ||',
+  },
+  MA => 'KI', # Määräys
+  MO => 'KI', # Moniste
+  MM => 'AT', # Multimedia
+  MV => {
+    code => 'MV',
+    description => 'Moniviestin',
+    leader => '     nom a22     zu 4500',
+    f007   => 'ou',
+    f008   => '||||||n||||    xxd|||       |    b||||||',
+  },
+  NU => {
+    code => 'NU',
+    description => 'Nuotti',
+    leader => '     ncm a22     zu 4500',
+    f007   => 'qu',
+    f008   => '||||||n||||    fi ||||||||||||||||||||||',
+  },
+  OM => 'KI', # Oppimateriaali
+  OP => 'KI', # Opinnäytetyö
+  RA => 'KI', # Raportti
+  PP => 'KI', # Pienpainate
+  SA => 'KA', # Sarjajulkaisu
+  SO => 'KI', # Sopimus
+  SR => {
+    code => 'SR',
+    description => 'Äänite',
+    leader => '     njm a22     zu 4500',
+    f007   => 'sd f||g|||m|||',
+    f008   => '      n||||    xxu||nn  ||||||   |     |',
+  },
+  ST => 'KI', # Standardi
+  TK => 'KN', # Tuotekansio
+  TU => 'OP', # Tutkimus
+  VI => {
+    code => 'VI',
+    description => 'Video (VHS)',
+    leader => '     ngm a22     zu 4500',
+    f007   => 'vf |ba|||',
+    f008   => '||||||n||||    xxd|||||||||| ||||v|   ||',
+  },
+  VA => {
+    code => 'VA',
+    description => 'Valokuva',
+    leader => '     nkm#a22     zu#4500',
+    f007   => 'k|#||#',
+    f008   => '      n        fi ||| |     ||   |||||||',
+  },
+);
+#DUPLICATION WARNING!
+#KohaLoader/bulkMARCFrameworkImport.pl needs updated changes from here!
+sub getFrameworkDetails {
+  my ($frameworkCode, $biblionumber, $depth_) = @_;
+  $depth_ = 0 unless $depth_;
 
-sub AA { # Äänikirja
-    $leader = '     nim a22     zu 4500';
-    $f007   = 'sd f||g|||m|||';
-    $f008   = '||||||n||||    fi ||||| ||||||f  |    ||';
-}
-sub AR { # Artikkeli
-    $leader = '     naa a22     zu 4500';
-    $f007   = 'ta';
-    $f008   = '||||||n||||    xxd|||||||||| ||||||   ||';
-}
-sub AT { # ATK-tallenne
-    $leader = '     nmm a22     zu 4500';
-    $f007   = 'cd ||||||||';
-    $f008   = '||||||n||||    fi |||||||||| ||||f|   ||';
-}
-sub CD { # CD-äänilevy
-    $leader = '     njm a22     zu 4500';
-    $f007   = 'sd f||g|||m|||';
-    $f008   = '      n||||    xxu||nn  ||||||   |     |';
-}
-sub DI { # Dia
-    $leader = '     ngm a22     zu 4500';
-    $f007   = 'g| ||||||';
-    $f008   = '      n        fi |||       |    d|   ||';
-}
-sub DV { # DVD, videotallenne
-    $leader = '     ngm a22     zu 4500';
-    $f007   = 'vd cvaiz|';
-    $f008   = '      n        fi |||       |    v|   ||';
-}
-sub EA { # Elektroninen aineisto
-    $leader = '     nmm a22     zu 4500';
-    $f007   = 'cr |||||||||||';
-    $f008   = '      n           ||||      |||| ||   ||';
-}
-sub EJ { # Elektroninen kausijulkaisu
-    $leader = '     nas a22     zu 4500';
-    $f007   = 'cr#|||||||||||';
-    $f008   = '      n        xxu|||||o|||| |###|     |';
-}
-sub EK { # E-Kirja
-    $leader = '     nam a22     zu 4500';
-    $f007   = 'cr |||||||||||';
-    $f008   = '      n           |||| o    |||| ||   ||';
-}
-sub ES { # Esine
-    $leader = '     nrm a22     zu 4500';
-    $f007   = 'z|';
-    $f008   = '      n||||||||xx |||||     ||   rn|||||';
-}
-sub KA { # Kausijulkaisu/Sarjajulkaisu
-    $leader = '     nas a22     zu 4500';
-    $f008   = '      n        xxu||||| |||| 00| 0     |';
-    $componentPart = 's';
-}
-sub KN { # Kansio
-    KI()
-}
-sub KI { # Kirja
-    $leader = '     nam a22     zu 4500';
-    $f008   = '||||||n||||    fi |||||||||| ||||||   ||';
-}
-sub KM { # Konemanuaali
-    KI()
-}
-sub KO { # Kokousjulkaisu
-    KI()
-}
-sub KR { # Kartta
-    $leader = '     nem a22     zu 4500';
-    $f007   = 'a| ca|||';
-    $f008   = '      n           ||||| |||| 00|       |';
-}
-sub KV { # Kalvot
-    KI()
-}
-sub LA { # Lautapeli
-    $leader = '     nrm a22     zu 4500';
-    $f007   = 'zu';
-    $f008   = '      n        fi ||| |      |   g|   ||';
-}
-sub MA { # Määräys
-    KI()
-}
-sub MO { # Moniste
-    KI()
-}
-sub MM { # Multimedia
-    AT()
-}
-sub MV { # Moniviestin
-    $leader = '     nom a22     zu 4500';
-    $f007   = 'ou';
-    $f008   = '||||||n||||    xxd|||       |    b||||||';
-}
-sub NU { # Nuotti
-    $leader = '     ncm a22     zu 4500';
-    $f007   = 'qu';
-    $f008   = '||||||n||||    fi ||||||||||||||||||||||';
-};
-sub OM { # Oppimateriaali
-    KI()
-}
-sub OP { # Opinnäytetyö
-    KI()
-}
-sub RA { # Raportti
-    KI()
-}
-sub PP { # Pienpainate
-    KI()
-}
-sub SA { # Sarjajulkaisu
-    KA()
-}
-sub SO { # Sopimus
-    KI()
-}
-sub SR { # Äänite
-    $leader = '     njm a22     zu 4500';
-    $f007   = 'sd f||g|||m|||';
-    $f008   = '      n||||    xxu||nn  ||||||   |     |';
-}
-sub ST { # Standardi
-    KI()
-}
-sub TK { # Tuotekansio
-    KN()
-}
-sub TU { # Tutkimus
-    OP()
-}
-sub VI { # Video (VHS)
-    $leader = '     ngm a22     zu 4500';
-    $f007   = 'vf |ba|||';
-    $f008   = '||||||n||||    xxd|||||||||| ||||v|   ||';
-}
-sub VA { # Valokuva
-    $leader = '     nkm#a22     zu#4500';
-    $f007   = 'k|#||#';
-    $f008   = '      n        fi ||| |     ||   |||||||';
+  if ($depth_ > 5) {
+    $log->warn("biblionumber='$biblionumber': Too deep recursion looking for frameworkCode, last key '$frameworkCode'!");
+    return {};
+  }
+  unless ($frameworks{$frameworkCode}) {
+    return {};
+  }
+  if (ref $frameworks{$frameworkCode} ne 'HASH') {
+    return getFrameworkDetails($frameworks{$frameworkCode}, $biblionumber, $depth_+1);
+  }
+  return $frameworks{$frameworkCode};
 }
 
 sub forceControlFields {
     my ($s, $o, $b) = @_;
     my ($r, $itemType) = ($s->{record}, $s->{record}->getUnrepeatableSubfield('942', 'c')->content());
-
-    ($leader, $f007, $f008, $componentPart) = (undef, undef, undef, 'a');
 
     if (my $mother_id = $r->isComponentPart()) {
         my $mother = $b->{Titles}->get($mother_id);
@@ -179,50 +201,28 @@ sub forceControlFields {
         }
     }
 
-    if    ($itemType eq 'KI') { KI() } # PrettyLib 0 => KI
-    elsif ($itemType eq 'NU') { NU() } # PrettyLib 2 => NU
-    elsif ($itemType eq 'KA') { KA() } # PrettyLib 3 => KA
-    elsif ($itemType eq 'ES') { ES() } # PrettyLib 8 => ES
-    elsif ($itemType eq 'DV') { DV() } # PrettyLib ? => DV
-    else {
-        eval {
-            no strict 'refs';
-            my $sub = __PACKAGE__->can($itemType);
-            if ($sub) {
-                $sub->();
-            }
-            else {
-                # probably translation tables change the default itype mappings to something completely new. So reconcile here.
-                my $standardItemtype = $MMT::TranslationTable::ItemTypes::PL_defaultTitleTypes{$o->{TitleType}};
-                $sub = __PACKAGE__->can($standardItemtype);
-                if ($sub) {
-                    $sub->();
-                } else {
-                    $log->warn($s->logId()." Unknown itemtype '$standardItemtype' to force control fields and leader. Defaulting to KI");
-                    KI();
-                }
-            }
-
-        };
-        if ($@ && ($@ =~ /Undefined subroutine/)) {
-            $log->warn($s->logId()." Unknown itemtype '$itemType' to force control fields and leader. Defaulting to KI");
-            KI();
-        }
-        elsif($@) {
-            die $@;
-        }
+    # Translation tables might change the default itype mappings to something completely new. So reconcile here.
+    my $fw = getFrameworkDetails($MMT::TranslationTable::ItemTypes::PL_defaultTitleTypes{$o->{TitleType}}, $s->{biblionumber});
+    unless ($fw) {
+        $log->warn($s->logId()." Unknown frameworkCode '".$MMT::TranslationTable::ItemTypes::PL_defaultTitleTypes{$o->{TitleType}}."' for TitleType='".$o->{TitleType}."'!");
+        $fw = getFrameworkDetails($itemType, $s->{biblionumber});
+    }
+    unless ($fw) {
+        $log->warn($s->logId()." Unknown frameworkCode '$itemType'! Defaulting to 'KI'.");
+        $fw = getFrameworkDetails('KI', $s->{biblionumber});
     }
 
     # Set the publication date to 008
     my $pd = $r->publicationDate();
-    substr($f008,7,4) = substr($pd,0,4) if ($pd);
+    substr($fw->{f008},7,4) = substr($pd,0,4) if ($pd);
 
-    if ($leader) {
-        $leader = characterReplace($leader, 7, $componentPart) if ($r->isComponentPart());
-        $r->leader( $leader );
+    if ($fw->{leader}) {
+        $fw->{leader} = characterReplace($fw->{leader}, 7, $fw->{componentPart} || 'a') if ($r->isComponentPart());
+        $r->leader( $fw->{leader} );
     }
-    $r->addUnrepeatableSubfield('007', '0', $f007) if ($f007);
-    $r->addUnrepeatableSubfield('008', '0', $f008) if ($f008);
+    $r->addUnrepeatableSubfield('007', '0', $fw->{f007}) if ($fw->{f007});
+    $r->addUnrepeatableSubfield('008', '0', $fw->{f008}) if ($fw->{f008});
+    $r->addUnrepeatableSubfield('999', 'b', $fw->{code} || die $s->logId()." No framework code!");
 }
 
 
