@@ -29,6 +29,7 @@ EXTRACTOR_DIR="$MMT_CODE/extractor"
 EXTRACTOR_PIPELINE_SCRIPT="prettyLibToTransformer.sh"
 LOADER_DIR="$MMT_CODE/loader"
 LOADER_PIPELINE_SCRIPT="transformerToKoha.sh"
+SQL_POSTPROCESS_CMD_FILE="postprocessing.sql"
 PIPELINE_SCRIPTS="$MMT_HOME/secret"
 
 cd $MMT_CODE #Make sure we are in the source directory
@@ -71,6 +72,7 @@ cp config/seed.gitignore $MMT_HOME/.gitignore || exit 11
 cp $EXTRACTOR_DIR/PrettyExtractor/preprocess.sh $MMT_HOME/preprocess.sh || exit 11
 cp $EXTRACTOR_DIR/$EXTRACTOR_PIPELINE_SCRIPT $PIPELINE_SCRIPTS/ || exit 12
 cp $LOADER_DIR/$LOADER_PIPELINE_SCRIPT $PIPELINE_SCRIPTS/ || exit 12
+cp $LOADER_DIR/$SQL_POSTPROCESS_CMD_FILE $PIPELINE_SCRIPTS/ || exit 12
 chown -R $MMT_USERGRP "$MMT_HOME"
 
 
