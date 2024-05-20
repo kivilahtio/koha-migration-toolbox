@@ -43,7 +43,7 @@ FinMARC -> MARC21 conversion is done post-transformation using USERMARCON
 
 sub build($s, $o, $b) {
 
-  $s->{biblionumber} = $o->{Id};
+  $s->{biblionumber} = _ss($o->{Id});
   unless ($s->{biblionumber}) {
     MMT::Exception::Delete->throw(error => "Missing field 001 with record:\n".Data::Printer::np($o)."\n!!");
   }
@@ -67,7 +67,7 @@ sub build($s, $o, $b) {
 
   $s->{record}->modTime($o->{UpdateDate} || $o->{SaveDate}); # Set 005
 
-  _setF001($s, $o->{F001} || $s->id); # Enforce Field 001
+  _setF001($s, _ss($o->{F001} || $s->id)); # Enforce Field 001
 
   linkToMother(@_, \%leader); # Create 773 to parent record.
 
@@ -261,7 +261,7 @@ sub linkToMother($s, $o, $b, $leader) {
       #Create the component parent link field
       my @sfs;
       # First the 'w'
-      push(@sfs, MMT::MARC::Subfield->new('w', $mother->[0]->{F001} || $o->{Id_Mother}));
+      push(@sfs, MMT::MARC::Subfield->new('w', _ss($mother->[0]->{F001} || $o->{Id_Mother})));
       # Then look for 't' from a long list of candidates
       for my $fieldCandidate (qw(245 240 210 222 247 246 243 242)) {
         if (my $f = _parseDatafield($s, $o, $b, $fieldCandidate, $mother->[0]->{"F$fieldCandidate"})) {
@@ -501,8 +501,8 @@ sub linkDocuments($s, $o, $b) {
       }
       $s->{record}->addField(
         MMT::MARC::Field->new('856', undef, undef, [
-          MMT::MARC::Subfield->new('u', $document->{DocName}),
-          MMT::MARC::Subfield->new('z', $document->{DocType} || 'Verkkoaineisto'),
+          MMT::MARC::Subfield->new('u', _ss($document->{DocName})),
+          MMT::MARC::Subfield->new('z', _ss($document->{DocType} || 'Verkkoaineisto')),
         ])
       );
       $log->debug($s->logId." - Linked in 856\$u Document '".$document->{DocType}."' '".$document->{DocName}."'") if $log->is_debug();
