@@ -217,8 +217,7 @@ sub forceControlFields {
     substr($fw->{f008},7,4) = substr($pd,0,4) if ($pd);
 
     if ($fw->{leader}) {
-        $fw->{leader} = characterReplace($fw->{leader}, 7, $fw->{componentPart} || 'a') if ($r->isComponentPart());
-        $r->leader( $fw->{leader} );
+        $r->leader( characterReplace($fw->{leader}, 7, $fw->{componentPart} || 'a') ) if ($r->isComponentPart());
     }
     $r->addUnrepeatableSubfield('007', '0', $fw->{f007}) if ($fw->{f007});
     $r->addUnrepeatableSubfield('008', '0', $fw->{f008}) if ($fw->{f008});
