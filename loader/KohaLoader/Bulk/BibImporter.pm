@@ -318,7 +318,8 @@ sub addRecord($s, $record, $recordXmlPtr, $legacyBiblionumber) {
 }
 
 sub addRecordKoha($s, $record, $recordXmlPtr, $legacyBiblionumber) {
-  my ($newBiblionumber, $newBiblioitemnumber) = eval { C4::Biblio::AddBiblio($record, '') };
+  my $frameworkcode = $record->subfield('999','b');
+  my ($newBiblionumber, $newBiblioitemnumber) = eval { C4::Biblio::AddBiblio($record, $frameworkcode) };
   die "Biblionumber '$newBiblionumber' and biblioitemnumber '$newBiblioitemnumber' do not match! This causes critical issues in Koha!\n" if $newBiblionumber != $newBiblioitemnumber;
 
   if ($@) {
@@ -335,7 +336,7 @@ sub addRecordFast($s, $record, $recordXmlPtr, $legacyBiblionumber) {
   my ($newBiblionumber, $newBiblioitemnumber, $error1, $error2);
 
   eval {
-  my $frameworkcode = '';
+  my $frameworkcode = $record->subfield('999','b');
   my $olddata = C4::Biblio::TransformMarcToKoha({record => $record});
   $olddata->{biblionumber} = $legacyBiblionumber if $s->p('preserveIds');
   ($newBiblionumber, $error1)     = _koha_add_biblio($dbh, $olddata, $frameworkcode);
