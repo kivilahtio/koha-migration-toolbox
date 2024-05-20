@@ -230,29 +230,14 @@ sub normalizeInternationalStandardNumbers($s, $field, $code) {
 
   my $isnsubfields = $field->getAllSubfields();
   for my $isnSubfield (@$isnsubfields) {
-    if ($isnSubfield->content() =~ m/($isn_re)/) {
-      my $normalized_isn = $1;
-      if ($isnSubfield->code() eq 'a') {
+    if ($isnSubfield->code() eq 'a') {
+      if ($isnSubfield->content() =~ m/($isn_re)/) {
+        my $normalized_isn = $1;
         $isnSubfield->content($normalized_isn);
       }
-      elsif ($isnSubfield->code() eq 'c') {
-        if ($field->getUnrepeatableSubfield('a')) {
-          # if subfield a exists, create new field
-          my $new_field = MMT::MARC::Field->new(_ss($code));
-          $new_field->addSubfield('a', $isnSubfield->content($normalized_isn));
-          $s->{record}->addField($new_field);
-          $field->deleteSubfield($isnSubfield);
-          $log->debug($s->logId()." - Created new field $code and removed subfield c from old field");
-        } else {
-          # otherwise move subfield c contents to subfield a
-          $isnSubfield->code('a');
-          $isnSubfield->content($normalized_isn);
-          $log->debug($s->logId()." - Relocated $isn field '$code' from subfield c to subfield a");
-        }
+      else {
+        $log->warn($s->logId()." - Unable to normalize $isn field '$code\$" . $isnSubfield->code() . "' value '" . $isnSubfield->content() . "'");
       }
-    }
-    else {
-      $log->warn($s->logId()." - Unable to normalize $isn field '$code' value '" . $isnSubfield->content() . "'");
     }
   }
 }
