@@ -104,6 +104,7 @@ sub build($self, $o, $b) {
   $self->setCategorycode                     ($o, $b);
   $self->setDateenrolled                     ($o, $b);
   $self->setDateexpiry                       ($o, $b);
+  $self->setPasswordExpirationDate           ($o, $b);
   $self->setStatuses                         ($o, $b);
   #  \$self->setLost
   #   \$self->setDebarred
@@ -394,6 +395,14 @@ sub setPassword($s, $o, $b) {
   #Having a PIN is in no way mandatory in PrettyLib, so let's not complain about that.
   #Just cleanly disable accounts without a password
   $s->{password} = $o->{PIN} || '!';
+}
+sub setPasswordExpirationDate($s, $o, $b) {
+    return if $s->{flags} && $s->{flags}>0; # skip librarians
+    my $password_expiration_date = MMT::Config::patronPasswordExpirationDate;
+    if ($password_expiration_date && $password_expiration_date eq 'NOW') {
+      $password_expiration_date = DateTime->now()->ymd();
+    }
+    $s->{password_expiration_date} = $password_expiration_date;
 }
 sub setSsn($s, $o, $b) {
   $s->{ssn} = $o->{institution_id}; #For some reason ssn is here

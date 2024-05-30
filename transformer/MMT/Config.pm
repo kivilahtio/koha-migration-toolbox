@@ -83,6 +83,9 @@ sub organizationISILCode() {
 sub patronAddExpiryYears() {
   return $config->{patronAddExpiryYears};
 }
+sub patronPasswordExpirationDate() {
+  return $config->{patronPasswordExpirationDate};
+}
 sub patronDefaultPrivacy() {
   return $config->{patronDefaultPrivacy} // 1;
 }
