@@ -86,8 +86,16 @@ Used when the Koha object doesn't have a barcode/cardnumber
 =cut
 
 our $pattern;
+our $lastNumber = MMT::Config::emptyBarcodeStartNumber();
 sub createBarcode($s, $seed=undef) {
-  $seed //= $s->_id();
+  unless(defined($seed)) {
+    if ($lastNumber == -1) {
+      $seed = $s->_id();
+    }
+    else {
+      $seed = ++$lastNumber;
+    }
+  }
   unless ($pattern) {
     my $pat = MMT::Config::emptyBarcodePattern();
     unless ($pat =~ /^([^0]*)(0+)([^0]*)/) {

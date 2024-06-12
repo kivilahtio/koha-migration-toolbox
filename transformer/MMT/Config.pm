@@ -37,6 +37,9 @@ sub csvInputHeader() {
 sub defaultReplacementPrice() {
   return $config->{defaultReplacementPrice};
 }
+sub emptyBarcodeStartNumber() {
+  return $config->{emptyBarcodeStartNumber};
+}
 sub emptyBarcodePattern() {
   return $config->{emptyBarcodePattern};
 }
@@ -224,6 +227,8 @@ unless ($config->{csvInputParams} && $config->{csvInputParams}->{new}) {
 unless ($config->{csvInputParams} && $config->{csvInputParams}->{header}) {
   die "Config 'csvInputParams->header' is not a proper Text::CSV options HASH";
 }
+
+$config->{emptyBarcodeStartNumber} = -1 if not defined $config->{emptyBarcodeStartNumber};
 
 unless (defined $config->{pl_shelf_filter}) {
   die "Config 'pl_shelf_filter' is not defined";
