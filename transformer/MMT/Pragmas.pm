@@ -16,6 +16,8 @@ sub import {
 
   #Pragmas
   Modern::Perl->import::into($target, '2015');
+  warnings->import::into($target);
+  strict->import::into($target);
   utf8->import::into($target); #This file and all Strings within are utf8-encoded
   Carp::Always::Color->import::into($target);
   experimental->import::into($target, 'smartmatch', 'signatures');

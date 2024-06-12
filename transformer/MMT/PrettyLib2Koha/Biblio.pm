@@ -428,7 +428,7 @@ sub linkBigTexts($s, $o, $builder) {
       $s->{record}->addField($field);
 
       if ($field->code == '505') {
-        for (my $i=0 ; i<@parts ; $i++) {
+        for (my $i=0 ; $i<@parts ; $i++) {
           my $p = $parts[$i];
           my $last = (scalar(@parts)-1 == $i ? 1 : 0);
           my $itemSeparator = ($last ? '' : ' .--');
