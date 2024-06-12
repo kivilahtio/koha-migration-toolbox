@@ -219,7 +219,9 @@ sub setItemcallnumber($s, $o, $b) {
       $log->debug($s->logId()." itemcallnumber '".$shelves->[0]->{Class}."' filtered. Id_Shelf=".$o->{Id_Shelf});
     }
     else {
-      $s->{itemcallnumber} = $shelves->[0]->{Class};
+      my $mainHeading = $o->{f950d_Item} || '';
+      $mainHeading = substr($mainHeading, 0, 3).' ' if $mainHeading;
+      $s->{itemcallnumber} = $mainHeading . $shelves->[0]->{Class};
     }
   }
 
