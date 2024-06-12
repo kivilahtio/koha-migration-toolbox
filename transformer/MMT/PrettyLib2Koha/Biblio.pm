@@ -381,6 +381,7 @@ sub linkAuthors($s, $o, $builder) {
 
 =head2 linkBigTexts
 
+Creates MARC21 directly. Using USEMARCON passthrough.
 PrettyLib.BigText -> Summaries -> Field 505
 
 =cut
@@ -390,12 +391,62 @@ sub linkBigTexts($s, $o, $builder) {
     $log->trace($s->logId." - Found '".scalar(@$texts)."' BigTexts.") if $log->is_trace();
 
     for my $text (@$texts) {
-      my $textFiltered = _ss($text->{TextContent}) if $text->{TextContent};
-      next unless($textFiltered);
+      next unless($text->{TextContent});
+      my $textFiltered = $text->{TextContent};
+      # PrettyLib has a codepoint sequence '5c 0d 5c 0a' which is the line separator for notes.
+      my @parts = split(m!\x{5c}\x{0d}\x{5c}\x{0a}!, $text->{TextContent});
+      @parts = map {_ss($_)} @parts;
 
-      $s->{record}->addField(MMT::MARC::Field->new('505', $text->{Id_Type}, '#', [
-        MMT::MARC::Subfield->new('a', $textFiltered),
-      ]));
+      my $type = $text->{Id_Type};
+      my $field = 505;
+      if ($type == 1) { #Tiivistelmä
+        $field = 505;
+      }
+      elsif ($type == 2) { #Sisällysluettelo
+        $field = 505;
+      }
+      elsif ($type == 3) { #Sisältö
+        $field = 505;
+      }
+      elsif ($type == 4) { #Johdanto
+        $field = 505;
+      }
+      elsif ($type == 5) { #Esipuhe
+        $field = 505;
+      }
+      elsif ($type == 6) { #Muistio
+        $field = 505;
+      }
+      elsif ($type == 7) { #Teksti
+        $field = 505;
+      }
+      else { #??
+        $log->warn($s->logId." - BigText type '$type' is unknown.");
+        $field = 505;
+      }
+      $field = MMT::MARC::Field->new($field, '0', '0'); #I0: Display constant 'Contents' I1: Content designation 'Enhanced'
+      $s->{record}->addField($field);
+
+      if ($field->code == '505') {
+        for (my $i=0 ; i<@parts ; $i++) {
+          my $p = $parts[$i];
+          my $last = (scalar(@parts)-1 == $i ? 1 : 0);
+          my $itemSeparator = ($last ? '' : ' .--');
+          if    ($p =~ m!^\s*(.+?)\s*/\s*(.+)\b?(.+?)?\s*$!gsm) {
+            $field->addSubfield('t', $1 . ' /');
+            $field->addSubfield('r', $2 . ($3 ? '' : $itemSeparator));
+            $field->addSubfield('g', $3 . $itemSeparator) if $3;
+          }
+          elsif ($p =~ m!^\s*(.+?)\s*:\s*(.+)\b?(.+?)?\s*$!gsm) {
+            $field->addSubfield('t', $1 . ' /');
+            $field->addSubfield('r', $2 . ($3 ? '' : $itemSeparator));
+            $field->addSubfield('g', $3 . $itemSeparator) if $3;
+          }
+          else {
+            $field->addSubfield('g', $p . $itemSeparator);
+          }
+        }
+      }
     }
   }
 }
