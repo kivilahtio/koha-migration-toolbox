@@ -67,7 +67,7 @@ sub build($s, $o, $b) {
 
   $s->{record}->modTime($o->{UpdateDate} || $o->{SaveDate}); # Set 005
 
-  _setF001($s, _ss($o->{F001} || $s->id)); # Enforce Field 001
+  _setF001($s, _ss($o->{F001})); # Enforce Field 001
 
   linkToMother(@_, \%leader); # Create 773 to parent record.
 
@@ -944,29 +944,33 @@ In practice the 001 should be unique in a DB, which doesn't differentiate with 0
 =cut
 
 sub _setF001($s, $f001Content) {
-  if (0) { #deduplicate record control numbers?
-    if (exists $f001s{$f001Content}) {
-      $log->warn($s->logId." - Field 001 collission! Record '$f001s{$f001Content}' has reserved the Field 001 value '$f001Content'. Trying to use biblionumber '".$s->id."' instead.");
+  unless ($f001Content) {
+    #$log->debug($s->logId." - Field 001 undefined! Using Title.Id");
+    $s->{record}->addUnrepeatableSubfield('001', '0', $s->id);
+    $f001s{$s->id} = $s->id;
+    return;
+  }
 
-      if (exists $f001s{$s->id}) {
-        $log->error($s->logId." - Field 001 collission! Record '$f001s{$f001Content}' has reserved the Field 001 value '$f001Content'. Biblionumber fallback '".$s->id."' is reserved by record '".$f001s{$s->id}."' instead. Using a random number.");
+  #$log->trace($s->logId." - Field 001 '$f001Content' and Title.Id '".$s->id."' mismatch") unless ($s->id eq $f001Content);
 
-        my $recordControlNumber = 1000000000000000000 + int(rand(999999999999999999));
-        $f001s{$recordControlNumber} = $s->id;
-        $s->{record}->addUnrepeatableSubfield('001', '0', $recordControlNumber);
-      }
-      else {
-        $f001s{$s->id} = $s->id;
-        $s->{record}->addUnrepeatableSubfield('001', '0', $s->id);
-      }
+  if (exists $f001s{$f001Content}) {
+    $log->warn($s->logId." - Field 001 collission! Record '$f001s{$f001Content}' has reserved the Field 001 value '$f001Content'. Trying to use biblionumber '".$s->id."' instead.");
+
+    if (exists $f001s{$s->id}) {
+      $log->error($s->logId." - Field 001 collission! Record '$f001s{$f001Content}' has reserved the Field 001 value '$f001Content'. Biblionumber fallback '".$s->id."' is reserved by record '".$f001s{$s->id}."' instead. Using a random number.");
+
+      my $recordControlNumber = 1000000000000000000 + int(rand(999999999999999999));
+      $f001s{$recordControlNumber} = $s->id;
+      $s->{record}->addUnrepeatableSubfield('001', '0', $recordControlNumber);
     }
     else {
-      $f001s{$f001Content} = $s->id;
-      $s->{record}->addUnrepeatableSubfield('001', '0', $f001s{$f001Content});
+      $f001s{$s->id} = $s->id;
+      $s->{record}->addUnrepeatableSubfield('001', '0', $s->id);
     }
   }
-  else { #preserve even duplicate record control numbers.
-    $s->{record}->addUnrepeatableSubfield('001', '0', $s->id);
+  else {
+    $f001s{$f001Content} = $s->id;
+    $s->{record}->addUnrepeatableSubfield('001', '0', $f001Content);
   }
 }
 
