@@ -545,17 +545,20 @@ These belong to 856$u
 sub linkDocuments($s, $o, $b) {
   if (my $documents = $b->{Documents}->get($o->{Id})) {
     for my $document (@$documents) {
-      $document->{DocName} =~ s/^\s+|\s+$//gsm; #Trim leading/tailing whitespace
+      $document->{DocName} = _ss($document->{DocName});
+      $document->{DocType} = _ss($document->{DocType});
+      $document->{Description} = _ss($document->{Description});
+
       unless ($document->{DocName}) {
         $log->error($s->logId." - Found a Document with Id '".$document->{Id}."' of type '".($document->{DocType} ? $document->{DocType} : 'NULL')."' linking to this Record, but the Document is missing it's URL/URI") if $log->is_error();
         next;
       }
-      $s->{record}->addField(
-        MMT::MARC::Field->new('856', undef, undef, [
-          MMT::MARC::Subfield->new('u', _ss($document->{DocName})),
-          MMT::MARC::Subfield->new('z', _ss($document->{DocType} || 'Verkkoaineisto')),
-        ])
-      );
+
+      my $f = MMT::MARC::Field->new('856', '#', '#');
+      $s->{record}->addField($f);
+      $f->addSubfield(MMT::MARC::Subfield->new('g', $document->{DocName})); #FinMARC $g => MARC21 $u
+      $f->addSubfield(MMT::MARC::Subfield->new('q', $document->{DocType})) if $document->{DocType}; #FinMARC and MARC21 subfield same
+      $f->addSubfield(MMT::MARC::Subfield->new('y', $document->{Description} || 'Verkkoaineisto')); #Field missing in FinMARC. USEMARCON deals ok.
       $log->debug($s->logId." - Linked in 856\$u Document '".$document->{DocType}."' '".$document->{DocName}."'") if $log->is_debug();
     }
   }
