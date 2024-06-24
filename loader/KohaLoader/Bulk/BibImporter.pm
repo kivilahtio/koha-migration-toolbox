@@ -341,7 +341,7 @@ sub addRecordFast($s, $record, $recordXmlPtr, $legacyBiblionumber) {
   $olddata->{biblionumber} = $legacyBiblionumber if $s->p('preserveIds');
   ($newBiblionumber, $error1)     = _koha_add_biblio($dbh, $olddata, $frameworkcode);
   if ($error1) {
-    ERROR "Error1=$error1";
+    ERROR "Record '$legacyBiblionumber': Error1=$error1";
     return ("insert", "ERROR1", $newBiblionumber);
   }
 
@@ -351,7 +351,7 @@ sub addRecordFast($s, $record, $recordXmlPtr, $legacyBiblionumber) {
   $olddata->{'biblioitemnumber'} = $newBiblionumber;
   ($newBiblioitemnumber, $error2) = _koha_add_biblioitem($dbh, $olddata);
   if ($error2) {
-    ERROR "Error2=$error2";
+    ERROR "Record '$legacyBiblionumber': Error2=$error2";
     return ("insert", "ERROR2", $newBiblionumber);
   }
 
@@ -371,13 +371,13 @@ sub addRecordFast($s, $record, $recordXmlPtr, $legacyBiblionumber) {
   }
   $s->{sth_insertBiblioMetadata}->execute($newBiblionumber, 'marcxml', 'MARC21', $record->as_xml());
   if ($s->{sth_insertBiblioMetadata}->errstr()) {
-    ERROR "Error3=".$s->{sth_insertBiblioMetadata}->errstr();
+    ERROR "Record '$legacyBiblionumber': Error3=".$s->{sth_insertBiblioMetadata}->errstr();
     return ("insert", "ERROR3", $newBiblionumber);
   }
   };
   if ($@) {
     $dbh->rollback();
-    ERROR "Error4=$@";
+    ERROR "Record '$legacyBiblionumber': Error4=$@";
     return ("insert", "ERROR4", $newBiblionumber);
   }
   else {
