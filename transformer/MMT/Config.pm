@@ -145,9 +145,17 @@ sub barcodeRegexReplace() {
 sub defaultMissingDate() {
   return '1999-12-31';
 }
-
+=head2
+MARC21 Format for bibliographic records recommends to define Field 490 as the primary Series statement for a series title.
+And 90X-83X - Series Added Entry Fields can supplement that.
+This supplementation looks a bit weird in Koha, as the same title/statement is shown both for the 490 and 8XX.
+In Koha, the default Koha-to-MARC-mappings dictate: biblio.seriestitle => 490$a, so it is better to use "490" here if using both fields is not wanted.
+One can generate:
+"490" = only the Field 490, losing detail from PrettyLib regarding the distinction between fields 800, 810, 811, 830
+"8XX" = 8XX + FinMARC conversion rules generate 490 too.
+=cut
 sub pl_biblio_seriesMARCCompatibility() {
-  return $config->{pl_biblio_seriesMARCCompatibility} // undef;
+  return $config->{pl_biblio_seriesMARCCompatibility} || die("Config 'pl_biblio_seriesMARCCompatibility' unset") ;
 }
 sub pl_barcodeFromAcqNumber() {
   return $config->{pl_barcodeFromAcqNumber};

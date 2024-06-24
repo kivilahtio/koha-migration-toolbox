@@ -162,9 +162,9 @@ pl_shelf_filter: ""
 # This supplementation looks a bit weird in Koha, as the same title/statement is shown both for the 490 and 8XX.
 # In Koha, the default Koha-to-MARC-mappings dictate: biblio.seriestitle => 490$a, so it is better to use "490" here if using both fields is not wanted.
 # One can generate:
-# "490" = only the Field 490, losign detail from PrettyLib regarding the distinction between fields 800, 810, 811, 830
+# "490" = only the Field 490, losing detail from PrettyLib regarding the distinction between fields 800, 810, 811, 830
 # "8XX" = 8XX + FinMARC conversion rules generate 490 too.
-pl_biblio_seriesMARCCompatibility: 490
+pl_biblio_seriesMARCCompatibility: 8XX
 
 
 #############################

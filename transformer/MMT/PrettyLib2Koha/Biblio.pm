@@ -614,6 +614,7 @@ sub linkSeries($s, $o, $builder) {
     @$seriesCrosses = sort {$a->{Pos} <=> $b->{Pos}} @$seriesCrosses; # PrettyLib.SeriesCross.Pos seems to denote the ordering of these subject-words.
 
     # For some reason PrettyLib has 410 with only $xyv, and then in addition Series + SeriesCross. Clean up the initial 410$vxy and merge with proper Series.
+    # Only FinMARC $v is important, others are instructions for sorting.
     my $v;
     my $f410 = $s->{record}->getUnrepeatableField('410');
     if ($f410) {
@@ -625,8 +626,8 @@ sub linkSeries($s, $o, $builder) {
     for my $seriesCross (@$seriesCrosses) {
       if (my $seriess = $builder->{Series}->get($seriesCross->{Id_Series})) {
         for my $series (@$seriess) {
-          unless ($series->{Title} || $series->{ISSN}) {
-            $log->debug($s->logId." - Found an empty Series with Id '".$series->{Id}."'.") if $log->is_debug();
+          unless ($series->{SeriesInfo} || $series->{ISSN}) {
+            $log->debug($s->logId." - Series Id '".$series->{Id}."' is empty.") if $log->is_debug();
             next;
           }
 
@@ -635,13 +636,18 @@ sub linkSeries($s, $o, $builder) {
           $series->{ISSN} = _ss($series->{ISSN});
           $series->{Name1} = _ss($series->{Name1});
           $series->{Name2} = _ss($series->{Name2});
-          $series->{SeriesInfo} = _ss($series->{SeriesInfo});
+          $series->{SeriesInfo} = _ss($series->{SeriesInfo}); #SeriesInfo is the FinMARC result aggregated from Title+Name1+Name2+SubSeries+SubTitle
           $series->{SubSeries} = _ss($series->{SubSeries});
           $series->{SubTitle} = _ss($series->{SubTitle});
           $series->{Title} = _ss($series->{Title});
           $series->{URL} = _ss($series->{URL});
-          $series->{f440d} = _ss($series->{f440d});
-          $series->{f440n} = _ss($series->{f440n});
+          $series->{f440d} = _ss($series->{f440d}); #PrettyLib GUI: "Yhteisön nimi MARC-kenttään 440d"
+          $series->{f440n} = _ss($series->{f440n}); #PrettyLib GUI: "Yhteisön nimi MARC-kenttään 440n"
+
+          if ($series->{bCompany} && ($series->{f440d} || $series->{f440n})) {
+            $log->warn($s->logId." - Series Id '".$series->{Id}."' is a Company-type Series with ".
+                       "illegal 440\$d='".($series->{f440d} ? $series->{f440d} : '')."', 440\$n='".($series->{f440n} ? $series->{f440n} : '')."'.");
+          }
 
           # Create the 8xx series added entry Field, since PrettyLib has the extra information for that.
           my $marcField;
@@ -649,54 +655,45 @@ sub linkSeries($s, $o, $builder) {
             $marcField = 410;
           }
           if ($series->{bTitle}) {
-            $log->warn($s->logId." - Found a Series entry with both bTitle and bCompany? '".$series->{SeriesInfo}." : ".$series->{ISSN}."'") if $marcField;
+            $log->warn($s->logId." - Series Id '".$series->{Id}."' Found a Series entry with both bTitle and bCompany? '".$series->{SeriesInfo}." : ".$series->{ISSN}."'") if $marcField;
             $marcField = 440;
           }
           unless ($marcField) {
-            $log->warn($s->logId." - Found a Series entry with no bTitle and bCompany? '".$series->{SeriesInfo}." : ".$series->{ISSN}."'");
+            $log->warn($s->logId." - Series Id '".$series->{Id}."' Found a Series entry with no bTitle and bCompany? '".$series->{SeriesInfo}." : ".$series->{ISSN}."'");
             $marcField = 440;
           }
 
-          if (not(MMT::Config::pl_biblio_seriesMARCCompatibility()) || MMT::Config::pl_biblio_seriesMARCCompatibility() eq '4XX') {
-            my $field4xx = $s->{record}->getUnrepeatableField($marcField);
-            $field4xx = MMT::MARC::Field->new($marcField, '2', ' ') unless ($field4xx);
-            if ($field4xx eq '410') {
-              $field4xx->addSubfield('a', $series->{Name1} || $series->{Title}) if ($series->{Name1} || $series->{Title});
+          if (MMT::Config::pl_biblio_seriesMARCCompatibility() eq '8XX') {
+            my $field4xx = $s->{record}->getOrAddUnrepeatableField($marcField, ' ', ' ');
+            if ($marcField eq '410') {
+              $field4xx->addSubfield('a', $series->{Name1}) if $series->{Name1};
               $field4xx->addSubfield('c', $series->{Name2}) if $series->{Name2};
               $field4xx->addSubfield('g', $series->{SubSeries}) if $series->{SubSeries};
-              $field4xx->addSubfield('h', $series->{SubTitle}) if $series->{SubTitle};
+              $field4xx->addSubfield('h', join(', ', grep {$_}($series->{Title}, $series->{SubTitle}))) if ($series->{Title} || $series->{SubTitle});
               $field4xx->addSubfield('w', $series->{ISSN}) if $series->{ISSN};
             } else {
-              $field4xx->addSubfield('a', $series->{Title} || $series->{SeriesInfo}) if $series->{Title} || $series->{SeriesInfo};
-              $field4xx->addSubfield('b', $series->{Name1} || $series->{Name2}) if ($series->{Name1} || $series->{Name2});
-              $field4xx->addSubfield('d', $series->{f440d}) if $series->{f440d};
-              $field4xx->addSubfield('n', $series->{f440n}) if $series->{f440n};
+              $field4xx->addSubfield('a', $series->{Title}) if $series->{Title};
+              $field4xx->addSubfield('b', join(', ', grep {$_}($series->{Name1}, $series->{Name2}))) if ($series->{Name1} || $series->{Name2});
+              $field4xx->addSubfield('d', $series->{Name1}) if $series->{f440d};
+              $field4xx->addSubfield('n', $series->{Name1}) if $series->{f440n};
               $field4xx->addSubfield('g', $series->{SubSeries}) if $series->{SubSeries};
               $field4xx->addSubfield('h', $series->{SubTitle}) if $series->{SubTitle};
               $field4xx->addSubfield('w', $series->{ISSN}) if $series->{ISSN};
             }
             if ($v) {
               $field4xx->addSubfield('v', $v);
-              $v = undef;
             }
-            $s->{record}->addField($field4xx) unless ($s->{record}->getUnrepeatableField($marcField));
           }
-
-          if (MMT::Config::pl_biblio_seriesMARCCompatibility() && MMT::Config::pl_biblio_seriesMARCCompatibility() eq '490') {
-            my $field490 = $s->{record}->getUnrepeatableField('490');
-            $field490 = MMT::MARC::Field->new('490', ' ', ' ') unless ($field490);
-            $field490->addSubfield('a', $series->{Title} || $series->{SeriesInfo}) if $series->{Title} || $series->{SeriesInfo};
-            $field490->addSubfield('b', $series->{Name1} || $series->{Name2}) if ($series->{Name1} || $series->{Name2});
-            $field490->addSubfield('d', $series->{f440d}) if $series->{f440d};
-            $field490->addSubfield('n', $series->{f440n}) if $series->{f440n};
-            $field490->addSubfield('g', $series->{SubSeries}) if $series->{SubSeries};
-            $field490->addSubfield('h', $series->{SubTitle}) if $series->{SubTitle};
-            $field490->addSubfield('w', $series->{ISSN}) if $series->{ISSN};
+          elsif (MMT::Config::pl_biblio_seriesMARCCompatibility() eq '490') {
+            my $field490 = $s->{record}->getOrAddUnrepeatableField('490', '0', '#'); #i1 = Series not traced
+            $field490->addSubfield('a', $series->{SeriesInfo}) if $series->{SeriesInfo};
+            #$field490->addSubfield('d', $series->{f440d}) if $series->{f440d}; #These are not used in 490-Field only.
+            #$field490->addSubfield('n', $series->{f440n}) if $series->{f440n};
+            $field490->addSubfield('x', $series->{ISSN}) if $series->{ISSN};
             if ($v) {
               $field490->addSubfield('v', $v);
               $v = undef;
             }
-            $s->{record}->addField($field490) unless ($s->{record}->getUnrepeatableField('490'));
           }
         }
       }
@@ -704,19 +701,8 @@ sub linkSeries($s, $o, $builder) {
   } else {
     my $f410 = $s->{record}->getUnrepeatableField('410');
     if ($f410) {
-      $log->warn($s->logId." - Found field 410 with no Series entry?");    
-      if (not(MMT::Config::pl_biblio_seriesMARCCompatibility()) || MMT::Config::pl_biblio_seriesMARCCompatibility() eq '4XX') {
-        my $f4xx = MMT::MARC::Field->new('440', ' ', ' ') unless ($s->{record}->getUnrepeatableField('440'));
-        $f4xx->mergeField($f410);
-        $s->{record}->deleteField($f410);
-        $s->{record}->addField($f4xx) unless ($s->{record}->getUnrepeatableField('440'));
-      }
-      elsif (MMT::Config::pl_biblio_seriesMARCCompatibility() && MMT::Config::pl_biblio_seriesMARCCompatibility() eq '490') {
-        my $f490 = MMT::MARC::Field->new('490', ' ', ' ') unless ($s->{record}->getUnrepeatableField('490'));
-        $f490->mergeField($f410);
-        $s->{record}->deleteField($f410);
-        $s->{record}->addField($f490) unless ($s->{record}->getUnrepeatableField('490'));
-      }
+      $log->warn($s->logId." - Found field 410 with no Series entry? Dropping F410xyv from the Record.");    
+      $s->{record}->deleteField($f410);
     }
   }
 }
