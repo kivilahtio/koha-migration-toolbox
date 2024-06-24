@@ -590,6 +590,12 @@ sub getUnrepeatableField {
   return $fields->[0];
 }
 
+sub getOrAddUnrepeatableField {
+  my ($self, $fieldCode, $ind1, $ind2) = @_;
+  return $self->{$fieldCode}->[0] if exists $self->{$fieldCode};
+  return $self->addField(MMT::MARC::Field->new($fieldCode, $ind1, $ind2));
+}
+
 #If Field's code changes, we need to move it to another hash bucket.
 sub relocateField { #params: ->($oldCode, $MARC::Field)
   my $self = shift;
