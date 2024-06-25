@@ -421,7 +421,7 @@ sub linkBigTexts($s, $o, $builder) {
         $field = 505;
       }
       else { #??
-        $log->warn($s->logId." - BigText type '$type' is unknown.");
+        $log->warn($s->logId." - BigText type '$type' is unknown. Using Field 505.");
         $field = 505;
       }
       $field = MMT::MARC::Field->new($field, '0', '0'); #I0: Display constant 'Contents' I1: Content designation 'Enhanced'
