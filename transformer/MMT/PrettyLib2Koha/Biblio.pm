@@ -663,8 +663,9 @@ sub linkSeries($s, $o, $builder) {
             $marcField = 440;
           }
 
+          my $field4xx;
           if (MMT::Config::pl_biblio_seriesMARCCompatibility() eq '8XX') {
-            my $field4xx = $s->{record}->getOrAddUnrepeatableField($marcField, ' ', ' ');
+            $field4xx = $s->{record}->getOrAddUnrepeatableField($marcField, ' ', ' ');
             if ($marcField eq '410') {
               $field4xx->addSubfield('a', $series->{Name1}) if $series->{Name1};
               $field4xx->addSubfield('c', $series->{Name2}) if $series->{Name2};
@@ -685,15 +686,20 @@ sub linkSeries($s, $o, $builder) {
             }
           }
           elsif (MMT::Config::pl_biblio_seriesMARCCompatibility() eq '490') {
-            my $field490 = $s->{record}->getOrAddUnrepeatableField('490', '0', '#'); #i1 = Series not traced
-            $field490->addSubfield('a', $series->{SeriesInfo}) if $series->{SeriesInfo};
-            #$field490->addSubfield('d', $series->{f440d}) if $series->{f440d}; #These are not used in 490-Field only.
-            #$field490->addSubfield('n', $series->{f440n}) if $series->{f440n};
-            $field490->addSubfield('x', $series->{ISSN}) if $series->{ISSN};
+            $field4xx = $s->{record}->getOrAddUnrepeatableField('490', '0', '#'); #i1 = Series not traced
+            $field4xx->addSubfield('a', $series->{SeriesInfo}) if $series->{SeriesInfo};
+            #$field4xx->addSubfield('d', $series->{f440d}) if $series->{f440d}; #These are not used in 490-Field only.
+            #$field4xx->addSubfield('n', $series->{f440n}) if $series->{f440n};
+            $field4xx->addSubfield('x', $series->{ISSN}) if $series->{ISSN};
             if ($v) {
-              $field490->addSubfield('v', $v);
+              $field4xx->addSubfield('v', $v);
               $v = undef;
             }
+          }
+
+          if (scalar(@{$field4xx->getAllSubfields()}) == 0) {
+            $log->warn($s->logId." - Series Id '".$series->{Id}."' is missing Field='".$field4xx->code."' subfields? Dropping empty field.");
+            $s->{record}->deleteField($field4xx);
           }
         }
       }
