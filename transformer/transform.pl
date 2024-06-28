@@ -131,7 +131,7 @@ MMT_HOME: ".($ENV{MMT_HOME} || '')."
             {name => 'PublisherCross', file => 'PublisherCross.csv', keys => ['Id_Title']},
             {name => 'Series', file => 'Series.csv', keys => ['Id']},
             {name => 'SeriesCross', file => 'SeriesCross.csv', keys => ['Id_Title']},
-            {name => 'TitleExtension', file => 'TitleExtension.csv', keys => ["Id_Title", "iMarc", "strSubField"]},
+            {name => 'TitleExtension', file => 'TitleExtension.csv', keys => ["Id_Title"]},
             {name => 'Items', file => 'Item.csv', keys => ['Id_Title']},
           ],
           translationTables => [

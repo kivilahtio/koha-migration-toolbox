@@ -799,7 +799,7 @@ PrettyLib.TitleExtension contains extra MARC fields.
 sub linkTitleExtension($s, $o, $b) {
   if (my $texes = $b->{TitleExtension}->get($o->{Id})) {
     for my $tex (@$texes) {
-      $s->{record}->addUnrepeatableSubField(
+      $s->{record}->addUnrepeatableSubfield(
         $tex->{iMarc},
         $tex->{strSubField},
         $tex->{strValue},
