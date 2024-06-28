@@ -596,6 +596,21 @@ sub getOrAddUnrepeatableField {
   return $self->addField(MMT::MARC::Field->new($fieldCode, $ind1, $ind2));
 }
 
+sub language {
+  my ($self) = @_;
+  my $lang;
+  if (my $f008 = $self->getUnrepeatableSubfield('008', '0')) {
+    if (length($f008->content) >= 38) {
+      if ($lang = substr($f008->content, 35, 3)) {
+        return $lang if $lang =~ /^[a-zA-Z]{3}$/;
+      }
+    }
+  }
+  return $lang->content if ($lang = $self->getUnrepeatableSubfield('041', 'a'));
+  return $lang->content if ($lang = $self->getUnrepeatableSubfield('240', 'l'));
+  return undef;
+}
+
 #If Field's code changes, we need to move it to another hash bucket.
 sub relocateField { #params: ->($oldCode, $MARC::Field)
   my $self = shift;

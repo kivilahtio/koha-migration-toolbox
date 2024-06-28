@@ -59,9 +59,6 @@ sub build($s, $o, $b) {
 
   ## Everything from now-on is MARC21
 
-  # Gather information needed to build the leader
-  my %leader;
-
   $s->{record}->addUnrepeatableSubfield('003', '0', MMT::Config::organizationISILCode()); # Set the cataloguing organization code
   $s->{record}->addUnrepeatableSubfield('040', 'c', MMT::Config::organizationISILCode());
 
@@ -69,12 +66,7 @@ sub build($s, $o, $b) {
 
   _setF001($s, _ss($o->{F001})); # Enforce Field 001
 
-  linkToMother(@_, \%leader); # Create 773 to parent record.
-
-  $s->{record}->leader( $s->_buildLeader(\%leader) );
-
-  $s->{record}->addUnrepeatableSubfield('008', '0', $s->_build008($o));
-  $s->{record}->publicationDate(getPublicationYear($o));
+  linkToMother(@_); # Create 773 to parent record.
 
   $s->mergeLinks($o, $b);
 
@@ -249,7 +241,7 @@ Create a 773-link to the component mother/parent.
 
 =cut
 
-sub linkToMother($s, $o, $b, $leader) {
+sub linkToMother($s, $o, $b) {
   # Set biblio link / Id_mother / 773w
   if ($o->{Id_Mother}) {
     if (my $mother = $b->{Titles}->get($o->{Id_Mother})) {
@@ -278,7 +270,6 @@ sub linkToMother($s, $o, $b, $leader) {
 
       my $newField = $s->{record}->addField( MMT::MARC::Field->new('773', '0', '#', \@sfs) );
 
-      $leader->{isComponentPart} = 1;
       $log->debug($s->logId." - Component part link (773w) created to parent '".($mother->[0]->{F001} || $o->{Id_Mother})."', with link text 't'='". (eval { $newField->subfields('t')->[0]->content() } || 'MISSING') ."'") if $log->is_debug();
     }
     else {
@@ -877,28 +868,6 @@ sub getItemType($s, $o, $b) {
   return $b->{ItemTypes}->translate($s, $item, $b, $titleType); # Try to get the itemtype from the biblio or the item
 }
 
-=head2 getPublicationYear
-
-@STATIC
-
-  Attempts to parse Year1 or 260$c
-
-=cut
-
-sub getPublicationYear($o) {
-    if ($o->{Year1} =~ /^\d\d\d\d$/) {
-      return $o->{Year1};
-    }
-    my $f260c = $o->{F260c};
-       $f260c =~ s/[^0-9]{4}//;
-
-    if ($f260c =~ /^\d\d\d\d$/) {
-      return $f260c;
-    }
-
-    return;
-}
-
 =head2 dropPassiveCirc
 
 PrettyCirc Biblios that have only passive Items/Subscriptions, are dropped.
@@ -971,217 +940,6 @@ sub _setF001($s, $f001Content) {
     $f001s{$f001Content} = $s->id;
     $s->{record}->addUnrepeatableSubfield('001', '0', $f001Content);
   }
-}
-
-sub _buildLeader($s, $flags) {
-
-  return
-#Character Positions
-#00-04 - Record length
-    '00000'.
-
-#05 - Record status
-#
-#    a - Increase in encoding level
-#    c - Corrected or revised
-#    d - Deleted
-#    n - New
-#    p - Increase in encoding level from prepublication
-    'n'.
-
-#06 - Type of record
-#
-#    a - Language material
-#    c - Notated music
-#    d - Manuscript notated music
-#    e - Cartographic material
-#    f - Manuscript cartographic material
-#    g - Projected medium
-#    i - Nonmusical sound recording
-#    j - Musical sound recording
-#    k - Two-dimensional nonprojectable graphic
-#    m - Computer file
-#    o - Kit
-#    p - Mixed materials
-#    r - Three-dimensional artifact or naturally occurring object
-#    t - Manuscript language material
-    'a'.
-
-#07 - Bibliographic level
-#
-#    a - Monographic component part
-#    b - Serial component part
-#    c - Collection
-#    d - Subunit
-#    i - Integrating resource
-#    m - Monograph/Item
-#    s - Serial
-    ($flags->{isComponentPart} ? 'a' : 'm').
-
-#08 - Type of control
-#
-#    # - No specified type
-#    a - Archival
-    '#'.
-
-#09 - Character coding scheme
-#
-#    # - MARC-8
-#    a - UCS/Unicode
-    'a'.
-
-#10 - Indicator count
-#
-#    2 - Number of character positions used for indicators
-    '2'.
-
-#11 - Subfield code count
-#
-#    2 - Number of character positions used for a subfield code
-    '2'.
-
-#12-16 - Base address of data
-#
-#    [number] - Length of Leader and Directory
-    '00555'.
-
-#17 - Encoding level
-#
-#    # - Full level
-#    1 - Full level, material not examined
-#    2 - Less-than-full level, material not examined
-#    3 - Abbreviated level
-#    4 - Core level
-#    5 - Partial (preliminary) level
-#    7 - Minimal level
-#    8 - Prepublication level
-#    u - Unknown
-#    z - Not applicable
-    'z'.
-
-#18 - Descriptive cataloging form
-#
-#    # - Non-ISBD
-#    a - AACR 2
-#    c - ISBD punctuation omitted
-#    i - ISBD punctuation included
-#    n - Non-ISBD punctuation omitted
-#    u - Unknown
-    'u'.
-
-#19 - Multipart resource record level
-#
-#    # - Not specified or not applicable
-#    a - Set
-#    b - Part with independent title
-#    c - Part with dependent title
-    '#'.
-
-#20 - Length of the length-of-field portion
-#
-#    4 - Number of characters in the length-of-field portion of a Directory entry
-    '4'.
-
-#21 - Length of the starting-character-position portion
-#
-#    5 - Number of characters in the starting-character-position portion of a Directory entry 
-    '5'.
-
-#22 - Length of the implementation-defined portion
-#
-#    0 - Number of characters in the implementation-defined portion of a Directory entry
-    '0'.
-
-#23 - Undefined
-#
-#    0 - Undefined
-    '0'.
-  '';
-}
-
-sub _build008($s, $flags) {
-  $flags->{SaveDate} =~ /\d\d(\d\d)-(\d\d)-(\d\d)/;
-  $flags->{dateEnteredOnFile} = ($1 ? $1 : 00).($2 ? $2 : 00).($3 ? $3 : 00);
-  return
-#Character Positions 
-#00-05 - Date entered on file
-    $flags->{dateEnteredOnFile}.
-#06 - Type of date/Publication status
-
-#    b - No dates given; B.C. date involved
-#    c - Continuing resource currently published
-#    d - Continuing resource ceased publication
-#    e - Detailed date
-#    i - Inclusive dates of collection
-#    k - Range of years of bulk of collection
-#    m - Multiple dates
-#    n - Dates unknown
-#    p - Date of distribution/release/issue and production/recording session when different 
-#    q - Questionable date
-#    r - Reprint/reissue date and original date
-#    s - Single known date/probable date
-#    t - Publication date and copyright date
-#    u - Continuing resource status unknown
-#    | - No attempt to code
-    '|'.
-
-#07-10 - Date 1
-#
-#    1-9 - Date digit
-#    # - Date element is not applicable
-#    u - Date element is totally or partially unknown
-#    |||| - No attempt to code
-    '||||'.
-
-#11-14 - Date 2
-#
-#    1-9 - Date digit
-#    # - Date element is not applicable
-#    u - Date element is totally or partially unknown
-#    |||| - No attempt to code
-    '||||'.
-
-#15-17 - Place of publication, production, or execution
-#
-#    xx# - No place, unknown, or undetermined
-#    vp# - Various places
-#    [aaa] - Three-character alphabetic code
-#    [aa#] - Two-character alphabetic code
-    'xx#'.
-
-#18-34 - Material specific coded elements
-    '|||||||||||||||||'.
-
-#35-37 - Language
-#
-#    ### - No information provided
-#    zxx - No linguistic content
-#    mul - Multiple languages
-#    sgn - Sign languages
-#    und - Undetermined
-#    [aaa] - Three-character alphabetic code
-    '###'.
-
-#38 - Modified record
-#
-#    # - Not modified
-#    d - Dashed-on information omitted
-#    o - Completely romanized/printed cards romanized
-#    r - Completely romanized/printed cards in script
-#    s - Shortened
-#    x - Missing characters
-#    | - No attempt to code
-    '|'.
-
-#39 - Cataloging source
-#
-#    # - National bibliographic agency
-#    c - Cooperative cataloging program
-#    d - Other
-#    u - Unknown
-#    | - No attempt to code 
-    '|'.
-  '';
 }
 
 # Trim all UTF-8 control characters except newline
