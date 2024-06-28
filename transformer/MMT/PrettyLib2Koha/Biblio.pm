@@ -701,8 +701,8 @@ sub linkSeries($s, $o, $builder) {
             $log->warn($s->logId." - Series Id '".$series->{Id}."' is missing Field='".$field4xx->code."' subfields? Dropping empty field.");
             $s->{record}->deleteField($field4xx);
           }
-          elsif (not ($field4xx->getUnrepeatableSubfield('a'))) {
-            $log->warn($s->logId." - Series Id '".$series->{Id}."' is missing Subfield='".$field4xx->code."\$a'? MARC21 conversion cannot succeed without. Substituting \$a with 'KONVERSIO'. ".$series->{SeriesInfo}." : ".$series->{ISSN}."");
+          elsif (not ($field4xx->getUnrepeatableSubfield('a') || $field4xx->getUnrepeatableSubfield('v'))) {
+            $log->warn($s->logId." - Series Id '".$series->{Id}."' is missing Subfield='".$field4xx->code."\$a||\$b'? MARC21 conversion cannot succeed without. Substituting \$a with 'KONVERSIO'. ".$series->{SeriesInfo}." : ".$series->{ISSN}."");
             $field4xx->addSubfield('a', 'KONVERSIO');
           }
         }
