@@ -75,6 +75,8 @@ sub build($s, $o, $b) {
   $s->{record}->addUnrepeatableSubfield('999', 'c', $s->id()); # 999$c = biblionumber
   $s->{record}->addUnrepeatableSubfield('999', 'd', $s->id()); # 999$d = biblioitemnumber
 
+  deduplicateFields($s, $o, $b);
+
   addCustomRepeatableFields($s);
 
   MMT::PrettyLib2Koha::Biblio::MaterialTypeRepair::forceControlFields(@_);
@@ -229,6 +231,57 @@ sub normalizeInternationalStandardNumbers($s, $field, $code) {
       }
       else {
         $log->warn($s->logId()." - Unable to normalize $isn field '$code\$" . $isnSubfield->code() . "' value '" . $isnSubfield->content() . "'");
+      }
+    }
+  }
+}
+
+=head2 deduplicateFields
+
+Some subject-terms might be duplicated.
+Match every subfield of every field against the subfields of every field to find duplicates.
+
+=cut
+
+my %dedupMap = (
+  #author-fields
+  '100' => 'a',
+  '110' => 'a',
+  '700' => 'a',
+  #series-fields
+  '410' => 'a',
+  '440' => 'a',
+  #subject-terms
+  '652' => 'a',
+  '653' => 'a',
+  '690' => 'a',
+  '692' => 'a',
+  '693' => 'a',
+  '694' => 'a',
+);
+sub deduplicateFields($s, $o,$b) {
+  while (my ($fieldCode, $sfCode) = each(%dedupMap)) {
+    my $fields = $s->{record}->{$fieldCode};
+    next if (not($fields && @$fields));
+    for (my $i=0 ; $i<@$fields ; $i++) {
+      my $subfields = $fields->[$i]->{$sfCode};
+      next if (not($subfields && @$subfields));
+      for (my $j=0 ; $j<@$subfields ; $j++) {
+        for (my $k=0 ; $k<@$fields ; $k++) {
+          my $subfields2 = $fields->[$k]->{$sfCode};
+          next if (not($subfields2 && @$subfields2));
+          for (my $m=0 ; $m<@$subfields2 ; $m++) {
+            next if ($i==$k && $j==$m); # Do not try to deduplicate the subfield we selected as the search needle
+            eval {
+              if ($subfields->[$j]->content() eq $subfields2->[$m]->content()) { # Duplicate found
+                $log->info($s->logId()." - Duplicate subfield '$fieldCode\$$sfCode'='".$subfields2->[$m]->content()."' found.")
+              }
+            };
+            if ($@) {
+              $log->error($s->logId()." - Exception while deduplicating subfield '$fieldCode\$$sfCode' \$i=$i, \$j=$j, \$k=$k, \$m=$m! ".$@);
+            }
+          }
+        }
       }
     }
   }
