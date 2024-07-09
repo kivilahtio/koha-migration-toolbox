@@ -274,7 +274,51 @@ sub deduplicateFields($s, $o,$b) {
             next if ($i==$k && $j==$m); # Do not try to deduplicate the subfield we selected as the search needle
             eval {
               if ($subfields->[$j]->content() eq $subfields2->[$m]->content()) { # Duplicate found
-                $log->info($s->logId()." - Duplicate subfield '$fieldCode\$$sfCode'='".$subfields2->[$m]->content()."' found.")
+                my $content = $subfields->[$j]->content();
+
+                # Deduplication happens inside the same field, so we can remove either subfield.
+                if ($i == $k) {
+                  $fields->[$i]->deleteSubfield($subfields->[$j]);
+                  $log->info($s->logId()." - Duplicate subfield '$fieldCode\$$sfCode'='$content' removed. IF");
+                  return deduplicateFields($s, $o, $b); # We must start over because the internal iterators are out of order now
+                }
+                # Remove the subject with less subfields, if origins match.
+                elsif ($fields->[$i]->{2} && $fields->[$k]->{2} &&
+                        $fields->[$i]->{2}->[0]->content() eq $fields->[$k]->{2}->[0]->content()) {
+                  if (@{$fields->[$i]->{subfields}} < @{$fields->[$k]->{subfields}}) {
+                    $fields->[$i]->deleteSubfield($subfields->[$j]);
+                    $s->{record}->deleteField($fields->[$i]) unless ($fields->[$i]->{$sfCode});
+                  }
+                  else {
+                    $fields->[$k]->deleteSubfield($subfields2->[$m]);
+                    $s->{record}->deleteField($fields->[$k]) unless ($fields->[$k]->{$sfCode});
+                  }
+                  $log->info($s->logId()." - Duplicate subfield '$fieldCode\$$sfCode'='$content' removed. OM");
+                  return deduplicateFields($s, $o, $b); # We must start over because the internal iterators are out of order now
+                }
+
+                ### Custom client-specific deduplication code
+                # Remove the subject which doesnt come from YSO
+                elsif ($fields->[$i]->{2} && $fields->[$i]->{2}->[0]->content() eq 'YSO' &&
+                        (not($fields->[$k]->{2}) || $fields->[$k]->{2}->[0]->content() ne 'YSO')) {
+                  $fields->[$k]->deleteSubfield($subfields2->[$m]);
+                  $s->{record}->deleteField($fields->[$k]) unless ($fields->[$k]->{$sfCode});
+                  $log->info($s->logId()." - Duplicate subfield '$fieldCode\$$sfCode'='$content' removed. YSO-L");
+                  return deduplicateFields($s, $o, $b); # We must start over because the internal iterators are out of order now
+                }
+                elsif ($fields->[$k]->{2} && $fields->[$k]->{2}->[0]->content() eq 'YSO' &&
+                        (not($fields->[$i]->{2}) || $fields->[$i]->{2}->[0]->content() ne 'YSO')) {
+                  $fields->[$i]->deleteSubfield($subfields->[$j]);
+                  $s->{record}->deleteField($fields->[$i]) unless ($fields->[$i]->{$sfCode});
+                  $log->info($s->logId()." - Duplicate subfield '$fieldCode\$$sfCode'='$content' removed. YSO-R");
+                  return deduplicateFields($s, $o, $b); # We must start over because the internal iterators are out of order now
+                }
+                ### EOF Custom client-specific deduplication code
+
+                # Dont know what to do if not an YSO subject.
+                else {
+                  $log->info($s->logId()." - Duplicate subfield '$fieldCode\$$sfCode'='$content' found.");
+                }
               }
             };
             if ($@) {
