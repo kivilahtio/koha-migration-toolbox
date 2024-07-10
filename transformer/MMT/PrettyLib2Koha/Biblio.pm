@@ -154,19 +154,20 @@ sub parseFxxx($s, $o, $b) {
       }
       else {
         #Datafields
-        _parseDatafield(@_, $code, $data);
+        my $field = _parseDatafield(@_, $code, $data, 0);
+        $s->{record}->addField($field) if $field;
       }
     }
   }
 }
 
-sub _parseDatafield($s, $o, $b, $code, $data) {
+sub _parseDatafield($s, $o, $b, $code, $data, $noSS) {
   my ($indicator1, $indicator2, @subfields);
 
   if (my @elements = split(/\x{1F}/, $data)) {
     ($indicator1, $indicator2) = split(//, $elements[0]);
     for (my $i=1 ; $i<@elements ; $i++) {
-      my $sf = MMT::MARC::Subfield->new(_ss(substr($elements[$i],0,1)), _ss(substr($elements[$i],1)));
+      my $sf = MMT::MARC::Subfield->new(_ss(substr($elements[$i],0,1)), ($noSS ? substr($elements[$i],1) : _ss(substr($elements[$i],1))));
       unless ($sf->content()) {
         $log->debug($s->logId()." - Skipping subfield '$code\$".$sf->code()."' is missing \$data?") if $log->is_debug();
         next;
@@ -184,7 +185,6 @@ sub _parseDatafield($s, $o, $b, $code, $data) {
                                           ($indicator1 ? _si($indicator1) : ''),
                                           ($indicator2 ? _si($indicator2) : ''),
                                           \@subfields);
-    $s->{record}->addField($field);
     normalizeLanguageCodes($field) if $code eq '041';
     normalizeInternationalStandardNumbers($s, $field, $code) if $code eq '020' or $code eq '021' or $code eq '022' or $code eq '024' or $code eq '025' or $code eq '027';
     return $field;
@@ -353,7 +353,7 @@ sub linkToMother($s, $o, $b) {
       push(@sfs, MMT::MARC::Subfield->new('w', _ss($mother->[0]->{F001} || $o->{Id_Mother})));
       # Then look for 't' from a long list of candidates
       for my $fieldCandidate (qw(245 240 210 222 247 246 243 242)) {
-        if (my $f = _parseDatafield($s, $o, $b, $fieldCandidate, $mother->[0]->{"F$fieldCandidate"})) {
+        if (my $f = _parseDatafield($s, $o, $b, $fieldCandidate, $mother->[0]->{"F$fieldCandidate"}, 0)) {
           if ($f->subfields('a') && $f->subfields('a')->[0] && $f->subfields('a')->[0]->content()) {
             push(@sfs, MMT::MARC::Subfield->new('t', $f->subfields('a')->[0]->content()));
             last;
@@ -480,7 +480,30 @@ sub linkBigTexts($s, $o, $builder) {
 
     for my $text (@$texts) {
       next unless($text->{TextContent});
-      my $textFiltered = $text->{TextContent};
+
+      # Some TextContent-fields have embedded MARC subfields, but not all.
+      # Looks like there is only subfield $a defined there, so just extract it to normalize processing.
+      if ($text->{TextContent} =~ /^..\x{1F}/) { # Looks like an embedded MARC subfield structure
+        eval {
+          my $textContentNormalization = _parseDatafield($s, $o, $b, '505', $text->{TextContent}, 'no-sanitate');
+          my $sfs = $textContentNormalization->getAllSubfields();
+          if ($sfs && @$sfs == 1) {
+            if ($sfs->[0]->code eq 'a') {
+              $text->{TextContent} = $sfs->[0]->content;
+            }
+            else {
+              $log->warn($s->logId()." - Linking BigText.Id='".$text->{Id}."' (tiivistelmä), no embedded MARC subfield 'a' found?");
+            }
+          }
+          else {
+            $log->warn($s->logId()." - Linking BigText.Id='".$text->{Id}."' (tiivistelmä), multiple embedded MARC subfields found?");
+          }
+        };
+        if ($@) {
+          $log->error($s->logId()." - Linking BigText.Id='".$text->{Id}."' (tiivistelmä), parsing embedded MARC-subfields failed. $@");
+        }
+      }
+
       # PrettyLib has a codepoint sequence '5c 0d 5c 0a' which is the line separator for notes.
       my @parts = split(m!\x{5c}\x{0d}\x{5c}\x{0a}!, $text->{TextContent});
       @parts = map {_ss($_)} @parts;
@@ -488,7 +511,7 @@ sub linkBigTexts($s, $o, $builder) {
       my $type = $text->{Id_Type};
       my $field = 505;
       if ($type == 1) { #Tiivistelmä
-        $field = 505;
+        $field = 506; #FinMARC 506 => MARC21 520
       }
       elsif ($type == 2) { #Sisällysluettelo
         $field = 505;
@@ -512,10 +535,15 @@ sub linkBigTexts($s, $o, $builder) {
         $log->warn($s->logId." - BigText type '$type' is unknown. Using Field 505.");
         $field = 505;
       }
-      $field = MMT::MARC::Field->new($field, '0', '0'); #I0: Display constant 'Contents' I1: Content designation 'Enhanced'
-      $s->{record}->addField($field);
 
-      if ($field->code == '505') {
+      if ($text->{strDescription} =~ /MARC:\s+(\d\d\d)/) {
+        $field = $1;
+      }
+
+      if ($field == '505' && @parts > 1) {
+        $field = MMT::MARC::Field->new($field, '0', '0'); #I0: Display constant 'Contents' I1: Content designation 'Enhanced'
+        $s->{record}->addField($field);
+
         for (my $i=0 ; $i<@parts ; $i++) {
           my $p = $parts[$i];
           my $last = (scalar(@parts)-1 == $i ? 1 : 0);
@@ -534,6 +562,16 @@ sub linkBigTexts($s, $o, $builder) {
             $field->addSubfield('g', $p . $itemSeparator);
           }
         }
+      }
+      elsif ($field == '505' && @parts == 1) {
+        $field = MMT::MARC::Field->new($field, '0', '#'); #I0: Display constant 'Contents' I1: Content designation 'Basic'
+        $s->{record}->addField($field);
+        $field->addSubfield('a', join("", @parts));
+      }
+      else {
+        $field = MMT::MARC::Field->new($field, ' ', ' ');
+        $s->{record}->addField($field);
+        $field->addSubfield('a', join(" .-- ", @parts));
       }
     }
   }
