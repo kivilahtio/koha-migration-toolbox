@@ -324,6 +324,16 @@ sub decomposeF008 {
     }
   }
 
+  if ($d{modifiedRecord} && $d{modifiedRecord} !~ /^[#dorsx |]$/) {
+    $d{modifiedRecord} = ' ';
+    $log->warn($s->logId." - F008 'modifiedRecord'='$d{modifiedRecord}' is not one of '[#dorsx |]'! Using ' '.");
+  }
+
+  if ($d{luetteloinninLahde} && $d{luetteloinninLahde} !~ /^[#cdu |]$/) {
+    $d{luetteloinninLahde} = ' ';
+    $log->warn($s->logId." - F008 'luetteloinninLahde'='$d{luetteloinninLahde}' is not one of '[#cdu |]'! Using ' '.");
+  }
+
   return \%d;
 }
 
