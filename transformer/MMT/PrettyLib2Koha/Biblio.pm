@@ -1154,7 +1154,34 @@ Drop all control characters that are not needed here.
 
 =cut
 
+# PrettyLib has some database cells in latin1 even if the whole column is utf8, or whatever uniform encoding.
+# Try to intercept common bad character translations and fix them.
+my %latin1ToUTF8repairTable = (
+  'Ã¥' => 'å',
+  'Ã¤' => 'ä',
+  'Ã¶' => 'ö',
+  'Ã©' => 'é',
+  'Ã¸' => 'ø',
+  'Ã²' => 'ò',
+  'Ã³' => 'ó',
+  'Ã¼' => 'ü',
+  'Ã¡' => 'á',
+  'Ã±' => 'ñ',
+  'Ãµ' => 'õ',
+  'Ã½' => 'ý',
+  'Ã°' => 'ð',
+  'Ã¦' => 'æ',
+  'Ã¿' => 'ÿ',
+  'Ãº' => 'ú',
+  'Ã¨' => 'è',
+  'Ã­' => 'í', #'Ã­' #Has a hidden character after. HEX: c3 83 c2 ad
+  ''   => '',
+);
+my $latin1ToUTF8repairTableCaptureGroupRegexp = "(".join("|", grep {$_} keys %latin1ToUTF8repairTable).")";
+$latin1ToUTF8repairTableCaptureGroupRegexp = qr/$latin1ToUTF8repairTableCaptureGroupRegexp/;
+
 sub _ss($text) {
+  $text =~ s/$latin1ToUTF8repairTableCaptureGroupRegexp/$latin1ToUTF8repairTable{$1}/gsm;
   $text =~ s/$re_sanitator//gsm;
   $text =~ s/^\s+|\s+$//gsm; #Trim leading/tailing whitespace
   return $text;
