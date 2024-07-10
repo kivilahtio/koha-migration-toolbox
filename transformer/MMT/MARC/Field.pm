@@ -35,8 +35,8 @@ sub new($class, $code, $ind1=undef, $ind2=undef, $subfields=undef) {
     $self->addSubfield($_) for @$subfields;
   }
 
-  $self->setIndicator(1, $ind1) if $ind1;
-  $self->setIndicator(2, $ind2) if $ind2;
+  $self->setIndicator(1, $ind1) if (defined($ind1));
+  $self->setIndicator(2, $ind2) if (defined($ind2));
 
   return $self;
 }
